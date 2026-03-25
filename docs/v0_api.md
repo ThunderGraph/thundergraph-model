@@ -398,6 +398,24 @@ class DriveSystem(System):
         model.allocate(shall_positive_power, motor)
 ```
 
+## Citations And References (Phase 8)
+
+**Citations** are first-class definition nodes: **`model.citation(name, **metadata)`** returns a **`Ref`** with **`kind="citation"`**. Store optional well-known keys in metadata (e.g. **`title`**, **`doi`**, **`url`**, **`standard_id`**, **`clause`**, **`revision`**, free-text **`notes`**) — v0 does not enforce a fixed schema beyond **JSON-serializable** metadata on compile.
+
+**`model.references(source, citation)`** records a **`references`** edge from any **declared** element on the same type (**`source`** `Ref`) to a **citation** `Ref`. The target must be **`kind="citation"`**. Multiple **`references`** edges from the same owner are allowed.
+
+- **Compile:** **`citation`** appears in **`nodes`**; each **`references`** edge appears in **`edges`** with **`kind: "references"`**, **`source`/`target`** as **`to_dict()`** payloads (same pattern as **`allocate`**).
+- **Instantiation:** **`instantiate`** builds **`ElementInstance`** rows for **`citation`** (and **`constraint`**, for reference sources) and attaches **`ConfiguredModel.references`**: a list of **`ReferenceBinding`** (**`source`**, **`citation`**) with resolved instance paths.
+- **Execution:** citations do **not** participate in **`compile_graph` / `Evaluator`** in v0.
+
+Orthogonal to Phase 7: a **requirement** may have both **`expr=`** (acceptance) and **`references(...)`** (provenance).
+
+```python
+std = model.citation("asme_v", title="ASME Section V", standard_id="BPVC-V-2023")
+req = model.requirement("weld_inspect", "Welds shall be inspected per code.", expr=...)
+model.references(req, std)
+```
+
 ## Parameters And Attributes
 
 Direction:

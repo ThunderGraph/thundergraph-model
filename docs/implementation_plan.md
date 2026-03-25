@@ -38,6 +38,7 @@ This is a plan for building the **library**, not ThunderGraph product features.
 - [Phase 5: Analysis Workflows And Reuse Boundaries](#phase-5-analysis-workflows-and-reuse-boundaries)
 - [Phase 6: Behavioral Execution](#phase-6-behavioral-execution)
 - [Phase 7 (addendum): Requirements And Acceptance Semantics](#phase-7-addendum-requirements-and-acceptance-semantics)
+- [Phase 8: Citations And Provenance Links](#phase-8-citations-and-provenance-links)
 - [Cross-Cutting Testing Strategy](#cross-cutting-testing-strategy)
 - [Requirement Coverage Direction](#requirement-coverage-direction)
 - [Go/No-Go Review Checklist](#gono-go-review-checklist)
@@ -210,6 +211,7 @@ flowchart TD
     P4 --> P5[Phase 5\nAnalysis Workflows]
     P5 --> P6[Phase 6\nBehavioral Execution]
     P6 --> P7[Phase 7 addendum\nRequirements Acceptance]
+    P7 --> P8[Phase 8\nCitations And Provenance]
 ```
 
 ### Phase dependency rule
@@ -793,6 +795,71 @@ Behavioral **scenarios** and **traces** may later **feed** requirement evidence 
 - **Reporting:** requirement acceptance results are a **filtered view** of **`constraint_results`**, not a separate verdict stream with its own versioning yet.
 - **Identity:** symbol / owner matching relies on **Python `type` object identity** (`is`) consistent with **`AttributeRef.owner_type`**; class reloads or duplicate type objects remain out-of-scope foot-guns for v0.
 
+## Phase 8: Citations And Provenance Links
+
+This phase is **implemented (library v0)**. It closes a structural gap: the library already supports rich **architecture, values, behavior, and requirement acceptance**; Phase 8 adds a **first-class, uniform way to attach external provenance** (standards, analysis reports, licensing inputs, safety basis paragraphs, journal or handbook references) to **authored elements** via **`citation`** nodes and **`references`** edges.
+
+### Problem statement
+
+- **Traceability** today is mostly **internal** (structure, allocation, constraints). **External** “why we believe this” or “where this came from” lives in **ad-hoc metadata dicts**, notebooks, or tools outside the model — if at all.
+- Without a shared **citation** primitive and a single **relationship name**, exporters, reviewers, and LLM-assisted authoring cannot rely on a **stable graph pattern** for references.
+- **Requirements** (Phase 7) especially benefit from explicit **normative / informative** references; the same mechanism should apply to **parts, parameters, constraints, ports, behavior**, and other declaration kinds without one-off APIs per type.
+
+### Design intent
+
+1. **Citation node type** — Introduce a **`citation`** declaration kind under `tg_model/model` (authoring surface + compiled node metadata), analogous in spirit to **`requirement`**: a named node carrying **structured + open metadata** (e.g. title, identifier, revision, URI/DOI, standard clause, free-text `notes`). Exact field taxonomy is a **workstream** decision; v0 may be **metadata-flexible** with optional well-known keys.
+2. **`references` relationship** — Any other **definition-time element** that participates in the type graph may declare **`references(citation_ref, …)`** (or equivalent) as an edge from **source → citation**, **`kind: references`**. Multiple citations per element are allowed unless a later rule forbids duplicates.
+3. **No execution semantics required for v0** — Citations do not need to participate in **`compile_graph` / `Evaluator`** unless a future workstream explicitly ties evidence (e.g. linking to analysis run IDs). Phase 8 v0 is **authoring + compile + validation + export visibility**.
+4. **Single spine** — One edge kind and one citation node kind for the whole ontology; avoid parallel “doc_link”, “source”, and “standard_ref” concepts unless a migration path is documented.
+
+### Scope governance
+
+- **In scope (library):** definition capture, compile output, static validation rules (e.g. citation must exist, optional URI shape checks), and **export** hooks so citations appear in canonical structural dumps / graph export.
+- **Out of scope (v0):** full bibliography managers, BibTeX/CSL import pipelines, ThunderGraph persistence, UI, or automatic DOI resolution.
+- **Product** may add richer citation registries later; the library supplies the **graph primitive** and **stable identity** for those layers to hang off.
+
+### Workstreams
+
+1. **8.1 — Authoring API** *(v0 implemented)*  
+   **`ModelDefinitionContext`** provides **`citation(name, **metadata)`** and **`references(source, citation)`**. Optional metadata keys documented in **`v0_api.md`**.
+
+2. **8.2 — Compilation and edges** *(v0 implemented)*  
+   **`compile_type`** records **`citation`** in **`nodes`**; **`references`** in **`edges`** with validation (resolved paths; target must be **`citation`**). Lookup avoids recursive **`compile()`** during validation.
+
+3. **8.3 — Instantiation / configured model** *(v0 implemented)*  
+   **`citation`** and **`constraint`** become **`ElementInstance`** rows where needed for **`references`** sources; **`ConfiguredModel.references`** lists **`ReferenceBinding`** for all **`references`** edges in the part instance tree.
+
+4. **8.4 — Export and reporting** *(v0 implemented)*  
+   Compiled JSON already includes **`citation`** / **`references`** (same artifact as structural export). Dedicated **`graph_export`** module remains future if a second schema is required.
+
+5. **8.5 — Documentation and tests** *(v0 implemented)*  
+   **`v0_api.md`** + **`tests/integration/structural_models/test_citations.py`**.
+
+### Go/No-Go gate (Phase 8)
+
+Go only if:
+
+- **`citation`** is a **first-class** compiled node kind under **`tg_model/model`**
+- **`references`** is the **sole** standard edge kind for “this element points at external provenance” in v0 (extensions documented if added later)
+- at least one **integration test** proves **multi-owner** reference attachment and **export** visibility
+- **`v0_api.md`** describes authoring and compile shapes without contradicting Phase 1–7 semantics
+
+No-go if:
+
+- citations become **string blobs** only with **no graph identity** (must be addressable nodes)
+- every element type grows a **bespoke** reference API instead of **`references`**
+- export silently **strips** citations, making the feature non-auditable
+
+### Relation to Phase 7
+
+**Requirements** should be able to **`references`** citations **without** conflating **acceptance (`expr`)** with **provenance**. Phase 7 answers *did we pass?*; Phase 8 answers *what evidence or authority did we cite?* Orthogonal concerns, composable edges.
+
+### Phase 8 library v0 — recorded limitations
+
+- **Validation cost:** resolving nested **`references`** paths may re-run **`define()`** on child types inside **`compile_type`** (fresh **`ModelDefinitionContext`** per walk) — acceptable for v0; optimize with per-type context cache if needed.
+- **Dedup:** duplicate **`references`** edges (same source → same citation) are not rejected in v0.
+- **Product:** BibTeX/CSL import, normative vs informative tagging, and trace-to-evidence links remain out of scope for the library v0 surface above.
+
 ## Cross-Cutting Testing Strategy
 
 The library shall be validated with both **unit tests** and **integration tests** in every phase.
@@ -823,6 +890,8 @@ Use a small set of canonical example models repeatedly across the plan:
 - discrete behavioral model
 
 This keeps the tests comprehensible and prevents a forest of near-duplicate fixtures.
+
+Phase 8 should add a **small citation fixture**: multiple **`references`** edges from distinct owner kinds to shared and distinct **`citation`** nodes, exercised in compile + export tests.
 
 ### Test execution philosophy
 

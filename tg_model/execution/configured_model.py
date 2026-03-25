@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from tg_model.execution.connection_bindings import AllocationBinding, ConnectionBinding
+from tg_model.execution.connection_bindings import (
+    AllocationBinding,
+    ConnectionBinding,
+    ReferenceBinding,
+)
 from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
 from tg_model.execution.value_slots import ValueSlot
 from tg_model.model.identity import derive_declaration_id
@@ -25,12 +29,14 @@ class ConfiguredModel:
         id_registry: dict[str, ElementInstance | ValueSlot],
         connections: list[ConnectionBinding],
         allocations: list[AllocationBinding],
+        references: list[ReferenceBinding],
     ) -> None:
         self.root = root
         self.path_registry = path_registry
         self.id_registry = id_registry
         self.connections = connections
         self.allocations = allocations
+        self.references = references
 
     def handle(self, path: str) -> ElementInstance | ValueSlot:
         """Look up an instance or slot by its dotted path string."""
@@ -46,7 +52,8 @@ class ConfiguredModel:
     def __repr__(self) -> str:
         return (
             f"<ConfiguredModel: {self.root.path_string} "
-            f"({len(self.path_registry)} handles, {len(self.connections)} connections)>"
+            f"({len(self.path_registry)} handles, {len(self.connections)} connections, "
+            f"{len(self.references)} references)>"
         )
 
 
@@ -79,6 +86,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
 
     connections = _instantiate_connections(compiled, root_instance, path_registry, root_type)
     allocations = _instantiate_allocations(compiled, root_instance, path_registry, root_type)
+    references = _instantiate_all_references(root_instance, path_registry, root_type)
 
     root_instance.freeze()
 
@@ -88,6 +96,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
         id_registry=id_registry,
         connections=connections,
         allocations=allocations,
+        references=references,
     )
 
 
@@ -161,6 +170,28 @@ def _instantiate_children(
                 metadata=metadata,
             )
             _register(req_instance, path_registry, id_registry)
+
+        elif kind == "constraint":
+            constraint_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=parent.definition_type,
+                definition_path=(name,),
+                instance_path=child_path,
+                kind="constraint",
+                metadata=metadata,
+            )
+            _register(constraint_instance, path_registry, id_registry)
+
+        elif kind == "citation":
+            cite_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=parent.definition_type,
+                definition_path=(name,),
+                instance_path=child_path,
+                kind="citation",
+                metadata=metadata,
+            )
+            _register(cite_instance, path_registry, id_registry)
 
 
 def _instantiate_connections(
@@ -238,6 +269,54 @@ def _instantiate_allocations(
         ))
 
     return allocations
+
+
+def _instantiate_all_references(
+    root: PartInstance,
+    path_registry: dict[str, ElementInstance | ValueSlot],
+    root_type: type,
+) -> list[ReferenceBinding]:
+    """Resolve ``references`` edges from every part type in the instance tree (Phase 8)."""
+    out: list[ReferenceBinding] = []
+    stack: list[PartInstance] = [root]
+    while stack:
+        part = stack.pop()
+        compiled = part.definition_type.compile()
+        for edge in compiled.get("edges", []):
+            if edge["kind"] != "references":
+                continue
+
+            src_path = part.instance_path + tuple(edge["source"]["path"])
+            tgt_path = part.instance_path + tuple(edge["target"]["path"])
+            src_key = ".".join(src_path)
+            tgt_key = ".".join(tgt_path)
+
+            src = path_registry.get(src_key)
+            tgt = path_registry.get(tgt_key)
+
+            if src is None:
+                raise ValueError(f"references source '{src_key}' not found in registry")
+            if tgt is None:
+                raise ValueError(f"references citation '{tgt_key}' not found in registry")
+            if not isinstance(tgt, ElementInstance) or tgt.kind != "citation":
+                raise ValueError(f"references target '{tgt_key}' is not a citation ElementInstance")
+
+            ref_id = derive_declaration_id(
+                root_type,
+                "references",
+                *[str(x) for x in src_path],
+                *[str(x) for x in tgt_path],
+            )
+            out.append(
+                ReferenceBinding(
+                    stable_id=ref_id,
+                    source=src,
+                    citation=tgt,
+                )
+            )
+        stack.extend(part.children)
+
+    return out
 
 
 def _register(

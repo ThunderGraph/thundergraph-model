@@ -25,9 +25,15 @@ from tg_model.execution.behavior import (
     validate_scenario_trace,
 )
 from tg_model.execution.configured_model import ConfiguredModel, instantiate
-from tg_model.execution.connection_bindings import AllocationBinding, ConnectionBinding
+from tg_model.execution.connection_bindings import (
+    AllocationBinding,
+    ConnectionBinding,
+    ReferenceBinding,
+)
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
 from tg_model.execution.evaluator import Evaluator, RunResult
+from tg_model.execution.graph_compiler import GraphCompilationError, compile_graph
+from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
 from tg_model.execution.requirements import (
     RequirementSatisfactionResult,
     RequirementSatisfactionSummary,
@@ -35,15 +41,12 @@ from tg_model.execution.requirements import (
     iter_requirement_satisfaction,
     summarize_requirement_satisfaction,
 )
-from tg_model.execution.graph_compiler import GraphCompilationError, compile_graph
-from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
 from tg_model.execution.run_context import ConstraintResult, RunContext, SlotState
 from tg_model.execution.validation import ValidationResult, validate_graph
 from tg_model.execution.value_slots import ValueSlot
 
 __all__ = [
     "AllocationBinding",
-    "all_requirements_satisfied",
     "BehaviorStep",
     "BehaviorTrace",
     "ConfiguredModel",
@@ -65,14 +68,16 @@ __all__ = [
     "NodeKind",
     "PartInstance",
     "PortInstance",
-    "RunContext",
+    "ReferenceBinding",
     "RequirementSatisfactionResult",
     "RequirementSatisfactionSummary",
+    "RunContext",
     "RunResult",
     "SequenceTraceStep",
     "SlotState",
     "ValidationResult",
     "ValueSlot",
+    "all_requirements_satisfied",
     "behavior_authoring_projection",
     "behavior_trace_to_records",
     "compile_graph",
@@ -84,8 +89,8 @@ __all__ = [
     "emit_item",
     "instantiate",
     "iter_requirement_satisfaction",
-    "summarize_requirement_satisfaction",
     "scenario_expected_event_names",
+    "summarize_requirement_satisfaction",
     "trace_events_chronological",
     "validate_graph",
     "validate_scenario_trace",

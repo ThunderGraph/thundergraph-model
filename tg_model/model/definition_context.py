@@ -114,6 +114,20 @@ class ModelDefinitionContext:
             metadata=metadata,
         )
 
+    def citation(self, name: str, **metadata: Any) -> Ref:
+        """Declare an external provenance node (standards, reports, URIs, clauses).
+
+        Link other declarations with :meth:`references`. Phase 8: authoring + compile + export;
+        no evaluator participation in v0.
+        """
+        self._register_node(name=name, kind="citation", metadata=dict(metadata))
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="citation",
+            metadata=dict(metadata),
+        )
+
     def requirement(self, name: str, text: str, *, expr: Any | None = None, **metadata: Any) -> Ref:
         """Declare a requirement.
 
@@ -431,6 +445,26 @@ class ModelDefinitionContext:
             kind="solve_group",
             metadata=meta,
         )
+
+    def references(self, source: Ref, citation: Ref) -> None:
+        """Declare provenance: ``source`` references external ``citation`` (Phase 8).
+
+        ``source`` must be a :class:`~tg_model.model.refs.Ref` to a node declared on this
+        type (part, port, parameter, requirement, constraint, …). ``citation`` must be a
+        ``kind='citation'`` ref from this type.
+        """
+        self._check_frozen()
+        if citation.kind != "citation":
+            raise ModelDefinitionError(
+                f"references(): citation must be a citation ref, got kind={citation.kind!r}"
+            )
+        if source.owner_type is not self.owner_type or citation.owner_type is not self.owner_type:
+            raise ModelDefinitionError("references(): source and citation must belong to this type")
+        self.edges.append({
+            "kind": "references",
+            "source": source,
+            "target": citation,
+        })
 
     def allocate(self, requirement_ref: Ref, target_ref: Ref) -> None:
         """Declare an allocation from a requirement to a model element."""

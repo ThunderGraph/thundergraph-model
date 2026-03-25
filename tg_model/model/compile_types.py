@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from tg_model.model.declarations.behavior import check_transition_determinism
-from tg_model.model.definition_context import ModelDefinitionError
+from tg_model.model.definition_context import ModelDefinitionError, NodeDecl
 from tg_model.model.identity import qualified_name
 
 
@@ -41,6 +41,7 @@ def compile_type(element_cls: type) -> dict[str, Any]:
             _validate_port_ref(ctx, edge["target"])
 
     _validate_requirement_acceptance(ctx)
+    _validate_references_edges(ctx)
 
     if ctx.behavior_transitions:
         check_transition_determinism(ctx.behavior_transitions)
@@ -241,6 +242,62 @@ def _cache_behavior_runtime_facets(element_cls: type, ctx: Any) -> None:
     element_cls._tg_initial_state_name = initials[0] if len(initials) == 1 else None
 
 
+def _validate_references_edges(ctx: Any) -> None:
+    """``references`` edges must resolve to declared nodes; target must be a citation."""
+    for edge in ctx.edges:
+        if edge.get("kind") != "references":
+            continue
+        src = edge.get("source")
+        tgt = edge.get("target")
+        if src is None or tgt is None:
+            raise ModelDefinitionError(f"{ctx.owner_type.__name__}: references edge missing source or target")
+        if getattr(tgt, "kind", None) != "citation":
+            raise ModelDefinitionError(
+                f"{ctx.owner_type.__name__}: references target must be a citation ref, "
+                f"got {getattr(tgt, 'kind', None)!r}"
+            )
+        sdecl = _lookup_node_decl_for_ref(ctx, src)
+        if sdecl is None:
+            raise ModelDefinitionError(
+                f"{ctx.owner_type.__name__}: references source path {getattr(src, 'path', ())!r} does not resolve"
+            )
+        tdecl = _lookup_node_decl_for_ref(ctx, tgt)
+        if tdecl is None or tdecl.kind != "citation":
+            raise ModelDefinitionError(
+                f"{ctx.owner_type.__name__}: references target path {getattr(tgt, 'path', ())!r} "
+                f"is not a citation node"
+            )
+
+
+def _lookup_node_decl_for_ref(ctx: Any, ref: Any) -> NodeDecl | None:
+    """Resolve a definition-time ref using the owning type's definition context (no recursive ``compile()``)."""
+    path = getattr(ref, "path", ())
+    if not path:
+        return None
+    if getattr(ref, "owner_type", None) is not ctx.owner_type:
+        return None
+    return _walk_path_in_definition_ctx(ctx, path)
+
+
+def _walk_path_in_definition_ctx(ctx: Any, path: tuple[str, ...]) -> NodeDecl | None:
+    """Walk ``path`` in ``ctx.nodes``, descending into child part types with a fresh definition context."""
+    if not path:
+        return None
+    decl = ctx.nodes.get(path[0])
+    if decl is None:
+        return None
+    if len(path) == 1:
+        return decl
+    if decl.kind != "part" or decl.target_type is None:
+        return None
+    from tg_model.model.definition_context import ModelDefinitionContext
+
+    sub = ModelDefinitionContext(decl.target_type)
+    decl.target_type.define(sub)
+    sub.freeze()
+    return _walk_path_in_definition_ctx(sub, path[1:])
+
+
 def _validate_requirement_acceptance(ctx: Any) -> None:
     """Requirements with ``_accept_expr`` must have at least one ``allocate`` from that requirement."""
     reqs_with_expr = {
@@ -279,6 +336,12 @@ def _serialize_edge(edge: dict[str, Any]) -> dict[str, Any]:
     if edge["kind"] == "allocate":
         return {
             "kind": "allocate",
+            "source": edge["source"].to_dict(),
+            "target": edge["target"].to_dict(),
+        }
+    if edge["kind"] == "references":
+        return {
+            "kind": "references",
             "source": edge["source"].to_dict(),
             "target": edge["target"].to_dict(),
         }
