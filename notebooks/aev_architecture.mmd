@@ -1,0 +1,11 @@
+flowchart TB
+  subgraph Vehicle["AutonomousVehicle (System)"]
+    PT["PowertrainPart<br/>HV + traction state machine"]
+    MO["MotionPart<br/>manual ↔ autonomous"]
+    PE["PerceptionStackPart<br/>scene publisher"]
+    PL["PlannerPart<br/>fusion / intent"]
+    SA["SafetySupervisorPart<br/>preflight + redundant checks"]
+  end
+  PE -->|"Observation (item)"| PL
+  RSAFE[(req_safe)] --> SA
+  RFLOW[(req_perception_flow)] --> PL
