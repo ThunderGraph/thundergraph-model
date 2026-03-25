@@ -67,6 +67,12 @@ from unitflow import Quantity
 from unitflow.catalogs.si import N, kg, m, s
 from unitflow.core.units import Unit
 from unitflow.expr.expressions import Expr, QuantityExpr
+from tg_model.integrations.external_compute import (
+    ExternalComputeBinding,
+    ExternalComputeResult,
+    link_external_routes,
+)
+from tg_model import parameter_ref
 from tg_model.model.elements import Part, System
 from tg_model.execution.configured_model import instantiate
 from tg_model.execution.evaluator import Evaluator
@@ -82,6 +88,119 @@ DIMLESS = Unit.dimensionless(symbol="1")
 # stage assemblies do—so their *local* ideal burn increment is 0 m/s. (Mass still flows through
 # dry/wet attributes; this slot is only the ideal ΣΔv accounting.)
 NO_MODELED_STAGE_BURN_DV = QuantityExpr(Quantity(0, m / s))
+
+def _leo_scenario_inputs() -> dict[str, object]:
+    """Mission scenario parameters as refs for ExternalComputeBinding.inputs (no module globals)."""
+    return {
+        "orbit_m": parameter_ref(LeoLaunchMission, "scenario_target_orbit_altitude_m"),
+        "payload_kg": parameter_ref(LeoLaunchMission, "scenario_payload_mass_kg"),
+    }
+
+
+def _leaf_mass_adapter(adapter_name: str, dry_base: float, prop_base: float):
+    """Tiny fake CAE/weights export: (orbit, payload) -> dry + prop for one tank/section part."""
+
+    class _LeafMassAdapter:
+        name = adapter_name
+
+        def compute(self, inputs: dict[str, Quantity]) -> ExternalComputeResult:
+            orbit_m = float(inputs["orbit_m"].to(m).magnitude)
+            payload_kg = float(inputs["payload_kg"].to(kg).magnitude)
+            s = 1.0 + (payload_kg - 5_200.0) / 500_000.0 + (orbit_m - 400_000.0) / 5_000_000.0
+            return ExternalComputeResult(
+                value={
+                    "local_dry_mass_kg": Quantity(dry_base * s, kg),
+                    "local_propellant_mass_kg": Quantity(prop_base * s, kg),
+                },
+                provenance={"adapter": self.name, "orbit_m": orbit_m},
+            )
+
+    return _LeafMassAdapter()
+
+
+class _NotionalRocketThrustStudio:
+    """Fake **propulsion/engine-deck** output only: sea-level thrust (not a mass rollup).
+
+    Vehicle **mass** on `LaunchRocket` comes from **composition** — rolling up child part subtree masses.
+    Thrust is a separate physics/product output (engine model, test data, MDAO thrust level).
+    """
+
+    name = "notional_rocket_thrust_studio"
+
+    def compute(self, inputs: dict[str, Quantity]) -> ExternalComputeResult:
+        orbit_m = float(inputs["orbit_m"].to(m).magnitude)
+        payload_kg = float(inputs["payload_kg"].to(kg).magnitude)
+        alt_400 = max(0.5, orbit_m / 400_000.0)
+        pay_scale = 1.0 + (payload_kg - 5_200.0) / 200_000.0
+        thrust = 7_600_000.0 * (0.97 + 0.03 * alt_400) * pay_scale
+        return ExternalComputeResult(
+            value=Quantity(thrust, N),
+            provenance={"adapter": self.name, "orbit_m": orbit_m, "payload_kg": payload_kg},
+        )
+
+
+class _NotionalFairingMassStudio:
+    """Fake fairing / PLF loads–mass sketch from trajectory + payload."""
+
+    name = "notional_fairing_mass_studio"
+
+    def compute(self, inputs: dict[str, Quantity]) -> ExternalComputeResult:
+        orbit_m = float(inputs["orbit_m"].to(m).magnitude)
+        payload_kg = float(inputs["payload_kg"].to(kg).magnitude)
+        dry = 5_200.0 + 0.12 * (payload_kg - 5_200.0) + 2e-6 * max(0.0, orbit_m - 400_000.0) * payload_kg
+        return ExternalComputeResult(
+            value={
+                "fairing_local_dry_mass_kg": Quantity(dry, kg),
+                "fairing_local_propellant_mass_kg": Quantity(0, kg),
+            },
+            provenance={"adapter": self.name, "orbit_m": orbit_m},
+        )
+
+
+class _NotionalUpperStageTrajectorySnapshot:
+    """Fake upper-stage mass / burn snapshot (e.g. exported from a trajectory tool)."""
+
+    name = "notional_upper_stage_trajectory_snapshot"
+
+    def compute(self, inputs: dict[str, Quantity]) -> ExternalComputeResult:
+        orbit_m = float(inputs["orbit_m"].to(m).magnitude)
+        payload_kg = float(inputs["payload_kg"].to(kg).magnitude)
+        pay = (payload_kg - 5_200.0) / 50_000.0
+        alt = (orbit_m - 400_000.0) / 1_000_000.0
+        return ExternalComputeResult(
+            value={
+                "upper_stage_structure_dry_mass_kg": Quantity(1_100.0 * (1.0 + 0.02 * pay), kg),
+                "upper_stage_structure_propellant_mass_kg": Quantity(0, kg),
+                "upper_stage_burn_initial_mass_kg": Quantity(168_000.0 * (1.0 + 0.03 * pay + 0.01 * alt), kg),
+                "upper_stage_burn_final_mass_kg": Quantity(52_000.0 * (1.0 + 0.02 * pay), kg),
+                "upper_stage_isp_seconds": Quantity(340.0 * (1.0 - 0.01 * alt), s),
+            },
+            provenance={"adapter": self.name, "orbit_m": orbit_m, "payload_kg": payload_kg},
+        )
+
+
+class _NotionalFirstStageTrajectorySnapshot:
+    """Fake booster mass / burn snapshot (e.g. from staging analysis export)."""
+
+    name = "notional_first_stage_trajectory_snapshot"
+
+    def compute(self, inputs: dict[str, Quantity]) -> ExternalComputeResult:
+        orbit_m = float(inputs["orbit_m"].to(m).magnitude)
+        payload_kg = float(inputs["payload_kg"].to(kg).magnitude)
+        pay = (payload_kg - 5_200.0) / 50_000.0
+        alt = (orbit_m - 400_000.0) / 1_000_000.0
+        # Isp stays ≥ ~318 s at defaults so ΣΔv requirement still closes (same role as prior hand input).
+        isp = max(318.0, 318.0 * (1.0 - 0.008 * alt) * (1.0 - 0.01 * pay))
+        return ExternalComputeResult(
+            value={
+                "first_stage_structure_dry_mass_kg": Quantity(920.0 * (1.0 + 0.015 * pay), kg),
+                "first_stage_structure_propellant_mass_kg": Quantity(0, kg),
+                "first_stage_burn_initial_mass_kg": Quantity(195_000.0 * (1.0 + 0.025 * pay + 0.008 * alt), kg),
+                "first_stage_burn_final_mass_kg": Quantity(38_000.0 * (1.0 + 0.02 * pay), kg),
+                "first_stage_isp_seconds": Quantity(isp, s),
+            },
+            provenance={"adapter": self.name, "orbit_m": orbit_m, "payload_kg": payload_kg},
+        )
 
 
 class TsiolkovskyDeltaVExpr(Expr):
@@ -122,9 +241,17 @@ class FairingAndPayloadInterface(Part):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b_fairing = ExternalComputeBinding(_NotionalFairingMassStudio(), inputs=_leo_scenario_inputs())
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b_fairing)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b_fairing)
+        link_external_routes(
+            b_fairing,
+            {
+                "fairing_local_dry_mass_kg": dry,
+                "fairing_local_propellant_mass_kg": prop,
+            },
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -133,9 +260,17 @@ class FairingAndPayloadInterface(Part):
 class UpperStageOxidizerTank(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_upper_ox_tank_mass_export", 380.0, 118_000.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -144,9 +279,17 @@ class UpperStageOxidizerTank(Part):
 class UpperStageFuelTank(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_upper_fuel_tank_mass_export", 290.0, 48_000.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -155,9 +298,17 @@ class UpperStageFuelTank(Part):
 class UpperStageEngineInstallation(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_upper_engine_install_mass_export", 650.0, 800.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -175,13 +326,27 @@ class UpperStageAssembly(Part):
         ft = model.part("fuel_tank", UpperStageFuelTank)
         ei = model.part("engine_installation", UpperStageEngineInstallation)
 
-        dry = model.parameter("stage_structure_dry_mass_kg", unit=kg)
-        prop = model.parameter("stage_structure_propellant_mass_kg", unit=kg)
-        wet_local = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b_upper = ExternalComputeBinding(
+            _NotionalUpperStageTrajectorySnapshot(),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("stage_structure_dry_mass_kg", unit=kg, computed_by=b_upper)
+        prop = model.attribute("stage_structure_propellant_mass_kg", unit=kg, computed_by=b_upper)
+        wet_local = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
 
-        mw = model.parameter("stage_burn_initial_mass_kg", unit=kg)
-        md = model.parameter("stage_burn_final_mass_kg", unit=kg)
-        isp = model.parameter("stage_isp_seconds", unit=s)
+        mw = model.attribute("stage_burn_initial_mass_kg", unit=kg, computed_by=b_upper)
+        md = model.attribute("stage_burn_final_mass_kg", unit=kg, computed_by=b_upper)
+        isp = model.attribute("stage_isp_seconds", unit=s, computed_by=b_upper)
+        link_external_routes(
+            b_upper,
+            {
+                "upper_stage_structure_dry_mass_kg": dry,
+                "upper_stage_structure_propellant_mass_kg": prop,
+                "upper_stage_burn_initial_mass_kg": mw,
+                "upper_stage_burn_final_mass_kg": md,
+                "upper_stage_isp_seconds": isp,
+            },
+        )
         local_dv = model.attribute(
             "local_stage_delta_v",
             unit=m / s,
@@ -193,29 +358,37 @@ class UpperStageAssembly(Part):
             unit=kg,
             expr=ox.subtree_dry_mass_kg + (ft.subtree_dry_mass_kg + ei.subtree_dry_mass_kg),
         )
-        model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry + r_dry)
+        model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym + r_dry.sym)
 
         r_wet = model.attribute(
             "rolled_children_wet_mass_kg",
             unit=kg,
             expr=ox.subtree_wet_mass_kg + (ft.subtree_wet_mass_kg + ei.subtree_wet_mass_kg),
         )
-        model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet_local + r_wet)
+        model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet_local.sym + r_wet.sym)
 
         r_dv = model.attribute(
             "rolled_children_delta_v_sum",
             unit=m / s,
             expr=ox.subtree_cumulative_delta_v + (ft.subtree_cumulative_delta_v + ei.subtree_cumulative_delta_v),
         )
-        model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=local_dv + r_dv)
+        model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=local_dv.sym + r_dv.sym)
 
 
 class FirstStagePropellantSection(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_first_propellant_section_mass_export", 480.0, 185_000.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -224,9 +397,17 @@ class FirstStagePropellantSection(Part):
 class FirstStageEngineCluster(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_first_engine_cluster_mass_export", 5_200.0, 0.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -235,9 +416,17 @@ class FirstStageEngineCluster(Part):
 class FirstStageThrustStructure(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        dry = model.parameter("local_dry_mass_kg", unit=kg)
-        prop = model.parameter("local_propellant_mass_kg", unit=kg)
-        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b = ExternalComputeBinding(
+            _leaf_mass_adapter("notional_first_thrust_structure_mass_export", 520.0, 1_200.0),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("local_dry_mass_kg", unit=kg, computed_by=b)
+        prop = model.attribute("local_propellant_mass_kg", unit=kg, computed_by=b)
+        link_external_routes(
+            b,
+            {"local_dry_mass_kg": dry, "local_propellant_mass_kg": prop},
+        )
+        wet = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
         model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym)
         model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet.sym)
         model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=NO_MODELED_STAGE_BURN_DV)
@@ -255,13 +444,27 @@ class FirstStageAssembly(Part):
         ec = model.part("engine_cluster", FirstStageEngineCluster)
         ts = model.part("thrust_structure", FirstStageThrustStructure)
 
-        dry = model.parameter("stage_structure_dry_mass_kg", unit=kg)
-        prop = model.parameter("stage_structure_propellant_mass_kg", unit=kg)
-        wet_local = model.attribute("local_wet_mass_kg", unit=kg, expr=dry + prop)
+        b_first = ExternalComputeBinding(
+            _NotionalFirstStageTrajectorySnapshot(),
+            inputs=_leo_scenario_inputs(),
+        )
+        dry = model.attribute("stage_structure_dry_mass_kg", unit=kg, computed_by=b_first)
+        prop = model.attribute("stage_structure_propellant_mass_kg", unit=kg, computed_by=b_first)
+        wet_local = model.attribute("local_wet_mass_kg", unit=kg, expr=dry.sym + prop.sym)
 
-        mw = model.parameter("stage_burn_initial_mass_kg", unit=kg)
-        md = model.parameter("stage_burn_final_mass_kg", unit=kg)
-        isp = model.parameter("stage_isp_seconds", unit=s)
+        mw = model.attribute("stage_burn_initial_mass_kg", unit=kg, computed_by=b_first)
+        md = model.attribute("stage_burn_final_mass_kg", unit=kg, computed_by=b_first)
+        isp = model.attribute("stage_isp_seconds", unit=s, computed_by=b_first)
+        link_external_routes(
+            b_first,
+            {
+                "first_stage_structure_dry_mass_kg": dry,
+                "first_stage_structure_propellant_mass_kg": prop,
+                "first_stage_burn_initial_mass_kg": mw,
+                "first_stage_burn_final_mass_kg": md,
+                "first_stage_isp_seconds": isp,
+            },
+        )
         local_dv = model.attribute(
             "local_stage_delta_v",
             unit=m / s,
@@ -273,29 +476,34 @@ class FirstStageAssembly(Part):
             unit=kg,
             expr=ps.subtree_dry_mass_kg + (ec.subtree_dry_mass_kg + ts.subtree_dry_mass_kg),
         )
-        model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry + r_dry)
+        model.attribute("subtree_dry_mass_kg", unit=kg, expr=dry.sym + r_dry.sym)
 
         r_wet = model.attribute(
             "rolled_children_wet_mass_kg",
             unit=kg,
             expr=ps.subtree_wet_mass_kg + (ec.subtree_wet_mass_kg + ts.subtree_wet_mass_kg),
         )
-        model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet_local + r_wet)
+        model.attribute("subtree_wet_mass_kg", unit=kg, expr=wet_local.sym + r_wet.sym)
 
         r_dv = model.attribute(
             "rolled_children_delta_v_sum",
             unit=m / s,
             expr=ps.subtree_cumulative_delta_v + (ec.subtree_cumulative_delta_v + ts.subtree_cumulative_delta_v),
         )
-        model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=local_dv + r_dv)
+        model.attribute("subtree_cumulative_delta_v", unit=m / s, expr=local_dv.sym + r_dv.sym)
 
 
 class LaunchRocket(Part):
     """**Rocket** block (BDD: the vehicle product): **composed of** fairing, upper stage, first stage.
 
-    All vehicle-level parameters, mass/Δv roll-ups, and design constraints live **here**. A separate
-    **mission / context** system composes this block as ``part rocket`` and holds mission-level
-    requirements plus allocation to ``rocket``.
+    **Mass / Δv:** `subtree_*` and roll-up attributes are **derived from child parts** (SysML composition).
+    Optional ``vehicle_misc_*`` would be mass **not** allocated to a named child in this model; **this demo
+    fixes them to 0 kg** with constant expressions so **vehicle mass is entirely the sum of composed
+    assemblies** — not a second parallel “simulator” at the root.
+
+    **Thrust:** `sea_level_thrust_n` is a **propulsion-side** output (`ExternalCompute`), not a sum of masses.
+
+    A **mission** system composes this block as ``part rocket`` and holds mission requirements.
     """
 
     @classmethod
@@ -305,11 +513,16 @@ class LaunchRocket(Part):
         upper = model.part("upper_stage", UpperStageAssembly)
         first = model.part("first_stage", FirstStageAssembly)
 
-        thrust = model.parameter("sea_level_thrust_n", unit=N)
-
-        misc_dry = model.parameter("vehicle_misc_dry_mass_kg", unit=kg)
-        misc_prop = model.parameter("vehicle_misc_propellant_mass_kg", unit=kg)
-        misc_wet = model.attribute("vehicle_misc_wet_mass_kg", unit=kg, expr=misc_dry + misc_prop)
+        b_thrust = ExternalComputeBinding(
+            _NotionalRocketThrustStudio(),
+            inputs=_leo_scenario_inputs(),
+        )
+        thrust = model.attribute("sea_level_thrust_n", unit=N, computed_by=b_thrust)
+        # Mass rollup is explicit composition: misc = 0 here (no mass invented at root by a “simulator”).
+        _zero_kg = QuantityExpr(Quantity(0, kg))
+        misc_dry = model.attribute("vehicle_misc_dry_mass_kg", unit=kg, expr=_zero_kg)
+        misc_prop = model.attribute("vehicle_misc_propellant_mass_kg", unit=kg, expr=_zero_kg)
+        misc_wet = model.attribute("vehicle_misc_wet_mass_kg", unit=kg, expr=misc_dry.sym + misc_prop.sym)
 
         r_dry = model.attribute(
             "rolled_major_assemblies_dry_mass_kg",
@@ -317,7 +530,7 @@ class LaunchRocket(Part):
             expr=fairing.subtree_dry_mass_kg
             + (upper.subtree_dry_mass_kg + first.subtree_dry_mass_kg),
         )
-        sub_dry = model.attribute("subtree_dry_mass_kg", unit=kg, expr=misc_dry + r_dry)
+        sub_dry = model.attribute("subtree_dry_mass_kg", unit=kg, expr=misc_dry.sym + r_dry.sym)
 
         r_wet = model.attribute(
             "rolled_major_assemblies_wet_mass_kg",
@@ -325,7 +538,7 @@ class LaunchRocket(Part):
             expr=fairing.subtree_wet_mass_kg
             + (upper.subtree_wet_mass_kg + first.subtree_wet_mass_kg),
         )
-        sub_wet = model.attribute("subtree_wet_mass_kg", unit=kg, expr=misc_wet + r_wet)
+        sub_wet = model.attribute("subtree_wet_mass_kg", unit=kg, expr=misc_wet.sym + r_wet.sym)
 
         r_dv = model.attribute(
             "rolled_major_assemblies_delta_v_sum",
@@ -338,7 +551,7 @@ class LaunchRocket(Part):
         twr = model.attribute(
             "liftoff_thrust_to_weight",
             unit=DIMLESS,
-            expr=thrust / (sub_wet * G0),
+            expr=thrust.sym / (sub_wet.sym * G0),
         )
         model.constraint("min_liftoff_twr", expr=twr >= Quantity(1.12, DIMLESS))
         model.constraint("vehicle_dry_under_cap", expr=sub_dry <= Quantity(28_000, kg))
@@ -349,10 +562,17 @@ class LeoLaunchMission(System):
 
     Requirements at this level allocate to ``rocket`` — the same pattern as allocating to any other
     composed subsystem: ``rocket = model.part(\"rocket\", LaunchRocket)`` then ``model.allocate(req, rocket)``.
+
+    **Simulation integration (showcase):** scenario parameters live on the mission block. Nested
+    parts use ``parameter_ref(LeoLaunchMission, ...)`` so ``ExternalComputeBinding.inputs`` point
+    at those parameters (no globals). Each block builds its own binding + ``link_external_routes``
+    next to the attributes it hydrates (one binding per owning part — compiler rule).
     """
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.parameter("scenario_target_orbit_altitude_m", unit=m)
+        model.parameter("scenario_payload_mass_kg", unit=kg)
         rocket = model.part("rocket", LaunchRocket)
         req = model.requirement(
             "req_leo_delta_v_budget",
@@ -389,35 +609,11 @@ CODE2 = r'''reset_vehicle_types()
 cm = instantiate(LeoLaunchMission)
 rocket = cm.rocket
 
+# **Only** mission scenario knobs. Mass roll-ups on the rocket are **sums of composed parts**; external
+# compute supplies thrust + discipline exports (tanks, burns, …), not a fake parallel root mass.
 inputs = {
-    rocket.sea_level_thrust_n.stable_id: Quantity(7_600_000, N),
-    rocket.vehicle_misc_dry_mass_kg.stable_id: Quantity(0, kg),
-    rocket.vehicle_misc_propellant_mass_kg.stable_id: Quantity(0, kg),
-    rocket.fairing_and_payload_interface.local_dry_mass_kg.stable_id: Quantity(5_200, kg),
-    rocket.fairing_and_payload_interface.local_propellant_mass_kg.stable_id: Quantity(0, kg),
-    rocket.upper_stage.stage_structure_dry_mass_kg.stable_id: Quantity(1_100, kg),
-    rocket.upper_stage.stage_structure_propellant_mass_kg.stable_id: Quantity(0, kg),
-    rocket.upper_stage.oxidizer_tank.local_dry_mass_kg.stable_id: Quantity(380, kg),
-    rocket.upper_stage.oxidizer_tank.local_propellant_mass_kg.stable_id: Quantity(118_000, kg),
-    rocket.upper_stage.fuel_tank.local_dry_mass_kg.stable_id: Quantity(290, kg),
-    rocket.upper_stage.fuel_tank.local_propellant_mass_kg.stable_id: Quantity(48_000, kg),
-    rocket.upper_stage.engine_installation.local_dry_mass_kg.stable_id: Quantity(650, kg),
-    rocket.upper_stage.engine_installation.local_propellant_mass_kg.stable_id: Quantity(800, kg),
-    rocket.upper_stage.stage_burn_initial_mass_kg.stable_id: Quantity(168_000, kg),
-    rocket.upper_stage.stage_burn_final_mass_kg.stable_id: Quantity(52_000, kg),
-    rocket.upper_stage.stage_isp_seconds.stable_id: Quantity(340, s),
-    rocket.first_stage.stage_structure_dry_mass_kg.stable_id: Quantity(920, kg),
-    rocket.first_stage.stage_structure_propellant_mass_kg.stable_id: Quantity(0, kg),
-    rocket.first_stage.propellant_section.local_dry_mass_kg.stable_id: Quantity(480, kg),
-    rocket.first_stage.propellant_section.local_propellant_mass_kg.stable_id: Quantity(185_000, kg),
-    rocket.first_stage.engine_cluster.local_dry_mass_kg.stable_id: Quantity(5_200, kg),
-    rocket.first_stage.engine_cluster.local_propellant_mass_kg.stable_id: Quantity(0, kg),
-    rocket.first_stage.thrust_structure.local_dry_mass_kg.stable_id: Quantity(520, kg),
-    rocket.first_stage.thrust_structure.local_propellant_mass_kg.stable_id: Quantity(1_200, kg),
-    rocket.first_stage.stage_burn_initial_mass_kg.stable_id: Quantity(195_000, kg),
-    rocket.first_stage.stage_burn_final_mass_kg.stable_id: Quantity(38_000, kg),
-    # ~318 s: with fixed masses, first-stage ideal Δv scales ~linearly with Isp; nudges ΣΔv past 9 km/s vs 290 s.
-    rocket.first_stage.stage_isp_seconds.stable_id: Quantity(318, s),
+    cm.scenario_target_orbit_altitude_m.stable_id: Quantity(400_000, m),
+    cm.scenario_payload_mass_kg.stable_id: Quantity(5_200, kg),
 }
 
 graph, handlers = compile_graph(cm)
@@ -428,54 +624,234 @@ ctx = RunContext()
 result = Evaluator(graph, compute_handlers=handlers).evaluate(ctx, inputs=inputs)
 assert not result.failures, result.failures
 
+_W = 78
 
-def qmag(q):
+
+def _qmag(q) -> float:
     return float(q.magnitude)
 
 
-print("=== LeoLaunchMission (configured root) ===")
-print("  part: rocket ->", rocket.path_string)
+def _hr(ch: str = "─", w: int = _W) -> None:
+    print(ch * w)
 
-print("\n=== LaunchRocket (vehicle block) ===")
-print("Wet mass (kg):", qmag(ctx.get_value(rocket.subtree_wet_mass_kg.stable_id)))
-print("Dry mass (kg):", qmag(ctx.get_value(rocket.subtree_dry_mass_kg.stable_id)))
-print("Ideal ΣΔv (m/s):", qmag(ctx.get_value(rocket.subtree_cumulative_delta_v.stable_id)))
-_twr = ctx.get_value(rocket.liftoff_thrust_to_weight.stable_id)
-print("Liftoff T/W (—):", _twr.magnitude)
 
-print("\n=== Major assemblies (composition under LaunchRocket) ===")
-for label, handle in [
-    ("Fairing + payload interface", rocket.fairing_and_payload_interface),
-    ("Upper stage", rocket.upper_stage),
-    ("First stage", rocket.first_stage),
+def _title(label: str) -> None:
+    print()
+    _hr("═")
+    print(f"  {label}")
+    _hr("═")
+
+
+def _subtitle(label: str) -> None:
+    print()
+    print(f"  ▸ {label}")
+    print("  " + "─" * 52)
+
+
+def _kv(key: str, val: str, klen: int = 40) -> None:
+    print(f"  {key:.<{klen}} {val}")
+
+
+def _table(headers: tuple[str, ...], rows: list[tuple[str, ...]], col_widths: tuple[int, ...]) -> None:
+    def row(cells: tuple[str, ...]) -> str:
+        parts = [str(c).ljust(col_widths[i]) for i, c in enumerate(cells)]
+        return " │ ".join(parts)
+
+    sep_w = sum(col_widths) + 3 * (len(headers) - 1)
+    print("  " + row(headers))
+    print("  " + "─" * sep_w)
+    for r in rows:
+        print("  " + row(r))
+
+
+def _fmt_km_from_m(q) -> str:
+    return f"{_qmag(q) / 1000.0:,.0f} km"
+
+
+def _fmt_kg(q) -> str:
+    return f"{_qmag(q):,.1f} kg"
+
+
+def _fmt_ms(q) -> str:
+    return f"{_qmag(q):,.2f} m/s"
+
+
+def _fmt_dimless(q) -> str:
+    return f"{_qmag(q):.3f}"
+
+
+def _fmt_n(q) -> str:
+    v = _qmag(q)
+    if v >= 1e6:
+        return f"{v / 1e6:.3f} MN"
+    return f"{v:,.0f} N"
+
+
+def _fmt_prov(p: dict) -> str:
+    if not p:
+        return "—"
+    ad = p.get("adapter", "—")
+    bits = [ad]
+    if "orbit_m" in p:
+        bits.append(f"orbit {float(p['orbit_m']) / 1000.0:,.0f} km")
+    if "payload_kg" in p:
+        bits.append(f"payload {float(p['payload_kg']):,.0f} kg")
+    return "  ·  ".join(bits)
+
+
+# ─── Report body ───────────────────────────────────────────────────────────
+orbit_q = inputs[cm.scenario_target_orbit_altitude_m.stable_id]
+payload_q = inputs[cm.scenario_payload_mass_kg.stable_id]
+
+print()
+_hr("═")
+print(
+    "  THUNDERGRAPH  ·  LEO MISSION SNAPSHOT  ·  NOTIONAL VEHICLE (IDEAL STAGE Δv, NO LOSSES)".ljust(
+        _W - 2
+    )
+)
+_hr("═")
+_kv("Configured root", "LeoLaunchMission")
+_kv("Composition chain", f"{rocket.path_string}  (LaunchRocket)")
+_kv("Scenario — target altitude", _fmt_km_from_m(orbit_q))
+_kv("Scenario — payload mass", _fmt_kg(payload_q))
+_kv(
+    "Evaluate() binding surface",
+    "two scenario parameters only; masses / thrust / burns from graph + external compute",
+)
+
+_title("EXTERNAL COMPUTE — SAMPLE HYDRATION + PROVENANCE")
+for slot_label, sid in [
+    ("Sea-level thrust (vehicle)", rocket.sea_level_thrust_n.stable_id),
+    ("Upper oxidizer tank — dry mass", rocket.upper_stage.oxidizer_tank.local_dry_mass_kg.stable_id),
 ]:
-    dry = ctx.get_value(handle.subtree_dry_mass_kg.stable_id)
-    wet = ctx.get_value(handle.subtree_wet_mass_kg.stable_id)
-    dv = ctx.get_value(handle.subtree_cumulative_delta_v.stable_id)
-    print(f"  {label}: dry={dry}  wet={wet}  ΣΔv={dv}")
+    rec = ctx.get_or_create_record(sid)
+    v = ctx.get_value(sid)
+    if "thrust" in slot_label.lower():
+        vstr = _fmt_n(v)
+    else:
+        vstr = _fmt_kg(v)
+    print(f"  {slot_label}")
+    print(f"      Value . . . . . . . .  {vstr}")
+    print(f"      Provenance . . . . . .  {_fmt_prov(dict(rec.provenance))}")
+    print()
 
-print("\n=== Upper stage — sibling tanks / engines ===")
-for name in ("oxidizer_tank", "fuel_tank", "engine_installation"):
-    h = getattr(rocket.upper_stage, name)
-    print(f"  {name}: dry={ctx.get_value(h.subtree_dry_mass_kg.stable_id)}  wet={ctx.get_value(h.subtree_wet_mass_kg.stable_id)}")
+_subtitle("Vehicle roll-up (LaunchRocket subtree)")
+_kv("Wet mass m_wet", _fmt_kg(ctx.get_value(rocket.subtree_wet_mass_kg.stable_id)))
+_kv("Dry mass m_dry", _fmt_kg(ctx.get_value(rocket.subtree_dry_mass_kg.stable_id)))
+_kv("Ideal ΣΔv (2 burning assemblies)", _fmt_ms(ctx.get_value(rocket.subtree_cumulative_delta_v.stable_id)))
+_twr = ctx.get_value(rocket.liftoff_thrust_to_weight.stable_id)
+_kv("Liftoff thrust-to-weight", _fmt_dimless(_twr))
 
-print("\n=== First stage — sibling sections ===")
-for name in ("propellant_section", "engine_cluster", "thrust_structure"):
-    h = getattr(rocket.first_stage, name)
-    print(f"  {name}: dry={ctx.get_value(h.subtree_dry_mass_kg.stable_id)}  wet={ctx.get_value(h.subtree_wet_mass_kg.stable_id)}")
+_title("COMPOSITION — MAJOR ASSEMBLIES (BDD-STYLE)")
+_table(
+    ("Block", "m_dry", "m_wet", "ΣΔv contrib."),
+    [
+        (
+            "Fairing + payload I/F",
+            _fmt_kg(ctx.get_value(rocket.fairing_and_payload_interface.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.fairing_and_payload_interface.subtree_wet_mass_kg.stable_id)),
+            _fmt_ms(ctx.get_value(rocket.fairing_and_payload_interface.subtree_cumulative_delta_v.stable_id)),
+        ),
+        (
+            "Upper stage assembly",
+            _fmt_kg(ctx.get_value(rocket.upper_stage.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.upper_stage.subtree_wet_mass_kg.stable_id)),
+            _fmt_ms(ctx.get_value(rocket.upper_stage.subtree_cumulative_delta_v.stable_id)),
+        ),
+        (
+            "First stage assembly",
+            _fmt_kg(ctx.get_value(rocket.first_stage.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.first_stage.subtree_wet_mass_kg.stable_id)),
+            _fmt_ms(ctx.get_value(rocket.first_stage.subtree_cumulative_delta_v.stable_id)),
+        ),
+    ],
+    (26, 14, 14, 18),
+)
 
-print("\n=== Stage burns (Tsiolkovsky at assembly only) ===")
-print("  Upper local_stage_delta_v:", ctx.get_value(rocket.upper_stage.local_stage_delta_v.stable_id))
-print("  First  local_stage_delta_v:", ctx.get_value(rocket.first_stage.local_stage_delta_v.stable_id))
+_subtitle("Upper stage — sibling parts")
+_table(
+    ("Part property", "m_dry", "m_wet"),
+    [
+        (
+            "oxidizer_tank",
+            _fmt_kg(ctx.get_value(rocket.upper_stage.oxidizer_tank.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.upper_stage.oxidizer_tank.subtree_wet_mass_kg.stable_id)),
+        ),
+        (
+            "fuel_tank",
+            _fmt_kg(ctx.get_value(rocket.upper_stage.fuel_tank.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.upper_stage.fuel_tank.subtree_wet_mass_kg.stable_id)),
+        ),
+        (
+            "engine_installation",
+            _fmt_kg(ctx.get_value(rocket.upper_stage.engine_installation.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.upper_stage.engine_installation.subtree_wet_mass_kg.stable_id)),
+        ),
+    ],
+    (22, 14, 14),
+)
+
+_subtitle("First stage — sibling parts")
+_table(
+    ("Part property", "m_dry", "m_wet"),
+    [
+        (
+            "propellant_section",
+            _fmt_kg(ctx.get_value(rocket.first_stage.propellant_section.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.first_stage.propellant_section.subtree_wet_mass_kg.stable_id)),
+        ),
+        (
+            "engine_cluster",
+            _fmt_kg(ctx.get_value(rocket.first_stage.engine_cluster.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.first_stage.engine_cluster.subtree_wet_mass_kg.stable_id)),
+        ),
+        (
+            "thrust_structure",
+            _fmt_kg(ctx.get_value(rocket.first_stage.thrust_structure.subtree_dry_mass_kg.stable_id)),
+            _fmt_kg(ctx.get_value(rocket.first_stage.thrust_structure.subtree_wet_mass_kg.stable_id)),
+        ),
+    ],
+    (22, 14, 14),
+)
+
+_subtitle("Stage ideal Δv (Tsiolkovsky attributed at assembly only)")
+_kv("Upper — local_stage_delta_v", _fmt_ms(ctx.get_value(rocket.upper_stage.local_stage_delta_v.stable_id)))
+_kv("First — local_stage_delta_v", _fmt_ms(ctx.get_value(rocket.first_stage.local_stage_delta_v.stable_id)))
 
 summary = summarize_requirement_satisfaction(result)
-print("\nRequirement checks:", summary.check_count, "| all_passed:", summary.all_passed)
+_title("REQUIREMENTS & CONSTRAINTS — VERIFICATION")
+pass_sym = "✓ SAT"
+fail_sym = "✗ UNSAT"
+_kv("Requirement acceptance checks", str(summary.check_count))
+_kv("All requirements satisfied", "YES" if summary.all_passed else "NO")
+print()
 for row in summary.results:
-    print(" ", row.requirement_path, "|", "PASS" if row.passed else "FAIL")
+    st = pass_sym if row.passed else fail_sym
+    print(f"  {st}  {row.requirement_path}")
+    print(f"         allocated to  {row.allocation_target_path}")
+    if row.evidence:
+        print(f"         evidence      {row.evidence[:64]}{'…' if len(row.evidence) > 64 else ''}")
 
-print("\nConstraints:", len(result.constraint_results))
-for cr in result.constraint_results:
-    print(" ", cr)
+print()
+print("  Local constraints (design rules on LaunchRocket)")
+_table(
+    ("Constraint", "Status"),
+    [
+        (
+            cr.name.split(".")[-1] if "." in cr.name else cr.name,
+            pass_sym if cr.passed else fail_sym,
+        )
+        for cr in result.constraint_results
+        if cr.requirement_path is None
+    ],
+    (48, 12),
+)
+
+print()
+_hr("═")
+print("  END SNAPSHOT — values traceable to composed blocks + external-compute provenance".ljust(_W - 2))
+_hr("═")
 '''
 
 nb = {
@@ -497,6 +873,8 @@ nb["cells"].append(
             "",
             "**Pattern:** **`LeoLaunchMission`** (configured root `System`) declares **`rocket = model.part(\"rocket\", LaunchRocket)`**, then a mission requirement and **`model.allocate(req, rocket)`**. The name **`rocket`** is a real composed child: after `instantiate(LeoLaunchMission)`, **`cm.rocket`** is the vehicle **`PartInstance`** that **owns** `fairing_and_payload_interface`, `upper_stage`, and `first_stage`. Vehicle physics and design constraints live on **`LaunchRocket`**; the **LEO Δv budget** requirement lives on the mission block and **allocates to** the rocket part.",
             "",
+            "**Simulation vs composition:** **Mass** totals on `LaunchRocket` **roll up from child parts** (fairing, stages, tanks…). **External compute** fills **discipline outputs** — e.g. CAE mass exports on leaves, **propulsion thrust** on the vehicle, trajectory-linked burn snapshots — not a duplicate “root mass simulator.” Mission **`scenario_*`** parameters are the only **`evaluate()` inputs**. **`parameter_ref`** wires nested **`ExternalComputeBinding.inputs`** to those root parameters (no hidden global state).",
+            "",
             "**ThunderGraph ↔ SysML:** each **`model.part(\"name\", BlockType)`** is **composition** (the parent **owns** that child). `model.part()` with **no** args remains available as a ref to the block you are defining (`root_block`); this demo does not need it because allocation targets the named **`rocket`** part.",
             "",
             "**What it is not:** trajectory, losses, staging time, or engine-out. Δv is **ideal Tsiolkovsky once per burning stage** (upper assembly and first-stage assembly). Tank/fairing **leaves** use `NO_MODELED_STAGE_BURN_DV`: they add **no burn term** to the ΣΔv roll-up (mass is in dry/wet; this slot is burn accounting only).",
@@ -506,6 +884,8 @@ nb["cells"].append(
             "**Imports:** load `tg_model` **after** the `sys.path` fix and any `sys.modules` purge.",
             "",
             "**Run:** `uv run jupyter nbconvert --to notebook --execute notebooks/leo_launch_vehicle_deep_stack.ipynb --inplace`",
+            "",
+            "**Kernel:** after updating `tg_model`, **restart the Jupyter kernel** and run the notebook from the top so `parameter_ref` and other API changes load (stale `ModelDefinitionContext` is a common cause of `AttributeError`).",
         ]
     )
 )
@@ -529,6 +909,7 @@ nb["cells"].append(
             "",
             "| Parent block | Part property (role) | Child block type |",
             "|--------------|----------------------|------------------|",
+            "| **`LeoLaunchMission`** | `scenario_target_orbit_altitude_m`, `scenario_payload_mass_kg` | scenario inputs (feed external compute) |",
             "| **`LeoLaunchMission`** | `rocket` | `LaunchRocket` |",
             "| **`LaunchRocket`** | `fairing_and_payload_interface` | `FairingAndPayloadInterface` |",
             "| **`LaunchRocket`** | `upper_stage` | `UpperStageAssembly` |",
@@ -568,9 +949,27 @@ nb["cells"].append(cell_code(CODE1))
 nb["cells"].append(
     cell_md(
         [
+            "## Parameters vs tool / simulation outputs",
+            "",
+            "| Mechanism | Meaning in ThunderGraph |",
+            "|-----------|-------------------------|",
+            "| **`model.parameter`** | You supply a value in the **`inputs`** map at `evaluate()` (or from a file/DB elsewhere). The **dependency graph does not compute it**.",
+            "| **`model.attribute(..., expr=...)`** | **Derived** in-graph from other slots (e.g. **sum of child part masses**, constraints on expressions).",
+            "| **`model.attribute(..., computed_by=ExternalComputeBinding)`** | Filled by **`ExternalCompute.compute()`** — use for **discipline / tool outputs** (propulsion thrust, CAE mass on a leaf, trajectory export), **not** for a duplicate root mass that should be a rollup.",
+            "",
+            "So: **\"sum the parts\"** → **expression / rollup**. **\"a tool produced this number\"** → **external**. **\"scenario knob for this run\"** → **parameter**.",
+            "",
+            "This demo uses **two mission parameters** (orbit + payload). **Vehicle-level mass** is the **composition sum** of child assemblies (optional `vehicle_misc_*` fixed at 0 kg). **Thrust and leaf/assembly tool outputs** are **externally hydrated** — each owning **`Part.define`** creates its **`ExternalComputeBinding`** and calls **`link_external_routes`** beside the attributes it fills (**one binding per owning part**, compiler rule). Nested parts use **`parameter_ref(LeoLaunchMission, \"…\")`** (import from **`tg_model`**) so tool inputs reference mission parameters **without module globals**.",
+        ]
+    )
+)
+
+nb["cells"].append(
+    cell_md(
+        [
             "## Instantiate, bind inputs, evaluate",
             "",
-            "Illustrative masses and stage burn parameters — chosen so **ΣΔv** and **T/W** constraints pass.",
+            "Bind **only** `scenario_target_orbit_altitude_m` and `scenario_payload_mass_kg`. After `evaluate()`, the cell prints a **column-aligned snapshot**: scenario summary, external-compute samples with provenance, composition tables (major assemblies + sibling parts), stage Δv, and requirement / constraint verification (✓ SAT / ✗ UNSAT).",
         ]
     )
 )

@@ -12,6 +12,66 @@ class ModelDefinitionError(Exception):
     """Raised when a model definition is invalid."""
 
 
+def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
+    """Return a reference to a parameter declared on ``root_block_type`` (typically the configured root).
+
+    Use in nested ``define()`` to wire :class:`~tg_model.integrations.external_compute.ExternalComputeBinding`
+    inputs or expressions to **mission / scenario** parameters without module-level globals.
+
+    Resolution order:
+
+    1. If ``root_block_type`` is **fully compiled**, the node is read from the cached artifact.
+    2. Else if ``root_block_type`` is **mid-compile** (nested part types are compiling before the
+       root's ``compile()`` returns), the node is read from the active definition context.
+       **Declare parameters on the root before** ``model.part(...)`` for child types that call
+       ``parameter_ref``.
+
+    If the type is not compiling and not compiled, raises :class:`ModelDefinitionError`.
+    """
+    meta: dict[str, Any]
+
+    compiled = getattr(root_block_type, "_compiled_definition", None)
+    if compiled is not None:
+        node = compiled.get("nodes", {}).get(name)
+        if node is None:
+            raise ModelDefinitionError(
+                f"parameter_ref({root_block_type.__name__}, {name!r}): no such node"
+            )
+        if node.get("kind") != "parameter":
+            raise ModelDefinitionError(
+                f"parameter_ref({root_block_type.__name__}, {name!r}): expected kind 'parameter', "
+                f"got {node.get('kind')!r}"
+            )
+        meta = dict(node.get("metadata", {}))
+    else:
+        active = getattr(root_block_type, "_tg_definition_context", None)
+        if active is None:
+            raise ModelDefinitionError(
+                f"parameter_ref({root_block_type.__name__}, {name!r}): type is not compiling and "
+                f"not compiled; call {root_block_type.__name__}.compile() first, or declare "
+                f"parameters on the root before nested parts that reference them."
+            )
+        decl: NodeDecl | None = active.nodes.get(name)
+        if decl is None:
+            raise ModelDefinitionError(
+                f"parameter_ref({root_block_type.__name__}, {name!r}): no such parameter "
+                f"(declare it on the root before composing parts that use parameter_ref)."
+            )
+        if decl.kind != "parameter":
+            raise ModelDefinitionError(
+                f"parameter_ref({root_block_type.__name__}, {name!r}): expected kind 'parameter', "
+                f"got {decl.kind!r}"
+            )
+        meta = dict(decl.metadata)
+
+    return AttributeRef(
+        owner_type=root_block_type,
+        path=(name,),
+        kind="parameter",
+        metadata=meta,
+    )
+
+
 @dataclass(frozen=True)
 class NodeDecl:
     """One declared node in a type definition."""
@@ -132,7 +192,13 @@ class ModelDefinitionContext:
         computed_by: Any | None = None,
         **metadata: Any,
     ) -> AttributeRef:
-        """Declare an attribute, optionally with a derived expression or external computation."""
+        """Declare an attribute, optionally with a derived expression or external computation.
+
+        **Chaining ``ref + ref + ref``:** Python parses ``a + b + c`` as ``(a + b) + c``. The first sum
+        yields a unitflow :class:`~unitflow.expr.expressions.Expr`; the outer ``+ c`` then fails to
+        combine with a bare :class:`~tg_model.model.refs.AttributeRef`. Use parentheses ``a + (b + c)``,
+        use ``a.sym + b.sym + …``, or use :func:`~tg_model.model.expr.sum_attributes`.
+        """
         meta = {**metadata}
         if expr is not None:
             meta["_expr"] = expr
@@ -155,6 +221,10 @@ class ModelDefinitionContext:
             kind="parameter",
             metadata=metadata,
         )
+
+    def parameter_ref(self, root_block_type: type, name: str) -> AttributeRef:
+        """Shorthand for :func:`parameter_ref` (same semantics)."""
+        return parameter_ref(root_block_type, name)
 
     def citation(self, name: str, **metadata: Any) -> Ref:
         """Declare an external provenance node (standards, reports, URIs, clauses).

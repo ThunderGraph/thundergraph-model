@@ -1491,6 +1491,8 @@ Key rules:
 - **Constraints** produce assessment results, not engineering values. They are not the solving mechanism.
 - **Solve groups** are explicit declarations. The engine does not infer solve semantics from constraints.
 
+**Root parameters in nested `define()`:** nested part types do not automatically see the parent `model` object from the configured root. To wire `ExternalComputeBinding.inputs` (or expressions) to **scenario / mission parameters** declared on the **configured root** block type, use **`parameter_ref(root_block_type, "param_name")`** or **`model.parameter_ref(root_block_type, "param_name")`**. Resolution uses the root type’s compiled artifact if it is already compiled, or the active definition context while that root’s `compile()` is still running—so **declare root parameters before** `model.part(...)` for children that reference them. At evaluation time, refs whose `owner_type` is the configured root resolve against `ConfiguredModel.root` (same rule as other cross-scope refs).
+
 ### Frozen decision 2: Single authoring surface
 
 **All declarations go through `model.*` methods in `define(cls, model)`.** There are no decorator-based or class-body alternatives for value constructs.

@@ -1,0 +1,42 @@
+"""Build unitflow expressions from model refs without ``.sym`` boilerplate.
+
+Python evaluates ``a + b + c`` **left to parenthesized**: ``(a + b) + c``. After ``a + b`` you have an
+:class:`unitflow.expr.expressions.Expr`. The next ``+ c`` calls **Expr**'s ``__add__``, which uses
+unitflow's ``_promote(c)`` — and **AttributeRef** is not a valid operand there, so you get
+``ExprError: Cannot promote AttributeRef to Expr``.
+
+**Ways to write roll-ups (pick one):**
+
+- **Parentheses:** ``a + (b + c)`` so every ``+`` still involves an :class:`~tg_model.model.refs.AttributeRef` on the left.
+- **Explicit symbols:** ``a.sym + b.sym + c.sym`` (what ``AttributeRef.__add__`` does internally for the left operand).
+- **This module:** :func:`sum_attributes` / :func:`as_expr_leaf` — same thing, obvious intent for ME/MBSE authors.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from tg_model.model.refs import AttributeRef
+
+
+def as_expr_leaf(x: Any) -> Any:
+    """If ``x`` is an :class:`~tg_model.model.refs.AttributeRef`, return ``x.sym``; otherwise ``x``.
+
+    Use when hand-building sums so ``expr + AttributeRef`` never hits unitflow's ``_promote``.
+    """
+    if isinstance(x, AttributeRef):
+        return x.sym
+    return x
+
+
+def sum_attributes(*terms: Any) -> Any:
+    """Sum two or more attribute refs and/or expressions, **assoc-safe** (no bare ``a+b+c`` trap).
+
+    Example: ``model.attribute("subtree_dry_mass_kg", unit=kg, expr=sum_attributes(misc, r_dry))``
+    """
+    if len(terms) < 2:
+        raise ValueError("sum_attributes requires at least two terms")
+    acc = as_expr_leaf(terms[0])
+    for t in terms[1:]:
+        acc = acc + as_expr_leaf(t)
+    return acc

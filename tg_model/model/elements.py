@@ -32,6 +32,8 @@ class Element:
     def _reset_compilation(cls) -> None:
         """Reset cached compilation. For testing only."""
         cls._compiled_definition = None
+        if getattr(cls, "_tg_definition_context", None) is not None:
+            cls._tg_definition_context = None
         for attr in (
             "_tg_behavior_spec",
             "_tg_action_effects",

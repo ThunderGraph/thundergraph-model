@@ -24,52 +24,56 @@ def compile_type(element_cls: type) -> dict[str, Any]:
     from tg_model.model.definition_context import ModelDefinitionContext
 
     ctx = ModelDefinitionContext(element_cls)
-    element_cls.define(ctx)
-    ctx.freeze()
+    element_cls._tg_definition_context = ctx
+    try:
+        element_cls.define(ctx)
+        ctx.freeze()
 
-    type_registry: dict[str, type] = {}
-    child_types: dict[str, dict[str, Any]] = {}
-    for decl in ctx.nodes.values():
-        if decl.kind == "part" and decl.target_type is not None:
-            qname = qualified_name(decl.target_type)
-            child_types[qname] = decl.target_type.compile()
-            type_registry[decl.name] = decl.target_type
+        type_registry: dict[str, type] = {}
+        child_types: dict[str, dict[str, Any]] = {}
+        for decl in ctx.nodes.values():
+            if decl.kind == "part" and decl.target_type is not None:
+                qname = qualified_name(decl.target_type)
+                child_types[qname] = decl.target_type.compile()
+                type_registry[decl.name] = decl.target_type
 
-    for edge in ctx.edges:
-        if edge["kind"] == "connect":
-            _validate_port_ref(ctx, edge["source"])
-            _validate_port_ref(ctx, edge["target"])
+        for edge in ctx.edges:
+            if edge["kind"] == "connect":
+                _validate_port_ref(ctx, edge["source"])
+                _validate_port_ref(ctx, edge["target"])
 
-    _validate_requirement_acceptance(ctx)
-    _validate_references_edges(ctx)
+        _validate_requirement_acceptance(ctx)
+        _validate_references_edges(ctx)
 
-    if ctx.behavior_transitions:
-        check_transition_determinism(ctx.behavior_transitions)
-    _validate_behavior_transition_effects(ctx)
-    _validate_initial_state_rule(ctx)
-    _validate_behavior_control_flow(ctx)
+        if ctx.behavior_transitions:
+            check_transition_determinism(ctx.behavior_transitions)
+        _validate_behavior_transition_effects(ctx)
+        _validate_initial_state_rule(ctx)
+        _validate_behavior_control_flow(ctx)
 
-    element_cls._tg_behavior_spec = _runtime_behavior_transitions(ctx)
-    _cache_behavior_runtime_facets(element_cls, ctx)
+        element_cls._tg_behavior_spec = _runtime_behavior_transitions(ctx)
+        _cache_behavior_runtime_facets(element_cls, ctx)
 
-    return {
-        "owner": qualified_name(element_cls),
-        "nodes": {
-            name: {
-                "kind": decl.kind,
-                "target_type": qualified_name(decl.target_type) if decl.target_type else None,
-                "metadata": dict(decl.metadata),
-            }
-            for name, decl in ctx.nodes.items()
-        },
-        "edges": [
-            _serialize_edge(edge)
-            for edge in ctx.edges
-        ],
-        "child_types": child_types,
-        "_type_registry": type_registry,
-        "behavior_transitions": _serialize_behavior_transitions(ctx.behavior_transitions),
-    }
+        return {
+            "owner": qualified_name(element_cls),
+            "nodes": {
+                name: {
+                    "kind": decl.kind,
+                    "target_type": qualified_name(decl.target_type) if decl.target_type else None,
+                    "metadata": dict(decl.metadata),
+                }
+                for name, decl in ctx.nodes.items()
+            },
+            "edges": [
+                _serialize_edge(edge)
+                for edge in ctx.edges
+            ],
+            "child_types": child_types,
+            "_type_registry": type_registry,
+            "behavior_transitions": _serialize_behavior_transitions(ctx.behavior_transitions),
+        }
+    finally:
+        element_cls._tg_definition_context = None
 
 
 def _serialize_behavior_transitions(transitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
