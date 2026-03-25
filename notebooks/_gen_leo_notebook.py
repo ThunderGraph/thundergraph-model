@@ -819,6 +819,55 @@ _subtitle("Stage ideal Δv (Tsiolkovsky attributed at assembly only)")
 _kv("Upper — local_stage_delta_v", _fmt_ms(ctx.get_value(rocket.upper_stage.local_stage_delta_v.stable_id)))
 _kv("First — local_stage_delta_v", _fmt_ms(ctx.get_value(rocket.first_stage.local_stage_delta_v.stable_id)))
 
+_subtitle("Δv budget evidence (per-stage equation inputs and reconstruction)")
+upper_isp = ctx.get_value(rocket.upper_stage.stage_isp_seconds.stable_id)
+upper_mw = ctx.get_value(rocket.upper_stage.stage_burn_initial_mass_kg.stable_id)
+upper_md = ctx.get_value(rocket.upper_stage.stage_burn_final_mass_kg.stable_id)
+upper_dv_model = ctx.get_value(rocket.upper_stage.local_stage_delta_v.stable_id)
+upper_dv_reconstructed = Quantity(
+    _qmag(upper_isp.to(s)) * _qmag(G0.to(m / (s * s))) * math.log(_qmag(upper_mw.to(kg)) / _qmag(upper_md.to(kg))),
+    m / s,
+)
+
+first_isp = ctx.get_value(rocket.first_stage.stage_isp_seconds.stable_id)
+first_mw = ctx.get_value(rocket.first_stage.stage_burn_initial_mass_kg.stable_id)
+first_md = ctx.get_value(rocket.first_stage.stage_burn_final_mass_kg.stable_id)
+first_dv_model = ctx.get_value(rocket.first_stage.local_stage_delta_v.stable_id)
+first_dv_reconstructed = Quantity(
+    _qmag(first_isp.to(s)) * _qmag(G0.to(m / (s * s))) * math.log(_qmag(first_mw.to(kg)) / _qmag(first_md.to(kg))),
+    m / s,
+)
+
+_table(
+    ("Stage", "Isp", "m0", "mf", "Δv(model)", "Δv(reconstructed)"),
+    [
+        (
+            "Upper",
+            f"{_qmag(upper_isp.to(s)):.2f} s",
+            _fmt_kg(upper_mw),
+            _fmt_kg(upper_md),
+            _fmt_ms(upper_dv_model),
+            _fmt_ms(upper_dv_reconstructed),
+        ),
+        (
+            "First",
+            f"{_qmag(first_isp.to(s)):.2f} s",
+            _fmt_kg(first_mw),
+            _fmt_kg(first_md),
+            _fmt_ms(first_dv_model),
+            _fmt_ms(first_dv_reconstructed),
+        ),
+    ],
+    (10, 10, 14, 14, 16, 20),
+)
+
+total_dv = ctx.get_value(rocket.subtree_cumulative_delta_v.stable_id)
+dv_target = Quantity(9_000, m / s)
+dv_margin = total_dv - dv_target
+_kv("ΣΔv total (vehicle)", _fmt_ms(total_dv))
+_kv("Mission requirement threshold", _fmt_ms(dv_target))
+_kv("Δv margin vs threshold", _fmt_ms(dv_margin))
+
 summary = summarize_requirement_satisfaction(result)
 _title("REQUIREMENTS & CONSTRAINTS — VERIFICATION")
 pass_sym = "✓ SAT"
@@ -830,6 +879,11 @@ for row in summary.results:
     st = pass_sym if row.passed else fail_sym
     print(f"  {st}  {row.requirement_path}")
     print(f"         allocated to  {row.allocation_target_path}")
+    print(
+        "         acceptance    "
+        f"ΣΔv(vehicle) {'>=' if row.passed else '<'} 9,000 m/s  "
+        f"({ _fmt_ms(total_dv) } vs { _fmt_ms(dv_target) })"
+    )
     if row.evidence:
         print(f"         evidence      {row.evidence[:64]}{'…' if len(row.evidence) > 64 else ''}")
 
