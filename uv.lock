@@ -1356,7 +1356,7 @@ name = "thundergraph-model"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "unitflow" },
+    { name = "unitflow", extra = ["numpy"] },
 ]
 
 [package.optional-dependencies]
@@ -1389,7 +1389,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
     { name = "scipy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
-    { name = "unitflow", specifier = ">=0.2.0" },
+    { name = "unitflow", extras = ["numpy"], specifier = ">=0.2.0" },
 ]
 provides-extras = ["dev"]
 
@@ -1513,6 +1513,11 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1e/ee/286eac876ecd306096a94ba296fd1e666ee849d034dad8cf95e5c489887c/unitflow-0.2.1.tar.gz", hash = "sha256:fd1570afd4db1187c0a0bf8f7daa836e9d6e204c7d9ba6bd4d9ccb8d185f7edd", size = 1945514, upload-time = "2026-03-23T20:19:34.12Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/26/3c/61b5146065ad42ad9815e91f0c255b78a64110c13d889306e9222fca8420/unitflow-0.2.1-py3-none-any.whl", hash = "sha256:eb8671f3198c2efa561f66ae3abb34b61aad0c7686118db5c568a87a78d748f9", size = 36805, upload-time = "2026-03-23T20:19:31.226Z" },
+]
+
+[package.optional-dependencies]
+numpy = [
+    { name = "numpy" },
 ]
 
 [[package]]

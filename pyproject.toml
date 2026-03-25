@@ -9,7 +9,7 @@ description = "Executable systems modeling in Python"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "unitflow>=0.2.0",
+    "unitflow[numpy]>=0.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]

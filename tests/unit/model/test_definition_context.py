@@ -23,6 +23,19 @@ class TestDeclarations:
         assert ref.target_type is DummyPart
         assert "battery" in ctx.nodes
 
+    def test_part_no_args_returns_root_ref_without_node(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        rocket = ctx.part()
+        assert isinstance(rocket, PartRef)
+        assert rocket.path == ()
+        assert rocket.target_type is System
+        assert len(ctx.nodes) == 0
+
+    def test_part_only_name_raises(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        with pytest.raises(ModelDefinitionError, match="no arguments"):
+            ctx.part("only_name")  # type: ignore[call-arg]
+
     def test_port_declaration(self) -> None:
         ctx = ModelDefinitionContext(Part)
         ref = ctx.port("power_out", direction="out")
@@ -86,6 +99,33 @@ class TestAllocations:
         ctx.allocate(req, part)
         assert len(ctx.edges) == 1
         assert ctx.edges[0]["kind"] == "allocate"
+
+    def test_owner_part_ref_has_empty_path(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        self_ref = ctx.owner_part()
+        assert isinstance(self_ref, PartRef)
+        assert self_ref.path == ()
+        assert self_ref.target_type is System
+        assert self_ref.owner_type is System
+
+    def test_root_block_matches_owner_part(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        assert ctx.root_block().path == ctx.owner_part().path == ()
+
+    def test_part_no_args_matches_root_block(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        assert ctx.part().path == ctx.root_block().path == ()
+
+    def test_allocate_to_root_target_matches_allocate_root_block(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        req = ctx.requirement("req1", "Shall do X.")
+        ctx.allocate_to_root(req)
+        assert len(ctx.edges) == 1
+        assert ctx.edges[0]["kind"] == "allocate"
+        ctx2 = ModelDefinitionContext(System)
+        req2 = ctx2.requirement("req1", "Shall do X.")
+        ctx2.allocate(req2, ctx2.root_block())
+        assert ctx.edges[0]["target"].path == ctx2.edges[0]["target"].path
 
 
 class TestFreezing:

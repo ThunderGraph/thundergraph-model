@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, overload
 
 from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref
 
@@ -61,8 +61,33 @@ class ModelDefinitionContext:
         self.nodes[name] = decl
         return decl
 
-    def part(self, name: str, part_type: type) -> PartRef:
-        """Declare a child part."""
+    @overload
+    def part(self) -> PartRef: ...
+
+    @overload
+    def part(self, name: str, part_type: type) -> PartRef: ...
+
+    def part(self, name: str | None = None, part_type: type | None = None) -> PartRef:
+        """Declare a child part, or return a ref to **this** block as the configured root.
+
+        **No arguments** — does **not** register a child. Returns a :class:`~tg_model.model.refs.PartRef` to
+        **this** block: the **parent** you are defining in ``define()``. All other ``model.part(name, Type)``
+        calls in the same ``define()`` become **children** of that parent at
+        :func:`~tg_model.execution.configured_model.instantiate` time (same root ``PartInstance`` owns them).
+        Typical pattern::
+
+            rocket = model.part()  # parent / configured root
+            tank = model.part("tank", TankType)  # child of rocket
+            model.allocate(req, rocket)
+
+        **Two arguments** — register a composed **child** part (``name``, ``part_type``) and return its ref.
+        """
+        if name is None and part_type is None:
+            return self.root_block()
+        if name is None or part_type is None:
+            raise ModelDefinitionError(
+                "part() takes no arguments (ref to this root block) or both name and part_type (child part)."
+            )
         self._register_node(name=name, kind="part", target_type=part_type)
         return PartRef(
             owner_type=self.owner_type,
@@ -70,6 +95,23 @@ class ModelDefinitionContext:
             kind="part",
             target_type=part_type,
         )
+
+    def root_block(self) -> PartRef:
+        """Ref to **this** system/part when it is the configured root.
+
+        Same as ``model.part()`` with no arguments. Prefer **`model.part()`** when you want
+        one API for both ``rocket = model.part()`` and ``model.part(\"motor\", Motor)``.
+        """
+        return PartRef(
+            owner_type=self.owner_type,
+            path=(),
+            kind="part",
+            target_type=self.owner_type,
+        )
+
+    def owner_part(self) -> PartRef:
+        """Alias of :meth:`root_block`."""
+        return self.root_block()
 
     def port(self, name: str, direction: str, **metadata: Any) -> PortRef:
         """Declare a port."""
@@ -474,6 +516,10 @@ class ModelDefinitionContext:
             "source": requirement_ref,
             "target": target_ref,
         })
+
+    def allocate_to_root(self, requirement_ref: Ref) -> None:
+        """Shorthand for ``allocate(requirement, root_block())`` when acceptance is checked on this root."""
+        self.allocate(requirement_ref, self.root_block())
 
     def connect(
         self,

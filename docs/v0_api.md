@@ -258,7 +258,7 @@ Proposed verbs / decorators (final names may differ):
 
 **On `model` (definition time), validated for parts/ports/attributes/connect in the prototype:**
 
-- `model.part(name, part_type, ...)`
+- `model.part()` (no args: **PartRef** to this root block, no child declared) / `model.part(name, part_type, ...)` (child part)
 - `model.port(name, ...)`
 - `model.attribute(name, ...)`
 - `model.connect(source_port_ref, target_port_ref, carrying=...)`
@@ -371,6 +371,8 @@ This direction:
 ## Requirements And Allocation
 
 Requirements are first-class nodes. **`model.allocate(requirement, target)`** records traceability from a requirement to a model element (typically a part).
+
+When the requirement’s **`expr=`** only references attributes on the **configured root** type, use **`rocket = model.part()`** (no arguments — does not declare a child) then **`model.allocate(requirement, rocket)`**, same pattern as **`model.part("name", Type)`** for children. That ref has an **empty path**; **`instantiate`** resolves it to the **root** **`PartInstance`**. Shortcut: **`model.allocate_to_root(requirement)`**. **`root_block()`** / **`owner_part()`** are aliases of the same ref as **`model.part()`**.
 
 ### Acceptance expression (Phase 7)
 
