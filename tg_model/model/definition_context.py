@@ -1,0 +1,495 @@
+"""ModelDefinitionContext — the ``model`` object passed into ``define(cls, model)``."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref
+
+
+class ModelDefinitionError(Exception):
+    """Raised when a model definition is invalid."""
+
+
+@dataclass(frozen=True)
+class NodeDecl:
+    """One declared node in a type definition."""
+
+    name: str
+    kind: str
+    target_type: type | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class ModelDefinitionContext:
+    """Records declarations during ``define(cls, model)`` and compiles them.
+
+    This is the ``model`` object. It is framework-controlled and
+    constrained to definition-time recording only.
+
+    All declaration names (parts, ports, parameters, states, events, actions,
+    scenarios, …) share one namespace per owner type; duplicate local names raise
+    :class:`ModelDefinitionError`.
+    """
+
+    def __init__(self, owner_type: type) -> None:
+        self.owner_type = owner_type
+        self.nodes: dict[str, NodeDecl] = {}
+        self.edges: list[dict[str, Any]] = []
+        self.behavior_transitions: list[dict[str, Any]] = []
+        self._frozen = False
+
+    def _check_frozen(self) -> None:
+        if self._frozen:
+            raise ModelDefinitionError("Cannot mutate model after define() phase is complete.")
+
+    def _register_node(
+        self,
+        *,
+        name: str,
+        kind: str,
+        target_type: type | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> NodeDecl:
+        self._check_frozen()
+        if name in self.nodes:
+            raise ModelDefinitionError(
+                f"Duplicate declaration '{name}' in {self.owner_type.__name__}"
+            )
+        decl = NodeDecl(name=name, kind=kind, target_type=target_type, metadata=metadata or {})
+        self.nodes[name] = decl
+        return decl
+
+    def part(self, name: str, part_type: type) -> PartRef:
+        """Declare a child part."""
+        self._register_node(name=name, kind="part", target_type=part_type)
+        return PartRef(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="part",
+            target_type=part_type,
+        )
+
+    def port(self, name: str, direction: str, **metadata: Any) -> PortRef:
+        """Declare a port."""
+        meta = {"direction": direction, **metadata}
+        self._register_node(name=name, kind="port", metadata=meta)
+        return PortRef(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="port",
+            metadata=meta,
+        )
+
+    def attribute(
+        self,
+        name: str,
+        *,
+        expr: Any | None = None,
+        computed_by: Any | None = None,
+        **metadata: Any,
+    ) -> AttributeRef:
+        """Declare an attribute, optionally with a derived expression or external computation."""
+        meta = {**metadata}
+        if expr is not None:
+            meta["_expr"] = expr
+        if computed_by is not None:
+            meta["_computed_by"] = computed_by
+        self._register_node(name=name, kind="attribute", metadata=meta)
+        return AttributeRef(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="attribute",
+            metadata=meta,
+        )
+
+    def parameter(self, name: str, **metadata: Any) -> AttributeRef:
+        """Declare an externally bindable parameter."""
+        self._register_node(name=name, kind="parameter", metadata=metadata)
+        return AttributeRef(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="parameter",
+            metadata=metadata,
+        )
+
+    def requirement(self, name: str, text: str, *, expr: Any | None = None, **metadata: Any) -> Ref:
+        """Declare a requirement.
+
+        Optional ``expr`` is an executable acceptance criterion (same expression family as
+        :meth:`constraint`): symbols must resolve under the :meth:`allocate` target part subtree
+        at graph-compile time. A requirement with ``expr`` must have at least one ``allocate``
+        edge from it (Phase 7).
+        """
+        meta = {"text": text, **metadata}
+        if expr is not None:
+            meta["_accept_expr"] = expr
+        self._register_node(name=name, kind="requirement", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="requirement",
+            metadata=meta,
+        )
+
+    def constraint(self, name: str, *, expr: Any, **metadata: Any) -> Ref:
+        """Declare a constraint (validity check over realized values)."""
+        meta = {"_expr": expr, **metadata}
+        self._register_node(name=name, kind="constraint", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="constraint",
+            metadata=meta,
+        )
+
+    def state(self, name: str, *, initial: bool = False, **metadata: Any) -> Ref:
+        """Declare a discrete behavioral state (Phase 6)."""
+        meta = {"initial": initial, **metadata}
+        self._register_node(name=name, kind="state", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="state",
+            metadata=meta,
+        )
+
+    def event(self, name: str, **metadata: Any) -> Ref:
+        """Declare a discrete behavioral event (Phase 6)."""
+        self._register_node(name=name, kind="event", metadata=metadata)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="event",
+            metadata=metadata,
+        )
+
+    def action(self, name: str, *, effect: Any | None = None, **metadata: Any) -> Ref:
+        """Declare a named action; optional ``effect`` is ``(RunContext, PartInstance) -> None``."""
+        meta = {**metadata}
+        if effect is not None:
+            meta["_effect"] = effect
+        self._register_node(name=name, kind="action", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="action",
+            metadata=meta,
+        )
+
+    def guard(self, name: str, *, predicate: Any, **metadata: Any) -> Ref:
+        """Declare a first-class guard: ``predicate`` is ``(RunContext, PartInstance) -> bool``."""
+        meta = {"_predicate": predicate, **metadata}
+        self._register_node(name=name, kind="guard", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="guard",
+            metadata=meta,
+        )
+
+    def merge(self, name: str, *, then_action: str | None = None, **metadata: Any) -> Ref:
+        """Declare a merge: optional ``then_action`` runs at :func:`~tg_model.execution.behavior.dispatch_merge`.
+
+        When a :meth:`decision` uses ``merge_point=`` to this merge, :func:`~tg_model.execution.behavior.dispatch_decision`
+        runs the merge continuation automatically (do not also call ``dispatch_merge`` for that path).
+        """
+        meta = {**metadata}
+        if then_action is not None:
+            meta["_merge_then"] = then_action
+        self._register_node(name=name, kind="merge", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="merge",
+            metadata=meta,
+        )
+
+    def item_kind(self, name: str, **metadata: Any) -> Ref:
+        """Declare a named kind of item that may flow across connections (see ``emit_item``)."""
+        self._register_node(name=name, kind="item_kind", metadata=dict(metadata))
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="item_kind",
+            metadata=dict(metadata),
+        )
+
+    def decision(
+        self,
+        name: str,
+        *,
+        branches: list[tuple[Ref | None, str]],
+        default_action: str | None = None,
+        merge_point: Ref | None = None,
+        **metadata: Any,
+    ) -> Ref:
+        """Declare exclusive branches: first branch whose guard passes runs its action name.
+
+        Each branch is ``(guard_ref | None, action_name)``. ``None`` guard means unconditional
+        (typically one default branch). ``default_action`` runs when no branch matches.
+
+        Optional ``merge_point`` names a :meth:`merge` node; :func:`~tg_model.execution.behavior.dispatch_decision`
+        then runs that merge's continuation after the chosen branch (compile-time pairing).
+        """
+        self._check_frozen()
+        normalized: list[tuple[Ref | None, str]] = []
+        for tup in branches:
+            if len(tup) != 2:
+                raise ModelDefinitionError("decision branch must be (guard_ref | None, action_name)")
+            gref, aname = tup
+            if gref is not None:
+                if gref.kind != "guard":
+                    raise ModelDefinitionError(
+                        f"decision branch guard must be guard ref, got {gref.kind!r}"
+                    )
+                if gref.owner_type is not self.owner_type:
+                    raise ModelDefinitionError("decision guard must belong to this part type")
+            if not isinstance(aname, str):
+                raise ModelDefinitionError("decision branch action name must be str")
+            normalized.append((gref, aname))
+        meta = {
+            "_decision_branches": normalized,
+            "_default_action": default_action,
+            **metadata,
+        }
+        if merge_point is not None:
+            if merge_point.kind != "merge":
+                raise ModelDefinitionError("decision merge_point= must be a merge ref")
+            if merge_point.owner_type is not self.owner_type:
+                raise ModelDefinitionError("decision merge_point must belong to this part type")
+            meta["_decision_merge"] = merge_point.path[-1]
+        self._register_node(name=name, kind="decision", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="decision",
+            metadata=meta,
+        )
+
+    def fork_join(
+        self,
+        name: str,
+        *,
+        branches: list[list[str]],
+        then_action: str | None = None,
+        **metadata: Any,
+    ) -> Ref:
+        """Declare a fork/join block: each inner list is one branch (action names in order).
+
+        At runtime, branches execute in list order (deterministic v0). After all branches,
+        ``then_action`` runs if set. See :func:`~tg_model.execution.behavior.dispatch_fork_join`.
+        """
+        self._check_frozen()
+        if not branches or not all(isinstance(b, list) for b in branches):
+            raise ModelDefinitionError("fork_join requires non-empty list of branch action lists")
+        meta = {
+            "_fj_branches": branches,
+            "_fj_then": then_action,
+            **metadata,
+        }
+        self._register_node(name=name, kind="fork_join", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="fork_join",
+            metadata=meta,
+        )
+
+    def sequence(self, name: str, *, steps: list[str], **metadata: Any) -> Ref:
+        """Declare a linear sequence of action names (intra-part activity graph; methodology default path)."""
+        self._check_frozen()
+        if not steps or not all(isinstance(s, str) for s in steps):
+            raise ModelDefinitionError("sequence requires a non-empty list of action name strings")
+        meta = {"_sequence_steps": list(steps), **metadata}
+        self._register_node(name=name, kind="sequence", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="sequence",
+            metadata=meta,
+        )
+
+    def transition(
+        self,
+        from_state: Ref,
+        to_state: Ref,
+        on: Ref,
+        *,
+        when: Any | None = None,
+        guard: Ref | None = None,
+        effect: str | None = None,
+    ) -> None:
+        """Declare a state transition on an event, optional guard and named action effect.
+
+        Use either inline ``when=`` **or** first-class ``guard=`` ref, not both.
+        """
+        self._check_frozen()
+        if when is not None and guard is not None:
+            raise ModelDefinitionError("transition(): use only one of when= or guard=")
+        if guard is not None:
+            if guard.kind != "guard":
+                raise ModelDefinitionError(f"transition guard= must be a guard ref, got {guard.kind!r}")
+            if guard.owner_type is not self.owner_type:
+                raise ModelDefinitionError("transition guard must belong to this part type")
+        for r, kind in (
+            (from_state, "state"),
+            (to_state, "state"),
+            (on, "event"),
+        ):
+            if r.kind != kind:
+                raise ModelDefinitionError(
+                    f"transition() expects {kind} ref for {kind}, got {r.kind!r} ({r.local_name!r})"
+                )
+            if r.owner_type is not self.owner_type:
+                raise ModelDefinitionError(
+                    f"transition() reference {r.local_name!r} must belong to {self.owner_type.__name__}"
+                )
+        self.behavior_transitions.append({
+            "from_state": from_state,
+            "to_state": to_state,
+            "on": on,
+            "when": when,
+            "guard_ref": guard,
+            "effect": effect,
+        })
+
+    def scenario(
+        self,
+        name: str,
+        *,
+        expected_event_order: list[Ref],
+        initial_behavior_state: str | None = None,
+        expected_final_behavior_state: str | None = None,
+        expected_interaction_order: list[tuple[str, str]] | None = None,
+        expected_item_kind_order: list[str] | None = None,
+        **metadata: Any,
+    ) -> Ref:
+        """Declare an authored scenario: event order and optional state expectations for one part type.
+
+        ``expected_interaction_order`` is a list of ``(relative_part_path, event_name)`` from this
+        type's instance root (e.g. ``("snd", "Ping")`` under a system). Validate with
+        :func:`~tg_model.execution.behavior.validate_scenario_trace` passing ``root=`` the configured
+        root part instance.
+
+        ``expected_item_kind_order`` checks :class:`~tg_model.execution.behavior.ItemFlowStep` kinds
+        in trace order (inter-part flows).
+        """
+        order: list[str] = []
+        for r in expected_event_order:
+            if r.kind != "event":
+                raise ModelDefinitionError(
+                    f"scenario expected_event_order must be event refs, got {r.kind!r} for {r.local_name!r}"
+                )
+            if r.owner_type is not self.owner_type:
+                raise ModelDefinitionError(
+                    f"scenario event {r.local_name!r} must belong to {self.owner_type.__name__}"
+                )
+            order.append(r.path[-1])
+        iord: list[list[str]] | None = None
+        if expected_interaction_order is not None:
+            iord = [[a, b] for a, b in expected_interaction_order]
+        meta = {
+            "_expected_event_order": order,
+            "_initial_behavior_state": initial_behavior_state,
+            "_expected_final_behavior_state": expected_final_behavior_state,
+            **metadata,
+        }
+        if iord is not None:
+            meta["_expected_interaction_order"] = iord
+        if expected_item_kind_order is not None:
+            meta["_expected_item_kind_order"] = list(expected_item_kind_order)
+        self._register_node(name=name, kind="scenario", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="scenario",
+            metadata=meta,
+        )
+
+    def solve_group(
+        self,
+        name: str,
+        *,
+        equations: list[Any],
+        unknowns: list[AttributeRef],
+        givens: list[AttributeRef],
+        **metadata: Any,
+    ) -> Ref:
+        """Declare an explicit solve group for coupled equations."""
+        meta = {
+            "_equations": equations,
+            "_unknowns": [u.path for u in unknowns],
+            "_givens": [g.path for g in givens],
+            **metadata,
+        }
+        self._register_node(name=name, kind="solve_group", metadata=meta)
+        return Ref(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="solve_group",
+            metadata=meta,
+        )
+
+    def allocate(self, requirement_ref: Ref, target_ref: Ref) -> None:
+        """Declare an allocation from a requirement to a model element."""
+        self._check_frozen()
+        self.edges.append({
+            "kind": "allocate",
+            "source": requirement_ref,
+            "target": target_ref,
+        })
+
+    def connect(
+        self,
+        source: PortRef,
+        target: PortRef,
+        carrying: str | None = None,
+    ) -> None:
+        """Declare a structural connection between ports."""
+        self._check_frozen()
+        if not isinstance(source, PortRef) or source.kind != "port":
+            raise ModelDefinitionError(
+                f"connect() source must be a PortRef, got {type(source).__name__} with kind '{source.kind}'"
+            )
+        if not isinstance(target, PortRef) or target.kind != "port":
+            raise ModelDefinitionError(
+                f"connect() target must be a PortRef, got {type(target).__name__} with kind '{target.kind}'"
+            )
+        self.edges.append({
+            "kind": "connect",
+            "source": source,
+            "target": target,
+            "carrying": carrying,
+        })
+
+    def parts(self) -> Any:
+        """Return a structural selector for all child parts."""
+        return "ALL_PARTS"
+
+    def link_external_routes(
+        self,
+        binding: Any,
+        routes: dict[str, AttributeRef],
+    ) -> None:
+        """Wire ``output_routes`` on an :class:`~tg_model.integrations.ExternalComputeBinding`.
+
+        Call after declaring attributes so ``AttributeRef`` values exist (Phase 4 affordance).
+        """
+        from tg_model.integrations.external_compute import (
+            ExternalComputeBinding as _ExtBinding,
+        )
+        from tg_model.integrations.external_compute import (
+            link_external_routes as _link_routes,
+        )
+
+        if not isinstance(binding, _ExtBinding):
+            raise ModelDefinitionError(
+                f"link_external_routes expects ExternalComputeBinding, got {type(binding).__name__}"
+            )
+        _link_routes(binding, routes)
+
+    def freeze(self) -> None:
+        """Freeze the context. Called by the compiler after define()."""
+        self._frozen = True

@@ -59,6 +59,22 @@ The engine must define a **deterministic mapping** from definition paths (+ conf
 - **Single run:** one evaluation pass for one configured instance and one input bundle (possibly involving async realization).
 - **Study / analysis:** many runs coordinated **outside** single-run resolution, reusing the execution subsystem per run ([logical architecture](logical_architecture.md) Analysis subsystem).
 
+### Execution modes
+
+The engine needs three different execution modes from the beginning:
+
+- **Directed evaluation** — one declared target value is computed from already known inputs through a local expression.
+- **Structural roll-up evaluation** — one declared target value is aggregated from a selector over configured child values.
+- **Explicit solve-group evaluation** — one declared group of equations is solved for one or more declared unknowns after the givens are bound.
+
+Methodology rule:
+
+- directed evaluation is the default path for most derived attributes
+- roll-ups are first-class structural computations, not disguised generic equations
+- solve-group evaluation is **explicit**, not inferred from every equality constraint in the model
+
+This distinction gives `tg-model` a day-1 path for derived attributes, roll-ups, and design-validity checks without turning the whole engine into a universal symbolic free-for-all.
+
 ## Runtime data model
 
 This section makes the engine concrete enough to reason about implementation. The names below are **methodology names**, not locked public classes, but the runtime needs equivalents of these concepts.
@@ -224,10 +240,27 @@ Methodology-level node kinds should include at least:
   - `local_expression`
   - `external_computation`
   - `rollup_computation`
+  - `solve_group`
   - `constraint_check`
 - future `behavioral_state_update` / `scenario_expectation`
 
 Not every runtime object needs to become an `ExecutionNode`. For example, `PortInstance` exists structurally even if it never participates in value resolution for a given run.
+
+### 10. `SolveGroupBinding`
+
+Represents one explicit equation-solving request in the configured model.
+
+It stores:
+
+- stable identity
+- owning instance scope
+- equation set
+- declared unknown handles
+- declared given handles
+- optional initial guesses, bounds, or solver hints
+- result mapping from solved unknowns back to `ValueSlot`s
+
+Methodology rule: a solve group is a **declared execution object**. It is not inferred from arbitrary constraints.
 
 ## Deterministic identity, paths, and handle mapping
 
@@ -299,6 +332,22 @@ This allows:
 - ergonomic user access (`drive.battery.voltage`)
 - stable persistence/export/traceability keyed by id
 - internal graph compilation keyed by canonical handles rather than ad hoc strings
+
+## Solver boundary
+
+`unitflow` is the engineering math substrate, but it is not assumed to solve equation systems by itself.
+
+The execution architecture therefore needs a distinct solver boundary:
+
+- `unitflow` owns symbolic expressions, quantities, and dimensional semantics
+- `tg-model` owns dependency planning, slot binding, execution ordering, and solve-group orchestration
+- a solver backend owns actual equation solving for explicit solve groups
+
+Methodology rule:
+
+- `tg-model` shall **not** build a custom symbolic solver
+- `tg-model` may provide one or more local solver backends and may also support external solver adapters
+- the public modeling semantics should not depend on one hard-coded solver implementation
 
 ## Lifecycle overview
 
@@ -467,7 +516,7 @@ The engine requirement is not which spelling wins. The requirement is:
 The configuration-scoped dependency graph should distinguish at least:
 
 - **Value nodes** — externally supplied parameters, attribute values, roll-up results, constraint results
-- **Compute nodes** — local expressions, external jobs, roll-up computations, synchronous checks
+- **Compute nodes** — local expressions, external jobs, roll-up computations, explicit solve groups, synchronous checks
 - **Scenario / behavior nodes** — optional v0+ extension, only when behavioral execution is in scope
 
 ### Dependency edge semantics
@@ -483,6 +532,7 @@ Illustrative examples:
 - child attribute `left_wing.mass` -> roll-up `aircraft.total_mass`
 - attribute `operating_temp` -> constraint `thermal_check`
 - external computed input `power_in` -> adapter job output `operating_temp`
+- known givens -> solve group -> solved unknown attributes
 
 In a bipartite reading, the more precise forms are:
 
@@ -490,6 +540,7 @@ In a bipartite reading, the more precise forms are:
 - `left_wing.mass` (value) -> `total_mass_rollup` (compute) -> `aircraft.total_mass` (value)
 - `power_in` (value) -> `thermal_job` (compute) -> `operating_temp` (value)
 - `operating_temp` (value) + `max_temp` (value) -> `thermal_check` (compute) -> `thermal_check_result` (value)
+- `shaft_power` (value) + `shaft_speed` (value) -> `power_balance_solve_group` (compute) -> `shaft_torque` (value)
 
 ### Graph compilation algorithm
 
@@ -499,12 +550,26 @@ For each configured instance:
 2. Create graph value nodes for attributes that participate in evaluation.
 3. Create compute nodes for local expressions and connect their input value nodes and output value nodes.
 4. Expand roll-up declarations into compute nodes whose inbound edges come from selected child value slots and whose outbound edge targets the aggregate value slot.
-5. Create external computation nodes for any `computed_by` bindings and connect all required input value nodes and all declared output value nodes.
-6. Create constraint compute nodes whose inbound edges are the value slots they read and whose outbound edge is a constraint-result value node.
-7. Validate acyclicity for the requested evaluation scope.
-8. Persist the graph on the configured model for reuse across parameter-only runs.
+5. Create solve-group compute nodes for any explicitly declared equation groups and connect given input value nodes and solved output value nodes.
+6. Create external computation nodes for any `computed_by` bindings and connect all required input value nodes and all declared output value nodes.
+7. Create constraint compute nodes whose inbound edges are the value slots they read and whose outbound edge is a constraint-result value node.
+8. Validate acyclicity for the requested evaluation scope.
+9. Persist the graph on the configured model for reuse across parameter-only runs.
 
 Constraint nodes belong in the graph for planning and ordering, but they do not produce new engineering values. Their output is an assessment result.
+
+### Constraint semantics vs solve semantics
+
+The engine must keep these roles separate:
+
+- **directed expressions** compute declared outputs from known inputs
+- **roll-ups** aggregate realized child values into a declared parent output
+- **solve groups** solve declared equation sets for declared unknowns
+- **constraints** answer whether the realized design is valid
+
+Methodology rule: constraints are not the library’s general solving mechanism.
+
+For design validity, constraint checks should usually evaluate to an assessment result with evidence. Equality-style validity checks may be evaluated as residuals with tolerance semantics rather than by asking the engine to solve the equality automatically.
 
 ## Phase 5 — Pre-execution static validation
 
@@ -533,6 +598,7 @@ Recommended categories:
 - **Reference errors** — declaration path or handle points to the wrong kind or a missing element
 - **Dependency errors** — cycle, missing upstream node, invalid roll-up expansion
 - **Dimensional errors** — `unitflow` incompatibility
+- **Solve errors** — underdetermined solve group, inconsistent system, non-convergent solve request
 - **Execution-contract errors** — missing required backend binding for a `computed_by` node
 
 Methodology rule: static validation should return enough structured evidence to let the user fix the model without starting evaluation.
@@ -566,6 +632,8 @@ The engine should behave like a deterministic scheduler over the pruned dependen
 3. Mark all ready nodes whose dependencies are satisfied.
 4. Repeatedly drain the ready set:
    - execute pure compute nodes immediately
+   - execute roll-up compute nodes when their selected child values are ready
+   - execute solve-group compute nodes when their givens are ready
    - submit external computation nodes to adapters/backends
    - mark async run-scoped state as `pending`
 5. When async nodes complete:
@@ -576,6 +644,19 @@ The engine should behave like a deterministic scheduler over the pruned dependen
    - abort the run if the failure makes requested outputs impossible
 7. After all requested value nodes reach terminal states in the `RunContext`, evaluate constraint nodes synchronously.
 8. Materialize the final run result object.
+
+#### Solve-group execution
+
+When a solve-group node becomes ready:
+
+1. gather the bound givens from the `RunContext`
+2. materialize the declared equation set in solver-backend form
+3. invoke the configured solver backend with unknowns, givens, and optional guesses/bounds
+4. validate dimensional compatibility and solver output shape
+5. write solved values back into the target slot state for this run
+6. mark the solve-group node `failed` if the system is underdetermined, inconsistent, or non-convergent
+
+Methodology rule: solve-group execution should be explicit and bounded. The engine should not implicitly reinterpret arbitrary constraints as equation-solving requests.
 
 #### Terminal node states
 
@@ -675,6 +756,7 @@ This gives sweeps a clear optimization boundary: reuse structure, isolate run st
 - Which runtime concepts become public Python classes versus internal machinery (`ValueSlot`, handles, run result objects).
 - **Handle** surface for sweeps: mirror `Ref` paths, opaque ids, or both.
 - Whether attribute projection (`drive.battery.voltage`) is the primary public ergonomics or just sugar over explicit lookups.
+- Which local solver backend should ship first for solve-group execution, and how much symbolic preprocessing should be delegated to `unitflow` versus the solver adapter.
 - When **roll-up** and **computed_by** declarations join the same `define` pipeline as structure, how much of the dependency graph is incremental vs full recompile on definition change.
 - How **behavioral** nodes attach to `model` without unreadable wiring; may require named intermediates or small internal DSL sugar.
 - Interaction between **scenario validation** and **constraint validation** (one report vs layered reports).

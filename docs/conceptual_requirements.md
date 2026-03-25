@@ -59,6 +59,7 @@ These requirements do not define:
 | `TGM-CAP-022` | The `tg-model` library shall enforce state isolation between independent evaluation executions. | `UC-08`, `UC-10`, `UC-12` | `T,D` |
 | `TGM-CAP-023` | The `tg-model` library shall reject the evaluation of expressions containing dimensionally incompatible values. | `UC-02`, `UC-03` | `T,D` |
 | `TGM-CAP-024` | The `tg-model` library shall evaluate compatible dimensional expressions in accordance with the unit semantics provided by `unitflow`. | `UC-02`, `UC-03`, `UC-06` | `T,D` |
+| `TGM-CAP-025` | The `tg-model` library shall solve explicitly declared equation groups for declared unknown model values using provided givens and solver inputs. | `UC-02`, `UC-03` | `T,D` |
 
 ## Requirement Notes
 
@@ -95,7 +96,7 @@ Operational-sequence evaluation is intentionally scoped at the conceptual level 
 - `TGM-CAP-012` through `TGM-CAP-016` establish core systems-engineering analysis capabilities.
 - `TGM-CAP-017` captures the need to integrate external analysis rather than internalize every solver.
 - `TGM-CAP-018` through `TGM-CAP-020` establish downstream interoperability and operational scalability.
-- `TGM-CAP-021` through `TGM-CAP-024` establish core execution and dimensional-correctness constraints on the engine itself.
+- `TGM-CAP-021` through `TGM-CAP-025` establish core execution and dimensional-correctness constraints on the engine itself.
 
 ## Verification Intent
 

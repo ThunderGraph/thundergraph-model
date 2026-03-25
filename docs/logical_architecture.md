@@ -110,6 +110,8 @@ It is the engineering math substrate for:
 
 `tg-model` owns system semantics on top of that foundation.
 
+`unitflow` is not assumed to be the full equation-solving engine. `tg-model` may orchestrate solving through a dedicated execution/integration boundary while still relying on `unitflow` for the math objects and dimensional rules.
+
 ### 4. Stable Identity Is Mandatory
 
 Every semantic element must have a stable deterministic identity.
@@ -135,6 +137,8 @@ Constraints operate synchronously over realized values.
 Constraints do not own async orchestration.
 Constraints do not directly manage external execution.
 
+Constraints are validity checks, not the library's general equation-solving mechanism.
+
 ### 6. Async Lives In Resolution, Not Authoring Logic
 
 Async behavior is allowed in:
@@ -144,6 +148,16 @@ Async behavior is allowed in:
 - evaluation engine internals
 
 Async behavior should not leak into the declarative modeling DSL as the primary authoring mode.
+
+### 6a. Solving Is Explicit In Resolution
+
+Equation solving may be required for declared engineering relationships, but it belongs in the execution/integration boundary, not in ad hoc authoring-time magic.
+
+Chosen direction:
+
+- directed expression evaluation, roll-ups, and explicit solve groups are different execution modes
+- solve requests should be declared explicitly and compiled into the execution plan
+- `tg-model` should not behave like a universal implicit equation solver for every equality it sees
 
 ### 7. The Model Owns A Precompiled Dependency Graph
 
@@ -277,6 +291,7 @@ Responsibilities:
 - statically validate evaluability before runtime execution begins
 - execute a single evaluation run for a specific instantiated configuration
 - resolve local expressions
+- execute explicit solve groups where declared
 - orchestrate external computations where needed
 - materialize realized values
 - enforce execution isolation
@@ -399,6 +414,7 @@ Chosen direction:
 - pre-execution static validation
 - single-run execution
 - evaluation planning
+- explicit equation solving for declared solve groups
 - computed attribute realization
 - async orchestration
 - result streaming
@@ -415,13 +431,14 @@ Chosen direction:
 This is a logical direction, not a final package commitment.
 
 ```text
-tg_model/
-├── model/         # public modeling API + core model objects
-├── execution/     # runtime evaluation API + engine
-├── analysis/      # sweeps, roll-ups, impact analysis
-├── integrations/  # external backend adapters
-├── export/        # graph export
-└── docs/          # architecture, requirements, use cases, API docs
+thundergraph-model/
+├── docs/              # architecture, requirements, use cases, API docs
+└── tg_model/
+    ├── model/         # public modeling API + core model objects
+    ├── execution/     # runtime evaluation API + engine
+    ├── analysis/      # sweeps, roll-ups, impact analysis
+    ├── integrations/  # external backend adapters
+    └── export/        # graph export
 ```
 
 Clarification:
