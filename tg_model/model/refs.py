@@ -181,7 +181,83 @@ class PartRef(Ref):
             return Ref(self.owner_type, chained_path, kind="fork_join", metadata=member_metadata)
         if member_kind == "sequence":
             return Ref(self.owner_type, chained_path, kind="sequence", metadata=member_metadata)
+        if member_kind == "requirement":
+            return Ref(
+                self.owner_type, chained_path, kind="requirement", metadata=member_metadata,
+            )
+        if member_kind == "requirement_block":
+            return RequirementBlockRef(
+                self.owner_type,
+                chained_path,
+                kind="requirement_block",
+                target_type=member_target_type,
+                metadata=member_metadata,
+            )
+        if member_kind == "citation":
+            return Ref(
+                self.owner_type, chained_path, kind="citation", metadata=member_metadata,
+            )
         raise AttributeError(
             f"Member '{name}' on {self.target_type.__name__} has kind '{member_kind}' "
             "which cannot be projected into a typed reference."
+        )
+
+
+class RequirementBlockRef(Ref):
+    """Reference to a declared requirement block.
+
+    Dot access resolves child ``requirement``, ``requirement_block``, and ``citation`` nodes
+    on the block's compiled type (same chaining idea as :class:`PartRef`).
+    """
+
+    def __getattr__(self, name: str) -> Ref:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if self.target_type is None:
+            raise AttributeError(f"{self!r} has no target_type for member lookup")
+
+        compiled = getattr(self.target_type, "_compiled_definition", None)
+        if compiled is None:
+            raise AttributeError(
+                f"{self.target_type.__name__} is not compiled yet; register it with "
+                f"model.requirement_block(...) before using dot access on the ref"
+            )
+        member = compiled["nodes"].get(name)
+        if member is None:
+            raise AttributeError(
+                f"{self.target_type.__name__} has no declared member named '{name}'"
+            )
+
+        chained_path = (*self.path, name)
+        member_kind: str = member["kind"]
+        member_metadata: dict[str, Any] = member.get("metadata", {})
+        type_registry: dict[str, type] = compiled.get("_type_registry", {})
+        member_target_type: type | None = type_registry.get(name)
+
+        if member_kind == "requirement":
+            return Ref(
+                self.owner_type,
+                chained_path,
+                kind="requirement",
+                metadata=member_metadata,
+            )
+        if member_kind == "requirement_block":
+            return RequirementBlockRef(
+                self.owner_type,
+                chained_path,
+                kind="requirement_block",
+                target_type=member_target_type,
+                metadata=member_metadata,
+            )
+        if member_kind == "citation":
+            return Ref(
+                self.owner_type,
+                chained_path,
+                kind="citation",
+                metadata=member_metadata,
+            )
+        raise AttributeError(
+            f"Member '{name}' on {self.target_type.__name__} has kind '{member_kind}' "
+            "which cannot be projected from a RequirementBlockRef "
+            "(allowed: requirement, requirement_block, citation)."
         )

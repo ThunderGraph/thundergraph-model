@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, overload
 
-from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref
+from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref, RequirementBlockRef
 
 
 class ModelDefinitionError(Exception):
@@ -72,6 +72,113 @@ def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
     )
 
 
+def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
+    """Return a :class:`~tg_model.model.refs.Ref` to a requirement at ``path`` under ``root_block_type``.
+
+    ``path`` is a tuple of declaration names starting at the root (e.g. ``(\"mission\", \"range\")``
+    for a requirement ``range`` inside block ``mission``).
+
+    Resolution order matches :func:`parameter_ref`: compiled root artifact when available; while the
+    root is compiling, the first segment is read from the active definition context and nested
+    segments from **compiled** requirement-block artifacts (blocks are compiled eagerly when
+    registered via :meth:`ModelDefinitionContext.requirement_block`).
+
+    Use from nested ``Part.define()`` to reference requirements on an ancestor ``System`` without
+    dot access from a :class:`~tg_model.model.refs.PartRef`.
+    """
+    if not path:
+        raise ModelDefinitionError("requirement_ref: path must be non-empty")
+
+    def _from_compiled(
+        owner: type,
+        suffix_path: tuple[str, ...],
+        current: dict[str, Any],
+        *,
+        original_path: tuple[str, ...],
+    ) -> Ref:
+        tr: dict[str, type] = current.get("_type_registry", {})
+        for i, segment in enumerate(suffix_path):
+            nodes = current.get("nodes", {})
+            node = nodes.get(segment)
+            if node is None:
+                raise ModelDefinitionError(
+                    f"requirement_ref({owner.__name__}, {original_path!r}): no node {segment!r} "
+                    f"at suffix index {i}"
+                )
+            kind = node.get("kind")
+            meta = dict(node.get("metadata", {}))
+            is_last = i == len(suffix_path) - 1
+            if is_last:
+                if kind != "requirement":
+                    raise ModelDefinitionError(
+                        f"requirement_ref({owner.__name__}, {original_path!r}): terminal kind must "
+                        f"be 'requirement', got {kind!r}"
+                    )
+                return Ref(
+                    owner_type=owner,
+                    path=original_path,
+                    kind="requirement",
+                    metadata=meta,
+                )
+            if kind != "requirement_block":
+                raise ModelDefinitionError(
+                    f"requirement_ref({owner.__name__}, {original_path!r}): intermediate segment "
+                    f"{segment!r} must be requirement_block, got {kind!r}"
+                )
+            bt = tr.get(segment)
+            if bt is None:
+                raise ModelDefinitionError(
+                    f"requirement_ref({owner.__name__}, {original_path!r}): missing target_type "
+                    f"for block {segment!r}"
+                )
+            from tg_model.model.compile_types import _requirement_block_compiled_artifact
+
+            current = _requirement_block_compiled_artifact(bt)
+            tr = current.get("_type_registry", {})
+        raise ModelDefinitionError(
+            f"requirement_ref({owner.__name__}, {original_path!r}): unreachable"
+        )
+
+    compiled_root = getattr(root_block_type, "_compiled_definition", None)
+    if compiled_root is not None:
+        return _from_compiled(root_block_type, path, compiled_root, original_path=path)
+
+    active = getattr(root_block_type, "_tg_definition_context", None)
+    if active is None:
+        raise ModelDefinitionError(
+            f"requirement_ref({root_block_type.__name__}, {path!r}): type is not compiling and "
+            f"not compiled."
+        )
+    first = path[0]
+    decl = active.nodes.get(first)
+    if decl is None:
+        raise ModelDefinitionError(
+            f"requirement_ref({root_block_type.__name__}, {path!r}): no declaration {first!r} "
+            f"on the root (declare requirement blocks before parts that use requirement_ref)."
+        )
+    if len(path) == 1:
+        if decl.kind != "requirement":
+            raise ModelDefinitionError(
+                f"requirement_ref({root_block_type.__name__}, {path!r}): expected kind 'requirement', "
+                f"got {decl.kind!r}"
+            )
+        return Ref(
+            owner_type=root_block_type,
+            path=path,
+            kind="requirement",
+            metadata=dict(decl.metadata),
+        )
+    if decl.kind != "requirement_block" or decl.target_type is None:
+        raise ModelDefinitionError(
+            f"requirement_ref({root_block_type.__name__}, {path!r}): first segment must be "
+            f"requirement_block with target_type for a multi-segment path"
+        )
+    from tg_model.model.compile_types import _requirement_block_compiled_artifact
+
+    inner = _requirement_block_compiled_artifact(decl.target_type)
+    return _from_compiled(root_block_type, path[1:], inner, original_path=path)
+
+
 @dataclass(frozen=True)
 class NodeDecl:
     """One declared node in a type definition."""
@@ -91,10 +198,23 @@ class ModelDefinitionContext:
     All declaration names (parts, ports, parameters, states, events, actions,
     scenarios, …) share one namespace per owner type; duplicate local names raise
     :class:`ModelDefinitionError`.
+
+    For :class:`~tg_model.model.elements.RequirementBlock`, ``symbol_owner`` and
+    ``symbol_path_prefix`` thread the **configured root** type and path prefix so
+    :meth:`requirement_input` registers :class:`~tg_model.model.refs.AttributeRef`
+    symbols that the graph compiler can resolve after :func:`allocate` bindings.
     """
 
-    def __init__(self, owner_type: type) -> None:
+    def __init__(
+        self,
+        owner_type: type,
+        *,
+        symbol_owner: type | None = None,
+        symbol_path_prefix: tuple[str, ...] = (),
+    ) -> None:
         self.owner_type = owner_type
+        self.symbol_owner = symbol_owner if symbol_owner is not None else owner_type
+        self.symbol_path_prefix = symbol_path_prefix
         self.nodes: dict[str, NodeDecl] = {}
         self.edges: list[dict[str, Any]] = []
         self.behavior_transitions: list[dict[str, Any]] = []
@@ -226,6 +346,10 @@ class ModelDefinitionContext:
         """Shorthand for :func:`parameter_ref` (same semantics)."""
         return parameter_ref(root_block_type, name)
 
+    def requirement_ref(self, root_block_type: type, path: tuple[str, ...]) -> Ref:
+        """Shorthand for :func:`requirement_ref` (same semantics)."""
+        return requirement_ref(root_block_type, path)
+
     def citation(self, name: str, **metadata: Any) -> Ref:
         """Declare an external provenance node (standards, reports, URIs, clauses).
 
@@ -247,6 +371,11 @@ class ModelDefinitionContext:
         :meth:`constraint`): symbols must resolve under the :meth:`allocate` target part subtree
         at graph-compile time. A requirement with ``expr`` must have at least one ``allocate``
         edge from it (Phase 7).
+
+        Prefer :meth:`requirement_input` plus :meth:`requirement_accept_expr` inside
+        :class:`~tg_model.model.elements.RequirementBlock` ``define()`` so acceptance uses
+        requirement-local symbols bound with :meth:`allocate` ``inputs=`` (no part refs in the
+        block).
         """
         meta = {"text": text, **metadata}
         if expr is not None:
@@ -257,6 +386,106 @@ class ModelDefinitionContext:
             path=(name,),
             kind="requirement",
             metadata=meta,
+        )
+
+    def requirement_input(self, requirement: Ref, name: str, **metadata: Any) -> AttributeRef:
+        """Declare an input slot on ``requirement`` (RequirementBlock authoring only).
+
+        Registers a value-bearing symbol under the configured root (see threaded
+        ``symbol_owner`` / ``symbol_path_prefix`` during compile). Bind each input to a part
+        parameter or attribute with :meth:`allocate` ``inputs={name: part_ref.…}``.
+        """
+        from tg_model.model.elements import RequirementBlock
+
+        if not issubclass(self.owner_type, RequirementBlock):
+            raise ModelDefinitionError(
+                "requirement_input(...) is only valid inside RequirementBlock.define()"
+            )
+        if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
+            raise ModelDefinitionError(
+                "requirement_input: first argument must be a requirement Ref from this block"
+            )
+        req_key = requirement.path[-1]
+        req_decl = self.nodes.get(req_key)
+        if req_decl is None or req_decl.kind != "requirement":
+            raise ModelDefinitionError(
+                f"requirement_input: no requirement {req_key!r} in this block (declare it first)"
+            )
+        if req_decl.metadata.get("_accept_expr") is not None:
+            raise ModelDefinitionError(
+                f"requirement_input({name!r}): requirement {req_key!r} already has acceptance expr"
+            )
+        internal = f"{req_key}__in__{name}"
+        if internal in self.nodes:
+            raise ModelDefinitionError(f"Duplicate requirement_input {name!r} for {req_key!r}")
+        self._register_node(
+            name=internal,
+            kind="requirement_input",
+            metadata={**metadata, "_requirement_key": req_key, "_input_name": name},
+        )
+        names = req_decl.metadata.setdefault("_requirement_input_names", [])
+        if name in names:
+            raise ModelDefinitionError(f"Duplicate requirement_input {name!r} on {req_key!r}")
+        names.append(name)
+        sym_path = self.symbol_path_prefix + requirement.path + (name,)
+        return AttributeRef(
+            owner_type=self.symbol_owner,
+            path=sym_path,
+            kind="parameter",
+            metadata=dict(metadata),
+        )
+
+    def requirement_accept_expr(self, requirement: Ref, *, expr: Any) -> None:
+        """Set executable acceptance for ``requirement`` (after :meth:`requirement_input` calls)."""
+        from tg_model.model.elements import RequirementBlock
+
+        if not issubclass(self.owner_type, RequirementBlock):
+            raise ModelDefinitionError(
+                "requirement_accept_expr(...) is only valid inside RequirementBlock.define()"
+            )
+        if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
+            raise ModelDefinitionError(
+                "requirement_accept_expr: first argument must be a requirement Ref from this block"
+            )
+        if len(requirement.path) != 1:
+            raise ModelDefinitionError(
+                "requirement_accept_expr: only single-segment requirement paths are supported here"
+            )
+        key = requirement.path[0]
+        decl = self.nodes.get(key)
+        if decl is None or decl.kind != "requirement":
+            raise ModelDefinitionError(f"requirement_accept_expr: no requirement {key!r}")
+        if decl.metadata.get("_accept_expr") is not None:
+            raise ModelDefinitionError(
+                f"requirement_accept_expr: requirement {key!r} already has acceptance (use one of "
+                f"requirement(..., expr=) or requirement_accept_expr)"
+            )
+        decl.metadata["_accept_expr"] = expr
+
+    def requirement_block(self, name: str, block_type: type) -> RequirementBlockRef:
+        """Declare a nested requirements subtree (see :class:`~tg_model.model.elements.RequirementBlock`).
+
+        Compiles ``block_type`` eagerly so nested :func:`requirement_ref` works from sibling
+        declarations in the same ``define()``.
+        """
+        from tg_model.model.compile_types import compile_type
+        from tg_model.model.elements import RequirementBlock
+
+        if not issubclass(block_type, RequirementBlock):
+            raise ModelDefinitionError(
+                f"requirement_block({name!r}, ...): {block_type!r} must be a subclass of RequirementBlock"
+            )
+        self._register_node(name=name, kind="requirement_block", target_type=block_type)
+        compile_type(
+            block_type,
+            symbol_anchor_type=self.symbol_owner,
+            symbol_path_prefix=self.symbol_path_prefix + (name,),
+        )
+        return RequirementBlockRef(
+            owner_type=self.owner_type,
+            path=(name,),
+            kind="requirement_block",
+            target_type=block_type,
         )
 
     def constraint(self, name: str, *, expr: Any, **metadata: Any) -> Ref:
@@ -578,14 +807,33 @@ class ModelDefinitionContext:
             "target": citation,
         })
 
-    def allocate(self, requirement_ref: Ref, target_ref: Ref) -> None:
-        """Declare an allocation from a requirement to a model element."""
+    def allocate(
+        self,
+        requirement_ref: Ref,
+        target_ref: Ref,
+        *,
+        inputs: dict[str, AttributeRef] | None = None,
+    ) -> None:
+        """Declare an allocation from a requirement to a model element.
+
+        Optional ``inputs`` maps :meth:`requirement_input` names to part parameter/attribute refs
+        (same :class:`~tg_model.model.refs.AttributeRef` family as ``constraint``). Required for
+        acceptance expressions that only reference requirement input symbols.
+        """
         self._check_frozen()
-        self.edges.append({
+        edge: dict[str, Any] = {
             "kind": "allocate",
             "source": requirement_ref,
             "target": target_ref,
-        })
+        }
+        if inputs:
+            for k, v in inputs.items():
+                if not isinstance(v, AttributeRef):
+                    raise ModelDefinitionError(
+                        f"allocate inputs[{k!r}] must be an AttributeRef, got {type(v).__name__}"
+                    )
+            edge["_allocate_inputs"] = dict(inputs)
+        self.edges.append(edge)
 
     def allocate_to_root(self, requirement_ref: Ref) -> None:
         """Shorthand for ``allocate(requirement, root_block())`` when acceptance is checked on this root."""

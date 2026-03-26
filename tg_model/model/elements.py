@@ -52,5 +52,20 @@ class Part(Element):
     """A concrete structural part in a system hierarchy."""
 
 
+class RequirementBlock(Element):
+    """A composable requirements subtree (nested requirements and citations).
+
+    Use :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_block`
+    from a :class:`Part` or :class:`System` ``define()`` to register a block; use
+    :class:`~tg_model.model.refs.RequirementBlockRef` dot access for child requirements.
+
+    ``define()`` may only declare ``requirement``, ``requirement_input``, ``citation``, nested
+    ``requirement_block``, and ``references`` edges (enforced at compile time). Call
+    ``model.requirement_accept_expr(...)`` to attach acceptance to a requirement using only
+    ``requirement_input`` symbols; bind those inputs to parts with ``allocate(..., inputs=…)``
+    on the configured root.
+    """
+
+
 class System(Element):
     """A top-level system element that composes parts."""

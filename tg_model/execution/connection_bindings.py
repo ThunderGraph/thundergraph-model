@@ -57,7 +57,7 @@ class ReferenceBinding:
 class AllocationBinding:
     """A resolved allocation from a requirement to a model element."""
 
-    __slots__ = ("requirement", "stable_id", "target")
+    __slots__ = ("input_bindings", "requirement", "stable_id", "target")
 
     def __init__(
         self,
@@ -65,10 +65,12 @@ class AllocationBinding:
         stable_id: str,
         requirement: ElementInstance,
         target: ElementInstance,
+        input_bindings: dict[str, ValueSlot] | None = None,
     ) -> None:
         self.stable_id = stable_id
         self.requirement = requirement
         self.target = target
+        self.input_bindings = input_bindings or {}
 
     def __repr__(self) -> str:
         return (

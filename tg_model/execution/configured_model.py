@@ -11,6 +11,7 @@ from tg_model.execution.connection_bindings import (
 )
 from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
 from tg_model.execution.value_slots import ValueSlot
+from tg_model.model.compile_types import _requirement_block_compiled_artifact
 from tg_model.model.identity import derive_declaration_id
 
 
@@ -82,11 +83,16 @@ def instantiate(root_type: type) -> ConfiguredModel:
     )
     _register(root_instance, path_registry, id_registry)
 
-    _instantiate_children(root_instance, compiled, root_type, path_registry, id_registry)
+    ref_accumulator: list[ReferenceBinding] = []
+    _instantiate_children(
+        root_instance, compiled, root_type, path_registry, id_registry, ref_accumulator,
+    )
 
     connections = _instantiate_connections(compiled, root_instance, path_registry, root_type)
     allocations = _instantiate_allocations(compiled, root_instance, path_registry, root_type)
-    references = _instantiate_all_references(root_instance, path_registry, root_type)
+    references = (
+        _instantiate_all_references(root_instance, path_registry, root_type) + ref_accumulator
+    )
 
     root_instance.freeze()
 
@@ -106,6 +112,7 @@ def _instantiate_children(
     root_type: type,
     path_registry: dict[str, ElementInstance | ValueSlot],
     id_registry: dict[str, ElementInstance | ValueSlot],
+    ref_accumulator: list[ReferenceBinding] | None = None,
 ) -> None:
     """Walk compiled nodes and create child instances under parent."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
@@ -113,7 +120,7 @@ def _instantiate_children(
     for name, node in compiled["nodes"].items():
         kind = node["kind"]
         metadata = node.get("metadata", {})
-        child_path = parent.instance_path + (name,)
+        child_path = (*parent.instance_path, name)
         child_id = derive_declaration_id(root_type, *child_path)
 
         if kind == "part":
@@ -131,8 +138,12 @@ def _instantiate_children(
             if child_type is not None:
                 child_compiled = child_type.compile()
                 _instantiate_children(
-                    child_instance, child_compiled, root_type,
-                    path_registry, id_registry,
+                    child_instance,
+                    child_compiled,
+                    root_type,
+                    path_registry,
+                    id_registry,
+                    ref_accumulator,
                 )
 
         elif kind == "port":
@@ -171,6 +182,29 @@ def _instantiate_children(
             )
             _register(req_instance, path_registry, id_registry)
 
+        elif kind == "requirement_block":
+            block_type = type_registry.get(name)
+            block_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=root_type,
+                definition_path=(name,),
+                instance_path=child_path,
+                kind="requirement_block",
+                metadata=metadata,
+            )
+            _register(block_instance, path_registry, id_registry)
+            if block_type is not None:
+                sub_compiled = _requirement_block_compiled_artifact(block_type)
+                _instantiate_requirement_block_children(
+                    child_path,
+                    sub_compiled,
+                    root_type,
+                    root_type,
+                    path_registry,
+                    id_registry,
+                    ref_accumulator,
+                )
+
         elif kind == "constraint":
             constraint_instance = ElementInstance(
                 stable_id=child_id,
@@ -192,6 +226,110 @@ def _instantiate_children(
                 metadata=metadata,
             )
             _register(cite_instance, path_registry, id_registry)
+
+
+def _instantiate_requirement_block_children(
+    prefix_path: tuple[str, ...],
+    compiled: dict[str, Any],
+    definition_root_type: type,
+    root_type: type,
+    path_registry: dict[str, ElementInstance | ValueSlot],
+    id_registry: dict[str, ElementInstance | ValueSlot],
+    ref_accumulator: list[ReferenceBinding] | None = None,
+) -> None:
+    """Materialize requirements/citations/nested blocks under a requirement_block (no PartInstance parent)."""
+    type_registry: dict[str, type] = compiled.get("_type_registry", {})
+
+    for name, node in compiled["nodes"].items():
+        kind = node["kind"]
+        metadata = node.get("metadata", {})
+        child_path = (*prefix_path, name)
+        child_id = derive_declaration_id(root_type, *child_path)
+
+        if kind == "requirement":
+            req_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=definition_root_type,
+                definition_path=tuple(child_path[1:]),
+                instance_path=child_path,
+                kind="requirement",
+                metadata=metadata,
+            )
+            _register(req_instance, path_registry, id_registry)
+        elif kind == "citation":
+            cite_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=definition_root_type,
+                definition_path=tuple(child_path[1:]),
+                instance_path=child_path,
+                kind="citation",
+                metadata=metadata,
+            )
+            _register(cite_instance, path_registry, id_registry)
+        elif kind == "requirement_block":
+            block_type = type_registry.get(name)
+            block_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=definition_root_type,
+                definition_path=tuple(child_path[1:]),
+                instance_path=child_path,
+                kind="requirement_block",
+                metadata=metadata,
+            )
+            _register(block_instance, path_registry, id_registry)
+            if block_type is not None:
+                _instantiate_requirement_block_children(
+                    child_path,
+                    _requirement_block_compiled_artifact(block_type),
+                    definition_root_type,
+                    root_type,
+                    path_registry,
+                    id_registry,
+                    ref_accumulator,
+                )
+
+    if ref_accumulator is not None:
+        _wire_requirement_block_references(
+            prefix_path, compiled, root_type, path_registry, ref_accumulator,
+        )
+
+
+def _wire_requirement_block_references(
+    block_instance_path: tuple[str, ...],
+    compiled: dict[str, Any],
+    root_type: type,
+    path_registry: dict[str, ElementInstance | ValueSlot],
+    out: list[ReferenceBinding],
+) -> None:
+    """Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.RequirementBlock`."""
+    for edge in compiled.get("edges", []):
+        if edge.get("kind") != "references":
+            continue
+        src_path = block_instance_path + tuple(edge["source"]["path"])
+        tgt_path = block_instance_path + tuple(edge["target"]["path"])
+        src_key = ".".join(src_path)
+        tgt_key = ".".join(tgt_path)
+        src = path_registry.get(src_key)
+        tgt = path_registry.get(tgt_key)
+        if src is None:
+            raise ValueError(f"references source '{src_key}' not found in registry")
+        if tgt is None:
+            raise ValueError(f"references citation '{tgt_key}' not found in registry")
+        if not isinstance(tgt, ElementInstance) or tgt.kind != "citation":
+            raise ValueError(f"references target '{tgt_key}' is not a citation ElementInstance")
+        ref_id = derive_declaration_id(
+            root_type,
+            "references",
+            *[str(x) for x in src_path],
+            *[str(x) for x in tgt_path],
+        )
+        out.append(
+            ReferenceBinding(
+                stable_id=ref_id,
+                source=src,
+                citation=tgt,
+            )
+        )
 
 
 def _instantiate_connections(
@@ -261,11 +399,25 @@ def _instantiate_allocations(
         if not isinstance(tgt, ElementInstance):
             raise ValueError(f"Allocation target '{tgt_key}' is not an ElementInstance")
 
+        input_bindings: dict[str, ValueSlot] = {}
+        raw_inputs = edge.get("_allocate_inputs")
+        if raw_inputs:
+            for iname, spec in raw_inputs.items():
+                rel = tuple(spec["path"])
+                slot_key = ".".join((root.path_string, *rel))
+                slot = path_registry.get(slot_key)
+                if not isinstance(slot, ValueSlot):
+                    raise ValueError(
+                        f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry"
+                    )
+                input_bindings[str(iname)] = slot
+
         alloc_id = derive_declaration_id(root_type, "allocate", *edge["source"]["path"], *edge["target"]["path"])
         allocations.append(AllocationBinding(
             stable_id=alloc_id,
             requirement=req,
             target=tgt,
+            input_bindings=input_bindings,
         ))
 
     return allocations

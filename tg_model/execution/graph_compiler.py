@@ -17,6 +17,7 @@ from typing import Any
 from unitflow import Quantity
 
 from tg_model.execution.configured_model import ConfiguredModel
+from tg_model.execution.connection_bindings import AllocationBinding
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
 from tg_model.execution.external_ops import (
     ExternalOpsError,
@@ -332,12 +333,18 @@ def _resolve_symbol_for_requirement_acceptance(
     allocate_target: PartInstance,
     requirement_definition_type: type,
     _model: ConfiguredModel,
+    alloc: AllocationBinding,
 ) -> ValueSlot:
     """Map a unitflow symbol to a :class:`ValueSlot` for requirement acceptance (Phase 7).
 
-    Symbols declared on the **same type as the allocate() call site** use paths from that type's
-    root (e.g. ``('motor', 'shaft_power')``); we strip the allocate target's path under the
-    configured root and resolve the remainder from ``allocate_target``.
+    If :class:`~tg_model.execution.connection_bindings.AllocationBinding` carries
+    ``input_bindings`` (from ``allocate(..., inputs=…)``), symbols owned by the configured root
+    whose path matches ``<requirement instance path tail> + (input_name,)`` resolve to the bound
+    part slot.
+
+    Otherwise: symbols declared on the **same type as the allocate() call site** use paths from
+    that type's root (e.g. ``('motor', 'shaft_power')``); we strip the allocate target's path
+    under the configured root and resolve the remainder from ``allocate_target``.
 
     Symbols declared on the **allocate target's part type** (e.g. attributes in ``Motor.define``)
     use paths relative to that part (e.g. ``('shaft_power',)``) and resolve directly from
@@ -349,6 +356,22 @@ def _resolve_symbol_for_requirement_acceptance(
     result = _symbol_id_to_path.get(id(sym))
     if result is not None:
         sym_owner, tg_path = result
+        req_inst = alloc.requirement
+        if (
+            alloc.input_bindings
+            and sym_owner is requirement_definition_type
+            and isinstance(req_inst, ElementInstance)
+        ):
+            rtail = tuple(req_inst.instance_path[1:])
+            if len(tg_path) == len(rtail) + 1 and tg_path[: len(rtail)] == rtail:
+                iname = tg_path[-1]
+                bound = alloc.input_bindings.get(iname)
+                if bound is not None:
+                    return bound
+                raise GraphCompilationError(
+                    f"Requirement acceptance symbol {iname!r} at path {tg_path!r} has no "
+                    f"matching entry in allocate(..., inputs=...) for this allocation"
+                )
         current: Any = allocate_target
         if sym_owner is allocate_target.definition_type:
             rel = tg_path
@@ -507,7 +530,7 @@ def _compile_requirement_acceptance(
             )
         for sym in expr.free_symbols:
             dep_slot = _resolve_symbol_for_requirement_acceptance(
-                sym, target, req_def_type, model,
+                sym, target, req_def_type, model, alloc,
             )
             dep_node_id = f"val:{dep_slot.path_string}"
             graph.add_edge(dep_node_id, node_id)
@@ -525,12 +548,13 @@ def _compile_requirement_acceptance(
             owner_part: PartInstance,
             cm: ConfiguredModel,
             req_owner_type: type,
+            binding: AllocationBinding,
         ) -> Callable[..., bool]:
             def handler(dep_values: dict[str, Any]) -> bool:
                 context: dict[Any, Any] = {}
                 for sym in constraint_expr.free_symbols:
                     dep_slot = _resolve_symbol_for_requirement_acceptance(
-                        sym, owner_part, req_owner_type, cm,
+                        sym, owner_part, req_owner_type, cm, binding,
                     )
                     dep_node_id = f"val:{dep_slot.path_string}"
                     if dep_node_id in dep_values:
@@ -539,7 +563,7 @@ def _compile_requirement_acceptance(
 
             return handler
 
-        handlers[node_id] = make_req_accept_handler(expr, target, model, req_def_type)
+        handlers[node_id] = make_req_accept_handler(expr, target, model, req_def_type, alloc)
 
 
 def _first_value_graph_node_id_under_part(part: PartInstance) -> str | None:
