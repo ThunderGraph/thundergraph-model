@@ -1,9 +1,14 @@
-"""Typed reference objects for the definition compiler.
+"""Symbolic references produced during ``define(cls, model)``.
 
-Refs are symbolic pointers produced during ``define(cls, model)``.
-They are NOT runtime instances. They allow chained access
-(e.g. ``battery.power_out``) by resolving against the compiled
-definition of the target type.
+Refs are **not** runtime instances. :class:`PartRef` and
+:class:`RequirementBlockRef` support dotted member access resolved against the
+**compiled** child type. :class:`AttributeRef` forwards arithmetic to unitflow
+:class:`~unitflow.expr.expressions.Expr` via :attr:`AttributeRef.sym`.
+
+See Also
+--------
+tg_model.model.definition_context.ModelDefinitionContext
+tg_model.model.expr.sum_attributes
 """
 
 from __future__ import annotations
@@ -12,7 +17,21 @@ from typing import Any
 
 
 class Ref:
-    """Base symbolic reference to a declared model element."""
+    """Symbolic reference to one declared model element.
+
+    Parameters
+    ----------
+    owner_type : type
+        Type whose compiled artifact owns this path (often the configured root).
+    path : tuple[str, ...]
+        Declaration names from that owner (``()`` for the root part ref).
+    kind : str
+        Node kind (``requirement``, ``constraint``, ``event``, ...).
+    target_type : type, optional
+        Composed type for ``part`` / ``requirement_block`` refs.
+    metadata : dict, optional
+        Declaration metadata copied from compile records.
+    """
 
     __slots__ = ("kind", "metadata", "owner_type", "path", "target_type")
 
@@ -32,9 +51,17 @@ class Ref:
 
     @property
     def local_name(self) -> str:
+        """Dotted path string for this ref (``a.b.c``)."""
         return ".".join(self.path)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize ref to a JSON-friendly dict (owner name, path, kind, optional target).
+
+        Returns
+        -------
+        dict
+            Keys: ``owner``, ``path``, ``kind``; optional ``target_type``, ``metadata``.
+        """
         payload: dict[str, Any] = {
             "owner": self.owner_type.__name__,
             "path": list(self.path),
@@ -51,7 +78,7 @@ class Ref:
 
 
 class PortRef(Ref):
-    """Reference to a declared port."""
+    """Reference to a declared port (use with :meth:`tg_model.model.definition_context.ModelDefinitionContext.connect`)."""
 
 
 _symbol_cache: dict[tuple[type, tuple[str, ...]], Any] = {}
@@ -59,11 +86,22 @@ _symbol_id_to_path: dict[int, tuple[type, tuple[str, ...]]] = {}
 
 
 class AttributeRef(Ref):
-    """Reference to a declared attribute or parameter."""
+    """Reference to a declared attribute or parameter (value slot at configure time)."""
 
     @property
     def sym(self) -> Any:
-        """Return the canonical unitflow Symbol for this reference."""
+        """Canonical unitflow symbol for this reference (cached per ref identity).
+
+        Returns
+        -------
+        Symbol
+            Unitflow symbol with ``unit`` from declaration metadata.
+
+        Raises
+        ------
+        ValueError
+            If ``metadata`` has no ``unit`` (symbols cannot be constructed).
+        """
         key = (self.owner_type, self.path)
         if key not in _symbol_cache:
             from unitflow import symbol
@@ -127,10 +165,12 @@ class AttributeRef(Ref):
 
 
 class PartRef(Ref):
-    """Reference to a declared part.
+    """Reference to a declared part; dot access chains into the child compiled type.
 
-    Attribute access resolves against the compiled definition of the
-    target type, producing chained typed references.
+    Raises
+    ------
+    AttributeError
+        If ``target_type`` is missing, the type is not compiled, or the member does not exist.
     """
 
     def __getattr__(self, name: str) -> Ref:
@@ -204,10 +244,13 @@ class PartRef(Ref):
 
 
 class RequirementBlockRef(Ref):
-    """Reference to a declared requirement block.
+    """Reference to a declared requirement block (dot access like :class:`PartRef`).
 
-    Dot access resolves child ``requirement``, ``requirement_block``, and ``citation`` nodes
-    on the block's compiled type (same chaining idea as :class:`PartRef`).
+    Raises
+    ------
+    AttributeError
+        If the block type is not compiled yet, the member is missing, or the kind cannot
+        be projected (only requirement subtree kinds are allowed).
     """
 
     def __getattr__(self, name: str) -> Ref:

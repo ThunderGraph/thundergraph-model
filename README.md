@@ -91,10 +91,18 @@ uv run jupyter nbconvert --to notebook --execute notebooks/cargo_jet_program.ipy
 
 | Doc | Purpose |
 |-----|---------|
-| [`docs/v0_api.md`](docs/v0_api.md) | Public API shape, authoring patterns, nested requirements, execution contract. |
-| [`docs/implementation_plan.md`](docs/implementation_plan.md) | Phased roadmap (requirements, behavior, citations, …). |
-| [`docs/logical_architecture.md`](docs/logical_architecture.md) | Conceptual architecture. |
-| [`examples/commercial_aircraft/IMPLEMENTATION_PLAN.md`](examples/commercial_aircraft/IMPLEMENTATION_PLAN.md) | Bounded-context plan for the cargo example (optional deep dive). |
+| [`docs/user_docs/IMPLEMENTATION_PLAN.md`](docs/user_docs/IMPLEMENTATION_PLAN.md) | **Roadmap:** Sphinx HTML site, NumPy docstrings, user vs developer docs, hosting. |
+| [`docs/generation_docs/v0_api.md`](docs/generation_docs/v0_api.md) | Internal design / agent-oriented API draft (not the public manual). |
+| [`docs/generation_docs/implementation_plan.md`](docs/generation_docs/implementation_plan.md) | Historical phased roadmap for library development. |
+| [`docs/generation_docs/logical_architecture.md`](docs/generation_docs/logical_architecture.md) | Conceptual architecture. |
+| [`examples/commercial_aircraft/IMPLEMENTATION_PLAN.md`](examples/commercial_aircraft/IMPLEMENTATION_PLAN.md) | Cargo example scope only (links to user-docs plan in §13). |
+
+Build user docs HTML (Phase 3 scaffold):
+
+```bash
+uv sync --group docs
+uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html
+```
 
 ---
 

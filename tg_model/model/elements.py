@@ -1,4 +1,14 @@
-"""Base element types for the tg-model authoring surface."""
+"""Authoring element types: :class:`Element`, :class:`Part`, :class:`System`, :class:`RequirementBlock`.
+
+Subclasses implement :meth:`Element.define` to record declarations on
+:class:`~tg_model.model.definition_context.ModelDefinitionContext` and call
+:meth:`Element.compile` (usually implicitly) to build cached definition artifacts.
+
+See Also
+--------
+tg_model.model.definition_context.ModelDefinitionContext
+tg_model.execution.configured_model.instantiate
+"""
 
 from __future__ import annotations
 
@@ -10,27 +20,43 @@ from tg_model.model.compile_types import compile_type
 class Element:
     """Abstract base for all model element types.
 
-    Subclasses define their structure by implementing the ``define``
-    classmethod. The framework calls ``define`` during compilation and
-    passes a ``ModelDefinitionContext`` that records declarations.
+    Subclasses implement :meth:`define` to record structure; compilation produces a
+    cached dict artifact consumed by instantiation and graph compilation.
+
+    Notes
+    -----
+    :meth:`compile` is idempotent per class. Use :meth:`_reset_compilation` only in tests.
     """
 
     _compiled_definition: dict[str, Any] | None = None
 
     @classmethod
     def define(cls, model: Any) -> None:
-        """Override to declare parts, ports, attributes, behavior, and relationships."""
+        """Declare this type's structure (override in subclasses).
+
+        Parameters
+        ----------
+        model : ModelDefinitionContext
+            Definition-time recorder passed by the compiler.
+        """
 
     @classmethod
     def compile(cls) -> dict[str, Any]:
-        """Compile this type's definition. Idempotent per type."""
+        """Compile this type's definition (cached on the class).
+
+        Returns
+        -------
+        dict
+            Compiled artifact (nodes, edges, registries) used by
+            :func:`~tg_model.execution.configured_model.instantiate`.
+        """
         if cls._compiled_definition is None:
             cls._compiled_definition = compile_type(cls)
         return cls._compiled_definition
 
     @classmethod
     def _reset_compilation(cls) -> None:
-        """Reset cached compilation. For testing only."""
+        """Clear cached compilation and definition hooks (**tests only**)."""
         cls._compiled_definition = None
         if getattr(cls, "_tg_definition_context", None) is not None:
             cls._tg_definition_context = None
@@ -49,23 +75,28 @@ class Element:
 
 
 class Part(Element):
-    """A concrete structural part in a system hierarchy."""
+    """Structural part in a hierarchy (may own child parts, ports, values, behavior)."""
 
 
 class RequirementBlock(Element):
-    """A composable requirements subtree (nested requirements and citations).
+    """Composable requirements subtree (nested requirements and citations).
 
-    Use :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_block`
-    from a :class:`Part` or :class:`System` ``define()`` to register a block; use
-    :class:`~tg_model.model.refs.RequirementBlockRef` dot access for child requirements.
+    Register on a :class:`Part` or :class:`System` via
+    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_block`;
+    navigate with :class:`~tg_model.model.refs.RequirementBlockRef` dot access.
 
-    ``define()`` may only declare ``requirement``, ``requirement_input``, ``citation``, nested
-    ``requirement_block``, and ``references`` edges (enforced at compile time). Call
-    ``model.requirement_accept_expr(...)`` to attach acceptance to a requirement using only
-    ``requirement_input`` symbols; bind those inputs to parts with ``allocate(..., inputs=…)``
-    on the configured root.
+    Notes
+    -----
+    ``define()`` may only declare ``requirement``, ``requirement_input``,
+    ``requirement_attribute``, ``citation``, nested ``requirement_block``, and ``references``
+    (enforced at compile). Prefer
+    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_accept_expr`
+    plus :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_input` /
+    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`
+    and :meth:`~tg_model.model.definition_context.ModelDefinitionContext.allocate` ``inputs=``
+    (for inputs wired from the design) for acceptance that avoids part refs inside the block.
     """
 
 
 class System(Element):
-    """A top-level system element that composes parts."""
+    """Top-level system element that composes parts (typical configured root type)."""

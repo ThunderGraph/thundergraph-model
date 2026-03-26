@@ -15,7 +15,6 @@ if str(_EXAMPLES_ROOT) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES_ROOT))
 
 from commercial_aircraft import CargoJetProgram, reset_commercial_aircraft_types  # noqa: E402
-from commercial_aircraft.program.l1_specs import L1_REQUIREMENTS  # noqa: E402
 from commercial_aircraft.reporting.extract import extract_cargo_jet_evaluation_report  # noqa: E402
 from commercial_aircraft.reporting.snapshot import format_cargo_jet_report  # noqa: E402
 
@@ -28,24 +27,6 @@ from tg_model.execution.validation import validate_graph  # noqa: E402
 
 def setup_function() -> None:
     reset_commercial_aircraft_types()
-
-
-def test_l1_requirements_module_has_no_tg_model() -> None:
-    assert len(L1_REQUIREMENTS) >= 3
-    for spec in L1_REQUIREMENTS:
-        assert spec.node_name
-        assert spec.statement
-        assert spec.allocate_to in ("program_root", "aircraft")
-        assert spec.block in ("mission", "airworthiness", "product")
-        assert spec.verification_kind in (
-            "executable_acceptance",
-            "evidenced_by_constraints",
-            "context_citations_only",
-        )
-        if spec.mission_closure_acceptance:
-            assert spec.allocate_to == "aircraft"
-            assert spec.block == "mission"
-            assert spec.verification_kind == "executable_acceptance"
 
 
 def test_cargo_jet_program_compiles() -> None:
@@ -106,15 +87,16 @@ def test_requirement_allocate_edges_exist() -> None:
     compiled = CargoJetProgram.compile()
     edges = compiled.get("edges", [])
     allocates = [e for e in edges if e.get("kind") == "allocate"]
-    assert len(allocates) == len(L1_REQUIREMENTS)
+    # One allocate edge per Level-1 requirement wired in CargoJetProgram.define
+    assert len(allocates) == 6
 
 
 def test_references_edges_exist() -> None:
     compiled = CargoJetProgram.compile()
     edges = compiled.get("edges", [])
     refs = [e for e in edges if e.get("kind") == "references"]
-    # Multiple citations per requirement → more reference edges than requirements.
-    assert len(refs) >= len(L1_REQUIREMENTS)
+    # Multiple citations per requirement → more reference edges than allocates.
+    assert len(refs) >= 5
 
 
 def test_cargo_jet_extract_and_snapshot_report() -> None:
@@ -151,7 +133,8 @@ def test_cargo_jet_extract_and_snapshot_report() -> None:
     assert "Verdict" in text
     assert "Mission desk" in text
     assert "Declared envelope" in text
-    assert "req_cargo_design_mission_closure" in text
+    assert "req_cargo_design_mission_payload_closure" in text
+    assert "req_cargo_design_mission_range_closure" in text
     assert "executable_acceptance" in text
     assert data["external_provenance"]
 

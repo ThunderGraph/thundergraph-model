@@ -1,4 +1,8 @@
-"""Type compilation: runs define() and produces canonical type artifacts."""
+"""Compile :class:`~tg_model.model.elements.Element` subclasses into cached definition artifacts.
+
+The public entry point for authors is usually :meth:`~tg_model.model.elements.Element.compile`;
+this module implements the recursive compile pipeline, validation, and runtime facet caching.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +14,25 @@ from tg_model.model.identity import qualified_name
 
 
 def _requirement_block_compiled_artifact(block_type: type) -> dict[str, Any]:
-    """Return a cached RequirementBlock artifact without calling ``compile()`` (avoids wrong symbol anchor)."""
+    """Return the cached compiled dict for a requirement block type (internal).
+
+    Parameters
+    ----------
+    block_type : type
+        Subclass of :class:`~tg_model.model.elements.RequirementBlock`.
+
+    Returns
+    -------
+    dict
+        Compiled artifact.
+
+    Raises
+    ------
+    TypeError
+        If ``block_type`` is not a requirement block subclass.
+    ModelDefinitionError
+        If the type has not been compiled yet (registration order bug).
+    """
     from tg_model.model.elements import RequirementBlock
 
     if not issubclass(block_type, RequirementBlock):
@@ -30,20 +52,36 @@ def compile_type(
     symbol_anchor_type: type | None = None,
     symbol_path_prefix: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """Compile a single element type into a canonical artifact.
+    """Compile ``element_cls`` and cache the result on the class.
 
-    Walks the define() hook, freezes the context, recursively compiles
-    child part types, validates edges, and returns a canonical dict.
+    Parameters
+    ----------
+    element_cls : type
+        Subclass of :class:`~tg_model.model.elements.Element` to compile.
+    symbol_anchor_type : type, optional
+        For :class:`~tg_model.model.elements.RequirementBlock` only: configured root type that
+        owns threaded requirement-input symbols.
+    symbol_path_prefix : tuple[str, ...], optional
+        Path prefix of nested requirement blocks under that root.
 
-    The returned artifact has two layers:
-    - canonical fields (owner, nodes, edges, child_types) are inspectable
-      and serialization-safe (no live class objects)
-    - internal fields (_type_registry) carry live class references for
-      framework use only (e.g. PartRef.__getattr__ resolution)
+    Returns
+    -------
+    dict
+        Canonical artifact with ``owner``, ``nodes``, ``edges``, ``child_types``, plus internal
+        ``_type_registry`` (live classes for :class:`~tg_model.model.refs.PartRef` resolution).
 
-    For nested :class:`~tg_model.model.elements.RequirementBlock` types, callers pass
-    ``symbol_anchor_type`` (the configured root, e.g. ``System``) and ``symbol_path_prefix``
-    so requirement input symbols register under the root type.
+    Raises
+    ------
+    ModelDefinitionError
+        On invalid definitions, nondeterministic transitions, bad ports, allocate inputs,
+        requirement acceptance, references edges, or other compile-time rules.
+    TypeError
+        Internal misuse of requirement-block artifacts.
+
+    Notes
+    -----
+    Idempotent: repeated calls return the same cached dict. Serialization-friendly fields avoid
+    embedding class objects; ``_type_registry`` is framework-only.
     """
     from tg_model.model.definition_context import ModelDefinitionContext
     from tg_model.model.elements import RequirementBlock
@@ -81,7 +119,7 @@ def compile_type(
                 child_types[qname] = compile_type(
                     decl.target_type,
                     symbol_anchor_type=ctx.symbol_owner,
-                    symbol_path_prefix=ctx.symbol_path_prefix + (decl.name,),
+                    symbol_path_prefix=(*ctx.symbol_path_prefix, decl.name),
                 )
                 type_registry[decl.name] = decl.target_type
 
@@ -93,6 +131,7 @@ def compile_type(
                 _validate_port_ref(ctx, edge["target"])
 
         _validate_requirement_acceptance(ctx, child_types, type_registry)
+        _validate_requirement_attributes_exprs(ctx)
         _validate_allocate_input_bindings(ctx)
         _validate_references_edges(ctx)
 
@@ -305,7 +344,13 @@ def _validate_requirement_block_if_needed(element_cls: type, ctx: Any) -> None:
 
     if not issubclass(element_cls, RequirementBlock):
         return
-    allowed_nodes = frozenset({"requirement", "citation", "requirement_block", "requirement_input"})
+    allowed_nodes = frozenset({
+        "requirement",
+        "citation",
+        "requirement_block",
+        "requirement_input",
+        "requirement_attribute",
+    })
     for name, decl in ctx.nodes.items():
         if decl.kind not in allowed_nodes:
             raise ModelDefinitionError(
@@ -503,6 +548,89 @@ def _requirement_metadata_at_path_compiled(
     return _requirement_metadata_at_path_compiled(sub, tuple(rest))
 
 
+def _requirement_allowed_symbol_names(meta: dict[str, Any]) -> frozenset[str]:
+    """Requirement-local names (inputs + derived attributes) for acceptance validation."""
+    inames = list(meta.get("_requirement_input_names") or [])
+    anames = list(meta.get("_requirement_attribute_names") or [])
+    return frozenset([*inames, *anames])
+
+
+def _validate_requirement_attributes_exprs(ctx: Any) -> None:
+    """Each ``requirement_attribute`` expr may only reference allowed symbols."""
+    from tg_model.model.elements import RequirementBlock
+
+    if issubclass(ctx.owner_type, RequirementBlock):
+        return
+
+    def walk_subtree(prefix: tuple[str, ...], nodes: dict[str, Any], tr: dict[str, type]) -> None:
+        for name, node in nodes.items():
+            path = (*prefix, name)
+            meta = node.get("metadata", {})
+            if node.get("kind") == "requirement" and meta.get("_requirement_attributes"):
+                _validate_one_requirement_attributes(
+                    ctx.owner_type.__name__,
+                    ctx.owner_type,
+                    path,
+                    meta,
+                )
+            if node.get("kind") == "requirement_block":
+                bt = tr.get(name)
+                if bt is not None:
+                    sub = _requirement_block_compiled_artifact(bt)
+                    walk_subtree(path, sub["nodes"], sub.get("_type_registry", {}))
+
+    for name, decl in ctx.nodes.items():
+        if decl.kind == "requirement" and decl.metadata.get("_requirement_attributes"):
+            _validate_one_requirement_attributes(
+                ctx.owner_type.__name__,
+                ctx.owner_type,
+                (name,),
+                dict(decl.metadata),
+            )
+        if decl.kind == "requirement_block" and decl.target_type is not None:
+            sub = _requirement_block_compiled_artifact(decl.target_type)
+            walk_subtree((name,), sub["nodes"], sub.get("_type_registry", {}))
+
+
+def _validate_one_requirement_attributes(
+    owner_name: str,
+    root_owner: type,
+    path: tuple[str, ...],
+    meta: dict[str, Any],
+) -> None:
+    from tg_model.model.definition_context import ModelDefinitionError
+    from tg_model.model.refs import _symbol_id_to_path
+
+    inames = list(meta.get("_requirement_input_names") or [])
+    decls = list(meta.get("_requirement_attributes") or [])
+    seen_attr: set[str] = set()
+    for idx, (aname, expr) in enumerate(decls):
+        if aname in seen_attr:
+            raise ModelDefinitionError(
+                f"{owner_name}: duplicate requirement_attribute name {aname!r} under requirement {path!r}"
+            )
+        seen_attr.add(aname)
+        if expr is None or not hasattr(expr, "free_symbols"):
+            continue
+        allowed_prev = frozenset([*inames, *[n for n, _ in decls[:idx]]])
+        for sym in expr.free_symbols:
+            info = _symbol_id_to_path.get(id(sym))
+            if info is None:
+                continue
+            sym_owner, sym_path = info
+            if sym_owner is not root_owner:
+                continue
+            if len(sym_path) != len(path) + 1 or sym_path[: len(path)] != path:
+                continue
+            leaf = sym_path[-1]
+            if leaf in allowed_prev:
+                continue
+            raise ModelDefinitionError(
+                f"{owner_name}: requirement_attribute {aname!r} expr references {leaf!r} under "
+                f"{path!r} but allowed names (inputs + earlier attributes) are {sorted(allowed_prev)!r}"
+            )
+
+
 def _validate_allocate_input_bindings(ctx: Any) -> None:
     """If a requirement declares inputs, every allocate must supply them; expr symbols must be bound."""
     from tg_model.model.elements import RequirementBlock
@@ -522,6 +650,7 @@ def _validate_allocate_input_bindings(ctx: Any) -> None:
         if meta is None:
             continue
         inames = list(meta.get("_requirement_input_names") or [])
+        allowed_names = _requirement_allowed_symbol_names(meta)
         inputs = edge.get("_allocate_inputs") or {}
         if inames:
             missing = [n for n in inames if n not in inputs]
@@ -543,10 +672,11 @@ def _validate_allocate_input_bindings(ctx: Any) -> None:
                 continue
             if len(sym_path) == len(path) + 1 and sym_path[: len(path)] == path:
                 iname = sym_path[-1]
-                if inames and iname not in inames:
+                if iname not in allowed_names:
                     raise ModelDefinitionError(
                         f"{ctx.owner_type.__name__}: acceptance expr uses symbol {iname!r} under "
-                        f"{path!r} but declared requirement_input names are {inames!r}"
+                        f"{path!r} but declared requirement_input / requirement_attribute names are "
+                        f"{sorted(allowed_names)!r}"
                     )
                 if iname in inames and iname not in inputs:
                     raise ModelDefinitionError(

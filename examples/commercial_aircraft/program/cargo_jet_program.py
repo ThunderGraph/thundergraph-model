@@ -4,40 +4,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from unitflow import Quantity
-
 from commercial_aircraft.integrations.bindings import make_mission_range_margin_binding
 from commercial_aircraft.product.aircraft import Aircraft
 from commercial_aircraft.program.l1_requirement_blocks import L1RequirementsRoot
-from commercial_aircraft.program.l1_specs import L1RequirementSpec, iter_l1_requirements
 from commercial_aircraft.program.mission_context import CITATION_RETRIEVED_ISO
+from unitflow import Quantity
 from unitflow.catalogs.si import kg, m
 
 from tg_model.model.definition_context import parameter_ref
 from tg_model.model.elements import System
 from tg_model.model.expr import sum_attributes
-from tg_model.model.refs import Ref, RequirementBlockRef
-
-
-def _l1_requirement_ref(l1: RequirementBlockRef, spec: L1RequirementSpec) -> Ref:
-    """Resolve ``spec`` to a requirement ref under ``l1`` (nested block + leaf name)."""
-    if spec.block == "mission":
-        branch = l1.mission
-    elif spec.block == "airworthiness":
-        branch = l1.airworthiness
-    elif spec.block == "product":
-        branch = l1.product
-    else:
-        raise ValueError(f"unknown L1 block {spec.block!r}")
-    return getattr(branch, spec.node_name)
 
 
 class CargoJetProgram(System):
-    """Configured root: scenario parameters, citations, nested L1 requirements, and composed ``aircraft`` part."""
+    """Configured root: scenario parameters, citations, nested Level-1 requirements, and composed ``aircraft`` part."""
 
     @classmethod
     def define(cls, model: Any) -> None:
-        # Scenario parameters first (nested parts may use parameter_ref(CargoJetProgram, ...) in later phases).
         model.parameter("scenario_payload_mass_kg", unit=kg)
         model.parameter("scenario_design_range_m", unit=m)
 
@@ -78,9 +61,9 @@ class CargoJetProgram(System):
 
         l1 = model.requirement_block("l1", L1RequirementsRoot)
         aircraft = model.part("aircraft", Aircraft)
-        # Anonymous configured root part: allocation target for regulatory/context L1 items that are
-        # not evidenced on the named ``aircraft`` subtree (citations + trace only — see ``l1_specs``).
-        root = model.part()
+        # Anonymous configured root part: allocation target for regulatory / context items that sit
+        # at program scope instead of under the named ``aircraft`` subtree.
+        program_scope_part = model.part()
 
         scenario_payload = parameter_ref(CargoJetProgram, "scenario_payload_mass_kg")
         scenario_range = parameter_ref(CargoJetProgram, "scenario_design_range_m")
@@ -102,24 +85,44 @@ class CargoJetProgram(System):
             expr=scenario_range <= aircraft.modeled_max_design_range_m,
         )
 
-        for spec in iter_l1_requirements():
-            req_ref = _l1_requirement_ref(l1, spec)
-            for cid in spec.citation_ids:
-                if cid not in citations:
-                    raise KeyError(f"Unknown citation id {cid!r} in requirement {spec.node_name}")
-                model.references(req_ref, citations[cid])
-            if spec.allocate_to == "program_root":
-                model.allocate(req_ref, root)
-            elif spec.mission_closure_acceptance:
-                model.allocate(
-                    req_ref,
-                    aircraft,
-                    inputs={
-                        "scenario_payload": parameter_ref(CargoJetProgram, "scenario_payload_mass_kg"),
-                        "scenario_range": parameter_ref(CargoJetProgram, "scenario_design_range_m"),
-                        "envelope_payload": aircraft.modeled_max_payload_kg,
-                        "envelope_range": aircraft.modeled_max_design_range_m,
-                    },
-                )
-            else:
-                model.allocate(req_ref, aircraft)
+        # --- Citations and allocation for each Level-1 requirement (explicit, same order as blocks) ---
+
+        r_payload = l1.mission.req_cargo_design_mission_payload_closure
+        r_range = l1.mission.req_cargo_design_mission_range_closure
+        for r_mission in (r_payload, r_range):
+            model.references(r_mission, citations["c_far25"])
+            model.references(r_mission, citations["c_ac25_7c"])
+        model.allocate(
+            r_payload,
+            aircraft,
+            inputs={
+                "scenario_payload": parameter_ref(CargoJetProgram, "scenario_payload_mass_kg"),
+                "envelope_payload": aircraft.modeled_max_payload_kg,
+            },
+        )
+        model.allocate(
+            r_range,
+            aircraft,
+            inputs={
+                "scenario_range": parameter_ref(CargoJetProgram, "scenario_design_range_m"),
+                "envelope_range": aircraft.modeled_max_design_range_m,
+            },
+        )
+
+        r_part25 = l1.airworthiness.req_transport_category_part25
+        model.references(r_part25, citations["c_far25"])
+        model.allocate(r_part25, program_scope_part)
+
+        r_airport = l1.product.req_airport_planning_representative
+        model.references(r_airport, citations["c_acaps"])
+        model.references(r_airport, citations["c_far25"])
+        model.allocate(r_airport, aircraft)
+
+        r_trace = l1.product.req_verification_traceability
+        model.references(r_trace, citations["c_far25"])
+        model.references(r_trace, citations["c_ac25_7c"])
+        model.allocate(r_trace, aircraft)
+
+        r_ft = l1.airworthiness.req_flight_test_methodology_alignment
+        model.references(r_ft, citations["c_ac25_7c"])
+        model.allocate(r_ft, program_scope_part)

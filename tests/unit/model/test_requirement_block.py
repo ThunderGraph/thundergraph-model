@@ -160,6 +160,53 @@ def test_requirement_input_allocate_inputs_graph() -> None:
     assert not result.failures
 
 
+def test_requirement_attribute_sum_and_acceptance() -> None:
+    class _Motor(Part):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            model.parameter("a_m", unit=m)
+            model.parameter("b_m", unit=m)
+
+    class _R(RequirementBlock):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            r = model.requirement("sum_positive", "sum positive")
+            a = model.requirement_input(r, "a_m", unit=m)
+            b = model.requirement_input(r, "b_m", unit=m)
+            s = model.requirement_attribute(r, "sum_m", expr=a + b, unit=m)
+            model.requirement_accept_expr(
+                r,
+                expr=s > QuantityExpr(Quantity(0, m)),
+            )
+
+    class _S(System):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            blk = model.requirement_block("blk", _R)
+            m = model.part("motor", _Motor)
+            model.allocate(
+                blk.sum_positive,
+                m,
+                inputs={"a_m": m.a_m, "b_m": m.b_m},
+            )
+
+    _S._reset_compilation()
+    _R._reset_compilation()
+    _Motor._reset_compilation()
+    cm = instantiate(_S)
+    assert any("sum_m" in s.path_string for s in cm.requirement_value_slots)
+    graph, handlers = compile_graph(cm)
+    assert validate_graph(graph).passed
+    result = Evaluator(graph, compute_handlers=handlers).evaluate(
+        RunContext(),
+        inputs={
+            cm.motor.a_m.stable_id: Quantity(1.0, m),
+            cm.motor.b_m.stable_id: Quantity(2.0, m),
+        },
+    )
+    assert not result.failures
+
+
 def test_allocate_omits_requirement_inputs_raises() -> None:
     class _Motor(Part):
         @classmethod

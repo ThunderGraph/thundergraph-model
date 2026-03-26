@@ -1,4 +1,4 @@
-"""ValueSlot — topology-level cell definition for parameters and attributes."""
+"""Topology-level value cells (:class:`ValueSlot`) for parameters and attributes."""
 
 from __future__ import annotations
 
@@ -37,14 +37,17 @@ class ValueSlot:
 
     @property
     def path_string(self) -> str:
+        """Dotted instance path for handles and debugging."""
         return ".".join(self.instance_path)
 
     @property
     def is_parameter(self) -> bool:
+        """True when ``kind == \"parameter\"``."""
         return self.kind == "parameter"
 
     @property
     def is_attribute(self) -> bool:
+        """True when ``kind == \"attribute\"``."""
         return self.kind == "attribute"
 
     def __repr__(self) -> str:

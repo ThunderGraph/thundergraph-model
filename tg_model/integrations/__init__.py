@@ -1,4 +1,15 @@
-"""Integration boundaries (external computation, async orchestration)."""
+"""Integration boundaries for external computation and async-capable backends.
+
+Bindings declared at definition time are compiled into graph nodes; sync evaluation
+uses :class:`~tg_model.integrations.external_compute.ExternalCompute`, while
+:class:`~tg_model.integrations.external_compute.AsyncExternalCompute` requires
+:class:`~tg_model.execution.evaluator.Evaluator.evaluate_async`.
+
+See Also
+--------
+tg_model.execution.graph_compiler.compile_graph
+tg_model.execution.evaluator.Evaluator
+"""
 
 from tg_model.integrations.external_compute import (
     AsyncExternalCompute,

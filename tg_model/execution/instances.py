@@ -1,4 +1,4 @@
-"""Runtime instance objects for the configured topology."""
+"""Runtime instances: :class:`ElementInstance`, :class:`PartInstance`, :class:`PortInstance`."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from tg_model.execution.value_slots import ValueSlot
 
 
 class ElementInstance:
-    """Generic runtime representation of one materialized semantic element."""
+    """One materialized declaration (requirement, port, block, …) under the configured root."""
 
     __slots__ = ("definition_path", "definition_type", "instance_path", "kind", "metadata", "stable_id")
 
@@ -22,6 +22,7 @@ class ElementInstance:
         kind: str,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Parameters mirror attributes (constructed by instantiation, not by library users)."""
         self.stable_id = stable_id
         self.definition_type = definition_type
         self.definition_path = definition_path
@@ -31,6 +32,7 @@ class ElementInstance:
 
     @property
     def path_string(self) -> str:
+        """Dotted path from configured root to this instance."""
         return ".".join(self.instance_path)
 
     def __repr__(self) -> str:
@@ -38,7 +40,7 @@ class ElementInstance:
 
 
 class PortInstance(ElementInstance):
-    """A concrete port endpoint in the configured topology."""
+    """Concrete port endpoint; ``direction`` comes from declaration metadata."""
 
     __slots__ = ("direction",)
 
@@ -51,6 +53,7 @@ class PortInstance(ElementInstance):
         instance_path: tuple[str, ...],
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Build a port instance (see :func:`~tg_model.execution.configured_model.instantiate`)."""
         direction = (metadata or {}).get("direction", "unknown")
         super().__init__(
             stable_id=stable_id,
@@ -64,10 +67,14 @@ class PortInstance(ElementInstance):
 
 
 class PartInstance(ElementInstance):
-    """A materialized Part or System in the configured topology.
+    """Materialized :class:`~tg_model.model.elements.Part` / :class:`~tg_model.model.elements.System`.
 
-    Owns child parts, ports, value slots, and connection bindings.
-    Supports attribute-style navigation for ergonomic access.
+    Owns child parts, ports, and value slots. After :meth:`freeze`, structure is immutable.
+
+    Raises
+    ------
+    RuntimeError
+        If mutators run after :meth:`freeze`.
     """
 
     __slots__ = ("_child_lookup", "_children", "_frozen", "_ports", "_value_slots")
@@ -100,39 +107,58 @@ class PartInstance(ElementInstance):
             raise RuntimeError(f"Cannot modify frozen PartInstance '{self.path_string}'")
 
     def freeze(self) -> None:
-        """Freeze this instance and all children. No structural mutations after this."""
+        """Recursively freeze this part subtree (called on the full model after instantiate)."""
         self._frozen = True
         for child in self._children:
             child.freeze()
 
     def add_child(self, name: str, child: PartInstance) -> None:
+        """Register a child part under ``name`` (instantiation only).
+
+        Raises
+        ------
+        RuntimeError
+            If this instance is frozen.
+        """
         self._check_frozen()
         self._children.append(child)
         self._child_lookup[name] = child
 
     def add_port(self, name: str, port: PortInstance) -> None:
+        """Register a port under ``name`` (instantiation only)."""
         self._check_frozen()
         self._ports.append(port)
         self._child_lookup[name] = port
 
     def add_value_slot(self, name: str, slot: ValueSlot) -> None:
+        """Register a value slot under ``name`` (instantiation only)."""
         self._check_frozen()
         self._value_slots.append(slot)
         self._child_lookup[name] = slot
 
     @property
     def children(self) -> list[PartInstance]:
+        """Shallow copy of child parts."""
         return list(self._children)
 
     @property
     def ports(self) -> list[PortInstance]:
+        """Shallow copy of owned ports."""
         return list(self._ports)
 
     @property
     def value_slots(self) -> list[ValueSlot]:
+        """Shallow copy of owned parameter/attribute slots."""
         return list(self._value_slots)
 
     def __getattr__(self, name: str) -> PartInstance | PortInstance | ValueSlot:
+        """Resolve ``name`` against registered children, ports, and value slots.
+
+        Raises
+        ------
+        AttributeError
+            If ``name`` is unknown or private.
+        """
         if name.startswith("_"):
             raise AttributeError(name)
         lookup = object.__getattribute__(self, "_child_lookup")
@@ -144,7 +170,18 @@ class PartInstance(ElementInstance):
 
 
 def slot_ids_for_part_subtree(part: PartInstance) -> frozenset[str]:
-    """All :class:`ValueSlot` ``stable_id`` values under ``part`` (including nested parts)."""
+    """Return every :class:`~tg_model.execution.value_slots.ValueSlot` ``stable_id`` under ``part``.
+
+    Parameters
+    ----------
+    part : PartInstance
+        Root of the subtree to walk.
+
+    Returns
+    -------
+    frozenset[str]
+        Stable ids for behavior subtree scoping.
+    """
     ids: set[str] = set()
     stack: list[PartInstance] = [part]
     while stack:

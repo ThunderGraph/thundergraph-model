@@ -9,11 +9,83 @@ from __future__ import annotations
 
 from typing import Any
 
-from commercial_aircraft.program.l1_specs import L1_REQUIREMENTS, L1RequirementSpec
-
 from tg_model.execution.configured_model import ConfiguredModel
 from tg_model.execution.evaluator import RunResult
 from tg_model.execution.run_context import RunContext, SlotState
+
+# Rows for the printed "Level-1 requirements" table only. Requirement text lives in
+# ``commercial_aircraft.program.l1_requirement_blocks`` — keep ``node_name`` and ``statement`` aligned.
+_L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
+    {
+        "node_name": "req_cargo_design_mission_payload_closure",
+        "block": "mission",
+        "allocate_to": "aircraft",
+        "verification_kind": "executable_acceptance",
+        "mission_closure_acceptance": True,
+        "statement": (
+            "The notional design mission payload mass shall be less than or equal to the aircraft modeled "
+            "maximum payload mass for the declared mass envelope (verification by analysis)."
+        ),
+    },
+    {
+        "node_name": "req_cargo_design_mission_range_closure",
+        "block": "mission",
+        "allocate_to": "aircraft",
+        "verification_kind": "executable_acceptance",
+        "mission_closure_acceptance": True,
+        "statement": (
+            "The notional design mission range shall be less than or equal to the aircraft modeled maximum "
+            "design range for the declared range envelope (verification by analysis)."
+        ),
+    },
+    {
+        "node_name": "req_transport_category_part25",
+        "block": "airworthiness",
+        "allocate_to": "program_root",
+        "verification_kind": "context_citations_only",
+        "mission_closure_acceptance": False,
+        "statement": (
+            "The notional product shall be scoped to transport-category airworthiness expectations "
+            "consistent with 14 CFR Part 25; modeled values and constraints are illustrative and not a "
+            "substitute for certification data."
+        ),
+    },
+    {
+        "node_name": "req_airport_planning_representative",
+        "block": "product",
+        "allocate_to": "aircraft",
+        "verification_kind": "context_citations_only",
+        "mission_closure_acceptance": False,
+        "statement": (
+            "The aircraft configuration shall remain representative of wide-body cargo operations for "
+            "airport planning purposes (order-of-magnitude compatibility with public planning categories); "
+            "the model does not reproduce OEM planning figures."
+        ),
+    },
+    {
+        "node_name": "req_verification_traceability",
+        "block": "product",
+        "allocate_to": "aircraft",
+        "verification_kind": "evidenced_by_constraints",
+        "mission_closure_acceptance": False,
+        "statement": (
+            "Demonstrated mass and performance results in the model shall be traceable to declared "
+            "parameters, computed attributes, or constraints under the allocated aircraft block."
+        ),
+    },
+    {
+        "node_name": "req_flight_test_methodology_alignment",
+        "block": "airworthiness",
+        "allocate_to": "program_root",
+        "verification_kind": "context_citations_only",
+        "mission_closure_acceptance": False,
+        "statement": (
+            "High-level performance demonstration intent for the notional program shall align with the "
+            "flight-test performance philosophy described in FAA AC 25-7C (not a complete test program)."
+        ),
+    },
+)
+
 
 _ENVELOPE_CONSTRAINT_NAMES = frozenset(
     {
@@ -56,11 +128,9 @@ def extract_cargo_jet_evaluation_report(
     cm: ConfiguredModel,
     ctx: RunContext,
     run_result: RunResult,
-    *,
-    l1_specs: tuple[L1RequirementSpec, ...] | None = None,
 ) -> dict[str, Any]:
-    """Flatten scenario, thesis metrics, roll-ups, constraints, and L1 metadata for reporting."""
-    specs = l1_specs if l1_specs is not None else L1_REQUIREMENTS
+    """Flatten scenario, thesis metrics, roll-ups, constraints, and Level-1 metadata for reporting."""
+    specs = _L1_REPORT_ROWS
     ac = cm.aircraft
     outputs = dict(run_result.outputs)
     margin_id = cm.mission_range_margin_m.stable_id
@@ -88,17 +158,7 @@ def extract_cargo_jet_evaluation_report(
     if margin is not None and hasattr(margin, "magnitude"):
         margin_km = f"{float(margin.magnitude) / 1000.0:,.1f} km"
 
-    spec_rows = [
-        {
-            "node_name": s.node_name,
-            "block": s.block,
-            "allocate_to": s.allocate_to,
-            "verification_kind": s.verification_kind,
-            "mission_closure_acceptance": s.mission_closure_acceptance,
-            "statement": s.statement,
-        }
-        for s in specs
-    ]
+    spec_rows = list(specs)
 
     scenario_range = outputs.get(cm.scenario_design_range_m.stable_id)
     modeled_range = outputs.get(ac.modeled_max_design_range_m.stable_id)

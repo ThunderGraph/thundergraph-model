@@ -15,7 +15,21 @@ from tg_model.execution.run_context import RunContext
 
 @dataclass(frozen=True)
 class RequirementSatisfactionResult:
-    """Outcome of one requirement acceptance check (one ``allocate`` × one ``expr``)."""
+    """Outcome of one requirement acceptance check (one allocation × one compiled check).
+
+    Attributes
+    ----------
+    requirement_path : str
+        Dotted requirement path in the configured model.
+    allocation_target_path : str
+        Part path where the requirement was allocated.
+    passed : bool
+        Whether the acceptance expression evaluated true.
+    evidence : str
+        Optional evaluator evidence string.
+    check_name : str
+        Internal constraint/check name from the graph.
+    """
 
     requirement_path: str
     allocation_target_path: str
@@ -48,7 +62,18 @@ class RequirementSatisfactionSummary:
 def iter_requirement_satisfaction(
     ctx: RunContext | RunResult,
 ) -> list[RequirementSatisfactionResult]:
-    """Return only constraint results that correspond to requirement acceptance (Phase 7)."""
+    """Filter constraint rows that carry ``requirement_path`` (acceptance checks).
+
+    Parameters
+    ----------
+    ctx : RunContext or RunResult
+        Object exposing ``constraint_results`` (same ordering as evaluation).
+
+    Returns
+    -------
+    list of RequirementSatisfactionResult
+        One row per tagged constraint result.
+    """
     out: list[RequirementSatisfactionResult] = []
     for cr in ctx.constraint_results:
         if cr.requirement_path is None:
@@ -68,14 +93,26 @@ def iter_requirement_satisfaction(
 def summarize_requirement_satisfaction(
     ctx: RunContext | RunResult,
 ) -> RequirementSatisfactionSummary:
-    """Build a :class:`RequirementSatisfactionSummary` from ``constraint_results``."""
+    """Aggregate :func:`iter_requirement_satisfaction` into a summary tuple.
+
+    Returns
+    -------
+    RequirementSatisfactionSummary
+        Includes :attr:`RequirementSatisfactionSummary.all_passed` semantics for zero checks.
+    """
     return RequirementSatisfactionSummary(tuple(iter_requirement_satisfaction(ctx)))
 
 
 def all_requirements_satisfied(ctx: RunContext | RunResult) -> bool:
-    """Shorthand for :meth:`summarize_requirement_satisfaction` ``.all_passed``.
+    """Return :attr:`RequirementSatisfactionSummary.all_passed` for ``ctx``.
 
-    Returns **False** when there are zero requirement acceptance checks in the run — use
-    :class:`RequirementSatisfactionSummary` if you need to distinguish "no checks" from "failed checks".
+    Returns
+    -------
+    bool
+        **False** when there are **zero** requirement acceptance checks (not vacuously true).
+
+    See Also
+    --------
+    summarize_requirement_satisfaction
     """
     return summarize_requirement_satisfaction(ctx).all_passed

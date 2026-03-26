@@ -1,4 +1,4 @@
-"""Pre-execution static validation."""
+"""Static validation for compiled :class:`~tg_model.execution.dependency_graph.DependencyGraph` objects."""
 
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ from tg_model.execution.value_slots import ValueSlot
 
 @dataclass
 class ValidationFailure:
+    """Single validation problem (category + message + optional graph path)."""
+
     category: str
     message: str
     path: str | None = None
@@ -20,13 +22,17 @@ class ValidationFailure:
 
 @dataclass
 class ValidationResult:
+    """Aggregate result of :func:`validate_graph`."""
+
     failures: list[ValidationFailure] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
+        """True when ``failures`` is empty."""
         return len(self.failures) == 0
 
     def add(self, category: str, message: str, path: str | None = None) -> None:
+        """Append a :class:`ValidationFailure`."""
         self.failures.append(ValidationFailure(category=category, message=message, path=path))
 
 
@@ -35,10 +41,20 @@ def validate_graph(
     *,
     configured_model: ConfiguredModel | None = None,
 ) -> ValidationResult:
-    """Run pre-execution static validation on a dependency graph.
+    """Run static checks before evaluation (cycles, orphans, roll-ups, externals).
 
-    Pass ``configured_model`` to run optional :class:`~tg_model.integrations.ValidatableExternalCompute`
-    ``validate_binding`` hooks (specs are v0 engine-defined: declared ``unit`` metadata per slot).
+    Parameters
+    ----------
+    graph : DependencyGraph
+        Output of :func:`~tg_model.execution.graph_compiler.compile_graph`.
+    configured_model : ConfiguredModel, optional
+        When provided, runs :class:`~tg_model.integrations.external_compute.ValidatableExternalCompute`
+        ``validate_binding`` hooks where implemented.
+
+    Returns
+    -------
+    ValidationResult
+        Non-passing result lists structured :class:`ValidationFailure` rows (never raises for soft checks).
     """
     result = ValidationResult()
 

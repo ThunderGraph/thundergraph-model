@@ -1,0 +1,1536 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 --><title>Index - ThunderGraph Model Docs</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --font-stack: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-stack--monospace: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --font-stack: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-stack--monospace: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --font-stack: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-stack--monospace: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">ThunderGraph Model Docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">ThunderGraph Model Docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/mental_model.html">Mental Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/api_root.html"><code class="docutils literal notranslate"><span class="pre">tg_model</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/api_model.html"><code class="docutils literal notranslate"><span class="pre">tg_model.model</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/api_execution.html"><code class="docutils literal notranslate"><span class="pre">tg_model.execution</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/api_integrations.html"><code class="docutils literal notranslate"><span class="pre">tg_model.integrations</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/api_analysis.html"><code class="docutils literal notranslate"><span class="pre">tg_model.analysis</span></code></a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
+<li class="toctree-l1"><a class="reference internal" href="drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="drafts/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="drafts/repository_map.html">Repository Map (thundergraph-model)</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#H"><strong>H</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#V"><strong>V</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.action">action() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.action">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.DecisionDispatchOutcome.ACTION_RAN">ACTION_RAN (tg_model.execution.DecisionDispatchOutcome attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValidationResult.add">add() (tg_model.execution.ValidationResult method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_child">add_child() (tg_model.execution.PartInstance method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.add_constraint_result">add_constraint_result() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.add_edge">add_edge() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.add_node">add_node() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_port">add_port() (tg_model.execution.PartInstance method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_value_slot">add_value_slot() (tg_model.execution.PartInstance method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionSummary.all_passed">all_passed (tg_model.execution.RequirementSatisfactionSummary property)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.RunContext.all_passed">(tg_model.execution.RunContext property)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.all_requirements_satisfied">all_requirements_satisfied() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.allocate">allocate() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.allocate">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.allocate_to_root">allocate_to_root() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.allocate_to_root">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.allocation_target_path">allocation_target_path (tg_model.execution.ConstraintResult attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id29">(tg_model.execution.RequirementSatisfactionResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.allocation_target_path">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding">AllocationBinding (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.as_expr_leaf">as_expr_leaf() (in module tg_model.model)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.assert_sync_external">assert_sync_external() (in module tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.AsyncExternalCompute">AsyncExternalCompute (class in tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.attribute">attribute() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.attribute">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.ATTRIBUTE_VALUE">ATTRIBUTE_VALUE (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef">AttributeRef (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.behavior_authoring_projection">behavior_authoring_projection() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.behavior_trace_to_records">behavior_trace_to_records() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.behavior_transitions">behavior_transitions (tg_model.model.ModelDefinitionContext attribute)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.behavior_transitions">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.BehaviorStep">BehaviorStep (class in tg_model.execution)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.BehaviorTrace">BehaviorTrace (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.bind_input">bind_input() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#id20">block_name (tg_model.execution.ForkJoinTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ForkJoinTraceStep.block_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.BLOCKED">BLOCKED (tg_model.execution.SlotState attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.BOUND_INPUT">BOUND_INPUT (tg_model.execution.SlotState attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_analysis.html#tg_model.analysis.CapturedSlotOutput">CapturedSlotOutput (class in tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConnectionBinding.carrying">carrying (tg_model.execution.ConnectionBinding attribute)</a>
+</li>
+        <li><a href="api/api_analysis.html#id2">changed_paths (tg_model.analysis.ImpactReport attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.ImpactReport.changed_paths">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionSummary.check_count">check_count (tg_model.execution.RequirementSatisfactionSummary property)</a>
+</li>
+        <li><a href="api/api_execution.html#id32">check_name (tg_model.execution.RequirementSatisfactionResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.check_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.children">children (tg_model.execution.PartInstance property)</a>
+</li>
+        <li><a href="api/api_execution.html#id11">chosen_action (tg_model.execution.DecisionDispatchResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionDispatchResult.chosen_action">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id16">(tg_model.execution.DecisionTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionTraceStep.chosen_action">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ReferenceBinding.citation">citation (tg_model.execution.ReferenceBinding attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.citation">citation() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.citation">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.clear_item_payload">clear_item_payload() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.compare_variants">compare_variants() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.compare_variants_async">compare_variants_async() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.CompareVariantsValidationError">CompareVariantsValidationError</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_root.html#tg_model.Element.compile">compile() (tg_model.Element class method)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.Element.compile">(tg_model.model.Element class method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.compile_graph">compile_graph() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.AsyncExternalCompute.compute">compute() (tg_model.integrations.AsyncExternalCompute method)</a>
+
+        <ul>
+          <li><a href="api/api_integrations.html#tg_model.integrations.ExternalCompute.compute">(tg_model.integrations.ExternalCompute method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConfiguredModel">ConfiguredModel (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.connect">connect() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.connect">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConnectionBinding">ConnectionBinding (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.constraint">constraint() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.constraint">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.CONSTRAINT_CHECK">CONSTRAINT_CHECK (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.CONSTRAINT_RESULT">CONSTRAINT_RESULT (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.constraint_results">constraint_results (tg_model.execution.RunContext property)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id34">(tg_model.execution.RunResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RunResult.constraint_results">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult">ConstraintResult (class in tg_model.execution)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.decision">decision() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.decision">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id15">decision_name (tg_model.execution.DecisionTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionTraceStep.decision_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#id6">decision_steps (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.decision_steps">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DecisionDispatchOutcome">DecisionDispatchOutcome (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DecisionDispatchResult">DecisionDispatchResult (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DecisionTraceStep">DecisionTraceStep (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.Element.define">define() (tg_model.Element class method)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.Element.define">(tg_model.model.Element class method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.definition_path">definition_path (tg_model.execution.ElementInstance attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.definition_path">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.definition_type">definition_type (tg_model.execution.ElementInstance attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.definition_type">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.dependencies_of">dependencies_of() (tg_model.execution.DependencyGraph method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.dependency_closure">dependency_closure() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.dependency_impact">dependency_impact() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph">DependencyGraph (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyNode">DependencyNode (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.dependent_closure">dependent_closure() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.dependents_of">dependents_of() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PortInstance.direction">direction (tg_model.execution.PortInstance attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.dispatch_decision">dispatch_decision() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.dispatch_event">dispatch_event() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.dispatch_fork_join">dispatch_fork_join() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.dispatch_merge">dispatch_merge() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.dispatch_sequence">dispatch_sequence() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DispatchOutcome">DispatchOutcome (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DispatchResult">DispatchResult (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_analysis.html#id4">downstream_slot_ids (tg_model.analysis.ImpactReport attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.ImpactReport.downstream_slot_ids">[1]</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.edges">edges (tg_model.execution.DependencyGraph property)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.edges">(tg_model.model.ModelDefinitionContext attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.edges">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id3">effect_name (tg_model.execution.BehaviorStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorStep.effect_name">[1]</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.Element">Element (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.Element">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ElementInstance">ElementInstance (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.emit_item">emit_item() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.Evaluator.evaluate">evaluate() (tg_model.execution.Evaluator method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.Evaluator.evaluate_async">evaluate_async() (tg_model.execution.Evaluator method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.Evaluator">Evaluator (class in tg_model.execution)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.event">event() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.event">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id2">event_name (tg_model.execution.BehaviorStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorStep.event_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.evidence">evidence (tg_model.execution.ConstraintResult attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id31">(tg_model.execution.RequirementSatisfactionResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.evidence">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_integrations.html#id0">external (tg_model.integrations.ExternalComputeBinding attribute)</a>, <a href="api/api_integrations.html#tg_model.integrations.ExternalComputeBinding.external">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.EXTERNAL_COMPUTATION">EXTERNAL_COMPUTATION (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ExternalCompute">ExternalCompute (class in tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ExternalComputeBinding">ExternalComputeBinding (class in tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ExternalComputeResult">ExternalComputeResult (class in tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ExternalComputeValidationError">ExternalComputeValidationError</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.FAILED">FAILED (tg_model.execution.SlotState attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#id35">failures (tg_model.execution.RunResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RunResult.failures">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ValidationResult.failures">(tg_model.execution.ValidationResult attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.DispatchOutcome.FIRED">FIRED (tg_model.execution.DispatchOutcome attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.fork_join">fork_join() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.fork_join">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#id7">fork_join_steps (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.fork_join_steps">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ForkJoinTraceStep">ForkJoinTraceStep (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.freeze">freeze() (tg_model.execution.PartInstance method)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.freeze">(tg_model.model.ModelDefinitionContext method)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.freeze">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.BehaviorStep.from_state">from_state (tg_model.execution.BehaviorStep attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.get_active_behavior_state">get_active_behavior_state() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.get_node">get_node() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.get_or_create_record">get_or_create_record() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.get_state">get_state() (tg_model.execution.RunContext method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.get_value">get_value() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.GraphCompilationError">GraphCompilationError</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.guard">guard() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.guard">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.DispatchOutcome.GUARD_FAILED">GUARD_FAILED (tg_model.execution.DispatchOutcome attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="H" class="genindex-section">
+  <h2>H</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.ConfiguredModel.handle">handle() (tg_model.execution.ConfiguredModel method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.has_computed_by">has_computed_by (tg_model.execution.ValueSlot attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.has_expr">has_expr (tg_model.execution.ValueSlot attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_analysis.html#tg_model.analysis.impact">impact() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.ImpactReport">ImpactReport (class in tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#id5">index (tg_model.analysis.SweepRecord attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.SweepRecord.index">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.induced_subgraph">induced_subgraph() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.input_bindings">input_bindings (tg_model.execution.AllocationBinding attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.INPUT_PARAMETER">INPUT_PARAMETER (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_analysis.html#id6">inputs (tg_model.analysis.SweepRecord attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.SweepRecord.inputs">[1]</a>
+
+        <ul>
+          <li><a href="api/api_integrations.html#id1">(tg_model.integrations.ExternalComputeBinding attribute)</a>, <a href="api/api_integrations.html#tg_model.integrations.ExternalComputeBinding.inputs">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.instance_path">instance_path (tg_model.execution.ElementInstance attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.instance_path">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.instantiate">instantiate() (in module tg_model.execution)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_integrations.html#tg_model.integrations.is_async_external">is_async_external() (in module tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.is_attribute">is_attribute (tg_model.execution.ValueSlot property)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.is_compute_node">is_compute_node (tg_model.execution.DependencyNode property)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.is_parameter">is_parameter (tg_model.execution.ValueSlot property)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.is_value_node">is_value_node (tg_model.execution.DependencyNode property)</a>
+</li>
+        <li><a href="api/api_execution.html#id5">item_flows (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.item_flows">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#id22">item_kind (tg_model.execution.ItemFlowStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ItemFlowStep.item_kind">[1]</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.item_kind">item_kind() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.item_kind">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ItemFlowStep">ItemFlowStep (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.iter_requirement_satisfaction">iter_requirement_satisfaction() (in module tg_model.execution)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="K" class="genindex-section">
+  <h2>K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.kind">kind (tg_model.AttributeRef attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.kind">(tg_model.execution.DependencyNode attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.kind">(tg_model.execution.ElementInstance attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.kind">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.kind">(tg_model.model.AttributeRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PartRef.kind">(tg_model.model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PortRef.kind">(tg_model.model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.Ref.kind">(tg_model.model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.kind">(tg_model.model.RequirementBlockRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PartRef.kind">(tg_model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PortRef.kind">(tg_model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.Ref.kind">(tg_model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.RequirementBlockRef.kind">(tg_model.RequirementBlockRef attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_analysis.html#id8">label (tg_model.analysis.VariantComparisonRow attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.VariantComparisonRow.label">[1]</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.link_external_routes">link_external_routes() (in module tg_model.integrations)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.link_external_routes">(tg_model.model.ModelDefinitionContext method)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.link_external_routes">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.LOCAL_EXPRESSION">LOCAL_EXPRESSION (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.Ref.local_name">local_name (tg_model.model.Ref property)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.Ref.local_name">(tg_model.Ref property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.mark_pending">mark_pending() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.merge">merge() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.merge">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id26">merge_name (tg_model.execution.MergeTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.MergeTraceStep.merge_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#id12">merge_ran (tg_model.execution.DecisionDispatchResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionDispatchResult.merge_ran">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#id8">merge_steps (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.merge_steps">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.MergeTraceStep">MergeTraceStep (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.metadata">metadata (tg_model.AttributeRef attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.metadata">(tg_model.execution.DependencyNode attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.metadata">(tg_model.execution.ElementInstance attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.metadata">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.metadata">(tg_model.model.AttributeRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PartRef.metadata">(tg_model.model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PortRef.metadata">(tg_model.model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.Ref.metadata">(tg_model.model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.metadata">(tg_model.model.RequirementBlockRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PartRef.metadata">(tg_model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PortRef.metadata">(tg_model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.Ref.metadata">(tg_model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.RequirementBlockRef.metadata">(tg_model.RequirementBlockRef attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_root.html#tg_model.ModelDefinitionContext">ModelDefinitionContext (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.ModelDefinitionError">ModelDefinitionError</a>
+</li>
+        <li>
+    module
+
+        <ul>
+          <li><a href="api/api_root.html#module-tg_model">tg_model</a>
+</li>
+          <li><a href="api/api_analysis.html#module-tg_model.analysis">tg_model.analysis</a>
+</li>
+          <li><a href="api/api_execution.html#module-tg_model.execution">tg_model.execution</a>
+</li>
+          <li><a href="api/api_integrations.html#module-tg_model.integrations">tg_model.integrations</a>
+</li>
+          <li><a href="api/api_model.html#module-tg_model.model">tg_model.model</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.name">name (tg_model.execution.ConstraintResult attribute)</a>
+
+        <ul>
+          <li><a href="api/api_integrations.html#tg_model.integrations.AsyncExternalCompute.name">(tg_model.integrations.AsyncExternalCompute property)</a>
+</li>
+          <li><a href="api/api_integrations.html#tg_model.integrations.ExternalCompute.name">(tg_model.integrations.ExternalCompute property)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.DecisionDispatchOutcome.NO_ACTION">NO_ACTION (tg_model.execution.DecisionDispatchOutcome attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DispatchOutcome.NO_MATCH">NO_MATCH (tg_model.execution.DispatchOutcome attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.node_id">node_id (tg_model.execution.DependencyNode attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind">NodeKind (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.nodes">nodes (tg_model.execution.DependencyGraph property)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.nodes">(tg_model.model.ModelDefinitionContext attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.nodes">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#id10">outcome (tg_model.execution.DecisionDispatchResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionDispatchResult.outcome">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id17">(tg_model.execution.DispatchResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DispatchResult.outcome">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_integrations.html#id2">output_routes (tg_model.integrations.ExternalComputeBinding attribute)</a>, <a href="api/api_integrations.html#tg_model.integrations.ExternalComputeBinding.output_routes">[1]</a>
+</li>
+        <li><a href="api/api_analysis.html#id9">outputs (tg_model.analysis.VariantComparisonRow attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.VariantComparisonRow.outputs">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id33">(tg_model.execution.RunResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RunResult.outputs">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.owner_part">owner_part() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.owner_part">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.owner_type">owner_type (tg_model.AttributeRef attribute)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.owner_type">(tg_model.model.AttributeRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.owner_type">(tg_model.model.ModelDefinitionContext attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PartRef.owner_type">(tg_model.model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PortRef.owner_type">(tg_model.model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.Ref.owner_type">(tg_model.model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.owner_type">(tg_model.model.RequirementBlockRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.owner_type">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PartRef.owner_type">(tg_model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PortRef.owner_type">(tg_model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.Ref.owner_type">(tg_model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.RequirementBlockRef.owner_type">(tg_model.RequirementBlockRef attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.parameter">parameter() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.parameter">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.parameter_ref">parameter_ref() (in module tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.parameter_ref">(in module tg_model.model)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.parameter_ref">(tg_model.model.ModelDefinitionContext method)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.parameter_ref">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.Part">Part (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.Part">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.part">part() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.part">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id1">part_path (tg_model.execution.BehaviorStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorStep.part_path">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id14">(tg_model.execution.DecisionTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionTraceStep.part_path">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id19">(tg_model.execution.ForkJoinTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ForkJoinTraceStep.part_path">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id25">(tg_model.execution.MergeTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.MergeTraceStep.part_path">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id37">(tg_model.execution.SequenceTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.SequenceTraceStep.part_path">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance">PartInstance (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.PartRef">PartRef (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.PartRef">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.parts">parts() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.parts">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.passed">passed (tg_model.execution.ConstraintResult attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id30">(tg_model.execution.RequirementSatisfactionResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.passed">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.RunResult.passed">(tg_model.execution.RunResult property)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ValidationResult.passed">(tg_model.execution.ValidationResult property)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.path">path (tg_model.AttributeRef attribute)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.path">(tg_model.model.AttributeRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PartRef.path">(tg_model.model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PortRef.path">(tg_model.model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.Ref.path">(tg_model.model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.path">(tg_model.model.RequirementBlockRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PartRef.path">(tg_model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PortRef.path">(tg_model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.Ref.path">(tg_model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.RequirementBlockRef.path">(tg_model.RequirementBlockRef attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.path_string">path_string (tg_model.execution.ElementInstance property)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.path_string">(tg_model.execution.ValueSlot property)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id23">payload (tg_model.execution.ItemFlowStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ItemFlowStep.payload">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.peek_item_payload">peek_item_payload() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.PENDING">PENDING (tg_model.execution.SlotState attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.pop_behavior_effect_scope">pop_behavior_effect_scope() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.port">port() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.port">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.PortInstance">PortInstance (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.PortRef">PortRef (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.PortRef">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.ports">ports (tg_model.execution.PartInstance property)</a>
+</li>
+        <li><a href="api/api_analysis.html#id1">present_in_run_outputs (tg_model.analysis.CapturedSlotOutput attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.CapturedSlotOutput.present_in_run_outputs">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.prime_item_payload">prime_item_payload() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_integrations.html#id4">provenance (tg_model.integrations.ExternalComputeResult attribute)</a>, <a href="api/api_integrations.html#tg_model.integrations.ExternalComputeResult.provenance">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.push_behavior_effect_scope">push_behavior_effect_scope() (tg_model.execution.RunContext method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.realize">realize() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.CapturedSlotOutput.realized">realized (tg_model.analysis.CapturedSlotOutput property)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.REALIZED">REALIZED (tg_model.execution.SlotState attribute)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.Ref">Ref (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.Ref">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ReferenceBinding">ReferenceBinding (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.references">references() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.references">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.requirement">requirement (tg_model.execution.AllocationBinding attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement">requirement() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_accept_expr">requirement_accept_expr() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement_accept_expr">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_attribute">requirement_attribute() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement_attribute">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_block">requirement_block() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement_block">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_input">requirement_input() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement_input">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.requirement_path">requirement_path (tg_model.execution.ConstraintResult attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id28">(tg_model.execution.RequirementSatisfactionResult attribute)</a>, <a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.requirement_path">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.requirement_ref">requirement_ref() (in module tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.requirement_ref">(in module tg_model.model)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_ref">(tg_model.model.ModelDefinitionContext method)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.requirement_ref">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.RequirementBlock">RequirementBlock (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlock">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.RequirementBlockRef">RequirementBlockRef (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult">RequirementSatisfactionResult (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionSummary">RequirementSatisfactionSummary (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_analysis.html#id7">result (tg_model.analysis.SweepRecord attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.SweepRecord.result">[1]</a>
+
+        <ul>
+          <li><a href="api/api_analysis.html#id10">(tg_model.analysis.VariantComparisonRow attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.VariantComparisonRow.result">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionSummary.results">results (tg_model.execution.RequirementSatisfactionSummary attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.ROLLUP_COMPUTATION">ROLLUP_COMPUTATION (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.root_block">root_block() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.root_block">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext">RunContext (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunResult">RunResult (class in tg_model.execution)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.scenario">scenario() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.scenario">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.scenario_expected_event_names">scenario_expected_event_names() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.sequence">sequence() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.sequence">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id38">sequence_name (tg_model.execution.SequenceTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.SequenceTraceStep.sequence_name">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#id9">sequence_steps (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.sequence_steps">[1]</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SequenceTraceStep">SequenceTraceStep (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.RunContext.set_active_behavior_state">set_active_behavior_state() (tg_model.execution.RunContext method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyNode.slot_id">slot_id (tg_model.execution.DependencyNode attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState">SlotState (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.NodeKind.SOLVE_GROUP">SOLVE_GROUP (tg_model.execution.NodeKind attribute)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.solve_group">solve_group() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.solve_group">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ConnectionBinding.source">source (tg_model.execution.ConnectionBinding attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ReferenceBinding.source">(tg_model.execution.ReferenceBinding attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ItemFlowStep.source_port_path">source_port_path (tg_model.execution.ItemFlowStep attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.stable_id">stable_id (tg_model.execution.AllocationBinding attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ConnectionBinding.stable_id">(tg_model.execution.ConnectionBinding attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.stable_id">(tg_model.execution.ElementInstance attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ReferenceBinding.stable_id">(tg_model.execution.ReferenceBinding attribute)</a>
+</li>
+          <li><a href="api/api_execution.html#tg_model.execution.ValueSlot.stable_id">(tg_model.execution.ValueSlot attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.state">state() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.state">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id0">step_index (tg_model.execution.BehaviorStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorStep.step_index">[1]</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#id13">(tg_model.execution.DecisionTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.DecisionTraceStep.step_index">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id18">(tg_model.execution.ForkJoinTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ForkJoinTraceStep.step_index">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id21">(tg_model.execution.ItemFlowStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.ItemFlowStep.step_index">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id24">(tg_model.execution.MergeTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.MergeTraceStep.step_index">[1]</a>
+</li>
+          <li><a href="api/api_execution.html#id36">(tg_model.execution.SequenceTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.SequenceTraceStep.step_index">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id4">steps (tg_model.execution.BehaviorTrace attribute)</a>, <a href="api/api_execution.html#tg_model.execution.BehaviorTrace.steps">[1]</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.sum_attributes">sum_attributes() (in module tg_model.model)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.summarize_requirement_satisfaction">summarize_requirement_satisfaction() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.sweep">sweep() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.sweep_async">sweep_async() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.SweepRecord">SweepRecord (class in tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.sym">sym (tg_model.AttributeRef property)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.sym">(tg_model.model.AttributeRef property)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.symbol_owner">symbol_owner (tg_model.model.ModelDefinitionContext attribute)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.symbol_owner">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.symbol_path_prefix">symbol_path_prefix (tg_model.model.ModelDefinitionContext attribute)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.symbol_path_prefix">(tg_model.ModelDefinitionContext attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_root.html#tg_model.System">System (class in tg_model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.System">(class in tg_model.model)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.target">target (tg_model.execution.AllocationBinding attribute)</a>
+
+        <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.ConnectionBinding.target">(tg_model.execution.ConnectionBinding attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.ItemFlowStep.target_port_path">target_port_path (tg_model.execution.ItemFlowStep attribute)</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.target_type">target_type (tg_model.AttributeRef attribute)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.target_type">(tg_model.model.AttributeRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PartRef.target_type">(tg_model.model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.PortRef.target_type">(tg_model.model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.Ref.target_type">(tg_model.model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.target_type">(tg_model.model.RequirementBlockRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PartRef.target_type">(tg_model.PartRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.PortRef.target_type">(tg_model.PortRef attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.Ref.target_type">(tg_model.Ref attribute)</a>
+</li>
+          <li><a href="api/api_root.html#tg_model.RequirementBlockRef.target_type">(tg_model.RequirementBlockRef attribute)</a>
+</li>
+        </ul></li>
+        <li>
+    tg_model
+
+        <ul>
+          <li><a href="api/api_root.html#module-tg_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    tg_model.analysis
+
+        <ul>
+          <li><a href="api/api_analysis.html#module-tg_model.analysis">module</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    tg_model.execution
+
+        <ul>
+          <li><a href="api/api_execution.html#module-tg_model.execution">module</a>
+</li>
+        </ul></li>
+        <li>
+    tg_model.integrations
+
+        <ul>
+          <li><a href="api/api_integrations.html#module-tg_model.integrations">module</a>
+</li>
+        </ul></li>
+        <li>
+    tg_model.model
+
+        <ul>
+          <li><a href="api/api_model.html#module-tg_model.model">module</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#id27">then_action (tg_model.execution.MergeTraceStep attribute)</a>, <a href="api/api_execution.html#tg_model.execution.MergeTraceStep.then_action">[1]</a>
+</li>
+        <li><a href="api/api_root.html#tg_model.AttributeRef.to">to() (tg_model.AttributeRef method)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.AttributeRef.to">(tg_model.model.AttributeRef method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.Ref.to_dict">to_dict() (tg_model.model.Ref method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.Ref.to_dict">(tg_model.Ref method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_execution.html#tg_model.execution.BehaviorStep.to_state">to_state (tg_model.execution.BehaviorStep attribute)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.topological_order">topological_order() (tg_model.execution.DependencyGraph method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.trace_events_chronological">trace_events_chronological() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.transition">transition() (tg_model.model.ModelDefinitionContext method)</a>
+
+        <ul>
+          <li><a href="api/api_root.html#tg_model.ModelDefinitionContext.transition">(tg_model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.SlotState.UNBOUND">UNBOUND (tg_model.execution.SlotState attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_analysis.html#id3">upstream_slot_ids (tg_model.analysis.ImpactReport attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.ImpactReport.upstream_slot_ids">[1]</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="V" class="genindex-section">
+  <h2>V</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ValidatableExternalCompute">ValidatableExternalCompute (class in tg_model.integrations)</a>
+</li>
+        <li><a href="api/api_integrations.html#tg_model.integrations.ValidatableExternalCompute.validate_binding">validate_binding() (tg_model.integrations.ValidatableExternalCompute method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.validate_graph">validate_graph() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.validate_scenario_trace">validate_scenario_trace() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValidationResult">ValidationResult (class in tg_model.execution)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_analysis.html#id0">value (tg_model.analysis.CapturedSlotOutput attribute)</a>, <a href="api/api_analysis.html#tg_model.analysis.CapturedSlotOutput.value">[1]</a>
+
+        <ul>
+          <li><a href="api/api_integrations.html#id3">(tg_model.integrations.ExternalComputeResult attribute)</a>, <a href="api/api_integrations.html#tg_model.integrations.ExternalComputeResult.value">[1]</a>
+</li>
+        </ul></li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.value_graph_propagation">value_graph_propagation() (in module tg_model.analysis)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.value_slots">value_slots (tg_model.execution.PartInstance property)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.ValueSlot">ValueSlot (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_analysis.html#tg_model.analysis.VariantComparisonRow">VariantComparisonRow (class in tg_model.analysis)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=8a448e45"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

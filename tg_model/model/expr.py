@@ -20,8 +20,20 @@ from tg_model.model.refs import AttributeRef
 
 
 def as_expr_leaf(x: Any) -> Any:
-    """If ``x`` is an :class:`~tg_model.model.refs.AttributeRef`, return ``x.sym``; otherwise ``x``.
+    """Promote :class:`~tg_model.model.refs.AttributeRef` to unitflow expr leaf.
 
+    Parameters
+    ----------
+    x
+        Attribute ref or already-expression value.
+
+    Returns
+    -------
+    Any
+        ``x.sym`` for refs; otherwise ``x``.
+
+    Notes
+    -----
     Use when hand-building sums so ``expr + AttributeRef`` never hits unitflow's ``_promote``.
     """
     if isinstance(x, AttributeRef):
@@ -30,9 +42,29 @@ def as_expr_leaf(x: Any) -> Any:
 
 
 def sum_attributes(*terms: Any) -> Any:
-    """Sum two or more attribute refs and/or expressions, **assoc-safe** (no bare ``a+b+c`` trap).
+    """Sum two or more attribute refs and/or expressions (associative-safe).
 
-    Example: ``model.attribute("subtree_dry_mass_kg", unit=kg, expr=sum_attributes(misc, r_dry))``
+    Avoids the Python ``a + b + c`` left-association trap with mixed
+    :class:`~tg_model.model.refs.AttributeRef` and :class:`~unitflow.expr.expressions.Expr`.
+
+    Parameters
+    ----------
+    *terms
+        Two or more refs and/or unitflow expressions.
+
+    Returns
+    -------
+    Any
+        Left-folded unitflow expression after :func:`as_expr_leaf` on each term.
+
+    Raises
+    ------
+    ValueError
+        If fewer than two terms are passed.
+
+    Examples
+    --------
+    ``model.attribute("total_kg", unit=kg, expr=sum_attributes(a, b, c))``
     """
     if len(terms) < 2:
         raise ValueError("sum_attributes requires at least two terms")

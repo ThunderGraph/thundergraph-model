@@ -1,4 +1,4 @@
-"""Roll-up compilation and execution."""
+"""Build evaluation handlers for attribute roll-ups (sum over child slots)."""
 
 from __future__ import annotations
 
@@ -10,10 +10,31 @@ def build_rollup_handler(
     value_func: Callable[[Any], Any],
     child_slots: list[str],
 ) -> Callable[[dict[str, Any]], Any]:
-    """Build a compute handler for a roll-up.
+    """Build a graph compute handler for one roll-up node.
 
-    Raises at evaluation time if no child values are available,
-    since a silent zero would hide structural modeling mistakes.
+    Parameters
+    ----------
+    kind : str
+        Roll-up kind (currently ``\"sum\"``).
+    value_func : callable
+        Per-child mapper (from graph compiler).
+    child_slots : list[str]
+        Stable ids of contributor value nodes.
+
+    Returns
+    -------
+    callable
+        ``handler(dep_values) -> aggregated quantity``.
+
+    Raises
+    ------
+    ValueError
+        At **handler build** time if ``child_slots`` is empty; at **evaluation** time if no
+        child values are present (avoids silent zero).
+
+    Notes
+    -----
+    Empty selector is a structural error, not a numeric zero.
     """
     if not child_slots:
         raise ValueError(

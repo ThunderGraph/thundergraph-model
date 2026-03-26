@@ -1,4 +1,4 @@
-"""Solve group execution using scipy.optimize."""
+"""Solve group handler factory (SciPy ``root`` + unitflow residuals)."""
 
 from __future__ import annotations
 
@@ -16,10 +16,34 @@ def build_solve_group_handler(
     given_to_node_id: dict[Symbol, str],
     sym_to_slot_id: dict[int, str],
 ) -> Callable[[dict[str, Any]], dict[str, Any]]:
-    """Build a compute handler for a solve group using scipy.optimize.root.
+    """Build a compute handler that solves coupled equations for unknown slots.
 
-    Returns a handler that takes dep_values (keyed by node_id) and
-    returns solved values keyed by stable_id (not symbol name).
+    Parameters
+    ----------
+    equations : list
+        Scalar expressions (length must match ``unknowns``).
+    unknowns : list[Symbol]
+        Unitflow symbols to solve for.
+    givens : list[Symbol]
+        Symbols bound from upstream graph values.
+    given_to_node_id : dict
+        Maps each given symbol to its dependency graph node id.
+    sym_to_slot_id : dict
+        Maps ``id(symbol)`` to unknown ``ValueSlot.stable_id``.
+
+    Returns
+    -------
+    callable
+        ``handler(dep_values) -> dict[stable_id, Quantity]``.
+
+    Raises
+    ------
+    RuntimeError
+        If SciPy/NumPy are not installed, the solver fails to converge, or symbol mapping is broken.
+    ValueError
+        If the system is empty or mismatched counts.
+    TypeError
+        If a given is not a :class:`~unitflow.core.quantities.Quantity`.
     """
     try:
         from scipy.optimize import root

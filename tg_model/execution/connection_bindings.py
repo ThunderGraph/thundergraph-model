@@ -1,4 +1,4 @@
-"""ConnectionBinding and AllocationBinding — resolved structural edges."""
+"""Resolved topology edges: connections, allocations, and citation references."""
 
 from __future__ import annotations
 
@@ -7,7 +7,17 @@ from tg_model.execution.value_slots import ValueSlot
 
 
 class ConnectionBinding:
-    """A resolved structural connection between two concrete PortInstances."""
+    """Resolved connection between two :class:`~tg_model.execution.instances.PortInstance` objects.
+
+    Parameters
+    ----------
+    stable_id : str
+        Unique edge id (derived at instantiate time).
+    source, target : PortInstance
+        Endpoint ports.
+    carrying : str, optional
+        Item kind discriminator for :func:`~tg_model.execution.behavior.emit_item`.
+    """
 
     __slots__ = ("carrying", "source", "stable_id", "target")
 
@@ -32,7 +42,7 @@ class ConnectionBinding:
 
 
 class ReferenceBinding:
-    """A resolved **references** edge: a declaration points at a citation (Phase 8)."""
+    """Resolved ``references`` edge from a declaration to a citation node (provenance)."""
 
     __slots__ = ("citation", "source", "stable_id")
 
@@ -55,7 +65,14 @@ class ReferenceBinding:
 
 
 class AllocationBinding:
-    """A resolved allocation from a requirement to a model element."""
+    """Resolved ``allocate`` edge from a requirement to a target element.
+
+    Parameters
+    ----------
+    input_bindings : dict[str, ValueSlot], optional
+        Maps :meth:`tg_model.model.definition_context.ModelDefinitionContext.requirement_input`
+        names to concrete value slots on the allocated subtree.
+    """
 
     __slots__ = ("input_bindings", "requirement", "stable_id", "target")
 

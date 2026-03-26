@@ -26,9 +26,10 @@ VariantScenario: TypeAlias = tuple[str, ConfiguredModel, Mapping[str, Any]]  # n
 
 
 class CompareVariantsValidationError(Exception):
-    """Static validation failed for one variant before evaluation."""
+    """Raised when :func:`~tg_model.execution.validation.validate_graph` fails for one variant."""
 
     def __init__(self, label: str, failures: list[str]) -> None:
+        """Attach ``label`` and ``failures`` to the exception for programmatic handling."""
         self.label = label
         self.failures = list(failures)
         detail = "; ".join(failures)
@@ -37,7 +38,15 @@ class CompareVariantsValidationError(Exception):
 
 @dataclass(frozen=True)
 class CapturedSlotOutput:
-    """Resolved output for one ``output_paths`` entry."""
+    """Resolved output for one ``output_paths`` entry in :class:`VariantComparisonRow`.
+
+    Attributes
+    ----------
+    value : Any or None
+        Value from ``RunResult.outputs`` when present.
+    present_in_run_outputs : bool
+        Whether the slot id appeared in ``RunResult.outputs`` (distinguishes missing from ``None``).
+    """
 
     value: Any | None
     present_in_run_outputs: bool
@@ -50,6 +59,18 @@ class CapturedSlotOutput:
 
 @dataclass(frozen=True)
 class VariantComparisonRow:
+    """One scenario row from :func:`compare_variants`.
+
+    Attributes
+    ----------
+    label : str
+        Scenario label from the input tuple.
+    outputs : dict
+        Path string → :class:`CapturedSlotOutput`.
+    result : RunResult
+        Full run outcome for that scenario.
+    """
+
     label: str
     outputs: dict[str, CapturedSlotOutput]
     result: RunResult
@@ -113,11 +134,36 @@ def compare_variants(
 ) -> list[VariantComparisonRow]:
     """Evaluate each ``(label, configured_model, inputs)`` with a fresh graph and context.
 
-    ``inputs`` maps ``ValueSlot.stable_id`` strings to bound values, same as
-    :meth:`Evaluator.evaluate`.
+    Parameters
+    ----------
+    scenarios
+        Sequence of ``(label, configured_model, inputs)`` tuples.
+    output_paths
+        Dotted paths that must resolve to :class:`~tg_model.execution.value_slots.ValueSlot`.
+    validate_before_run : bool, default True
+        Run :func:`~tg_model.execution.validation.validate_graph` before each evaluation.
+    require_same_root_definition_type : bool, default False
+        When True, all roots must share the same Python type.
 
-    **outputs** maps each path string to :class:`CapturedSlotOutput` so ``None`` values
-    are not confused with “missing from the run” (check ``present_in_run_outputs``).
+    Returns
+    -------
+    list of VariantComparisonRow
+        One row per scenario in input order.
+
+    Raises
+    ------
+    CompareVariantsValidationError
+        When validation fails for a labeled scenario.
+    ValueError
+        When ``require_same_root_definition_type`` is violated.
+    TypeError
+        When an ``output_paths`` entry does not resolve to a ``ValueSlot``.
+
+    Notes
+    -----
+    ``inputs`` maps ``ValueSlot.stable_id`` strings to values, same as
+    :meth:`~tg_model.execution.evaluator.Evaluator.evaluate`. ``CapturedSlotOutput``
+    distinguishes absent outputs from ``None`` values via ``present_in_run_outputs``.
     """
     _assert_same_root_if_requested(scenarios, require_same_root_definition_type=require_same_root_definition_type)
 
@@ -141,7 +187,13 @@ async def compare_variants_async(
     validate_before_run: bool = True,
     require_same_root_definition_type: bool = False,
 ) -> list[VariantComparisonRow]:
-    """Like :func:`compare_variants` but uses async external evaluation per scenario."""
+    """Async variant of :func:`compare_variants` (uses ``evaluate_async`` per scenario).
+
+    Raises
+    ------
+    CompareVariantsValidationError, ValueError, TypeError
+        Same families as :func:`compare_variants`.
+    """
     _assert_same_root_if_requested(scenarios, require_same_root_definition_type=require_same_root_definition_type)
 
     rows: list[VariantComparisonRow] = []

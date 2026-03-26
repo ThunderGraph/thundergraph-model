@@ -1,7 +1,8 @@
-"""Synchronous evaluation engine.
+"""Synchronous (and async-capable) evaluation over a :class:`~tg_model.execution.dependency_graph.DependencyGraph`.
 
-Walks the dependency graph in topological order, evaluating compute
-nodes and materializing results into the RunContext.
+:class:`Evaluator` walks topological order, runs compute nodes, and writes results into
+:class:`~tg_model.execution.run_context.RunContext`. Sync vs async external backends are split
+between :meth:`Evaluator.evaluate` and :meth:`Evaluator.evaluate_async` by design.
 """
 
 from __future__ import annotations
@@ -18,7 +19,17 @@ if TYPE_CHECKING:
 
 @dataclass
 class RunResult:
-    """The result of one evaluation run."""
+    """Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run.
+
+    Attributes
+    ----------
+    outputs : dict
+        Optional named outputs populated by higher-level runners (core evaluator may leave empty).
+    constraint_results : list of ConstraintResult
+        Constraint and requirement-acceptance checks recorded on the context.
+    failures : list of str
+        Missing required inputs and other top-level failures.
+    """
 
     outputs: dict[str, Any] = field(default_factory=dict)
     constraint_results: list[ConstraintResult] = field(default_factory=list)
@@ -26,6 +37,7 @@ class RunResult:
 
     @property
     def passed(self) -> bool:
+        """True when there are no failures and every constraint result passed."""
         return len(self.failures) == 0 and all(c.passed for c in self.constraint_results)
 
 
@@ -47,6 +59,15 @@ class Evaluator:
         *,
         compute_handlers: dict[str, Any] | None = None,
     ) -> None:
+        """Wrap a compiled graph and its node handlers.
+
+        Parameters
+        ----------
+        graph : DependencyGraph
+            Output of :func:`~tg_model.execution.graph_compiler.compile_graph`.
+        compute_handlers : dict, optional
+            Handler map from the same compile call (defaults to empty).
+        """
         self._graph = graph
         self._compute_handlers = compute_handlers or {}
 
@@ -55,7 +76,30 @@ class Evaluator:
         ctx: RunContext,
         inputs: dict[str, Any] | None = None,
     ) -> RunResult:
-        """Run a single synchronous evaluation."""
+        """Run one synchronous evaluation (external ``compute`` must not be async).
+
+        Parameters
+        ----------
+        ctx : RunContext
+            Fresh or reset per-run state.
+        inputs : dict, optional
+            Bound by stable slot id (see graph node metadata / compile conventions).
+
+        Returns
+        -------
+        RunResult
+            Aggregated failures and constraint outcomes.
+
+        Raises
+        ------
+        TypeError
+            Propagated from :func:`~tg_model.integrations.external_compute.assert_sync_external`
+            when an async external is present.
+
+        See Also
+        --------
+        evaluate_async
+        """
         self._bind_run_inputs(ctx, inputs)
         order = self._graph.topological_order()
         result = RunResult()
@@ -109,7 +153,26 @@ class Evaluator:
         configured_model: ConfiguredModel,
         inputs: dict[str, Any] | None = None,
     ) -> RunResult:
-        """Evaluate with async external backends (await ``compute`` when coroutine)."""
+        """Evaluate with async external backends (await ``compute`` when it returns a coroutine).
+
+        Parameters
+        ----------
+        ctx : RunContext
+            Per-run state.
+        configured_model : ConfiguredModel
+            Topology context for external resolution paths.
+        inputs : dict, optional
+            Same binding convention as :meth:`evaluate`.
+
+        Returns
+        -------
+        RunResult
+            Same shape as :meth:`evaluate`.
+
+        See Also
+        --------
+        evaluate
+        """
         self._bind_run_inputs(ctx, inputs)
         order = self._graph.topological_order()
         result = RunResult()

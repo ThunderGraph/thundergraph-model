@@ -1,4 +1,8 @@
-"""Shared helpers for external compute (graph compiler + async evaluator)."""
+"""Resolve :class:`~tg_model.model.refs.AttributeRef` and materialize external compute results.
+
+Used by the graph compiler and :class:`~tg_model.execution.evaluator.Evaluator` when wiring
+:class:`~tg_model.integrations.external_compute.ExternalComputeBinding` nodes.
+"""
 
 from __future__ import annotations
 
@@ -15,11 +19,29 @@ from tg_model.model.refs import AttributeRef
 
 
 class ExternalOpsError(Exception):
-    """Raised when external binding materialization cannot proceed."""
+    """Raised when resolving refs or navigating the configured tree for externals fails."""
 
 
 def navigate_to_part(root: PartInstance, path: tuple[str, ...]) -> PartInstance:
-    """Resolve ``path`` (``PartInstance.instance_path`` tuple) under ``root``'s tree."""
+    """Return the :class:`~tg_model.execution.instances.PartInstance` at ``path`` under ``root``.
+
+    Parameters
+    ----------
+    root : PartInstance
+        Ancestor instance (often configured model root).
+    path : tuple[str, ...]
+        Full ``instance_path`` tuple of the target part.
+
+    Returns
+    -------
+    PartInstance
+        Resolved part.
+
+    Raises
+    ------
+    ExternalOpsError
+        If navigation leaves the part tree or does not end on a ``PartInstance``.
+    """
     if path == root.instance_path:
         return root
     current: Any = root
@@ -37,7 +59,27 @@ def resolve_attribute_ref_to_slot(
     owner: PartInstance,
     model: ConfiguredModel,
 ) -> ValueSlot:
-    """Resolve a definition-time AttributeRef to a ValueSlot on this configuration."""
+    """Resolve ``ref`` to a :class:`~tg_model.execution.value_slots.ValueSlot` under ``model``.
+
+    Parameters
+    ----------
+    ref : AttributeRef
+        Definition-time ref (owner is ``owner.definition_type`` or ``model.root.definition_type``).
+    owner : PartInstance
+        Part instance used when ``ref.owner_type`` matches ``owner.definition_type``.
+    model : ConfiguredModel
+        Full configuration (for root-anchored refs).
+
+    Returns
+    -------
+    ValueSlot
+        Matching topology slot.
+
+    Raises
+    ------
+    ExternalOpsError
+        If ownership does not match, navigation fails, or the leaf is not a ``ValueSlot``.
+    """
     start: Any
     if ref.owner_type == owner.definition_type:
         start = owner
@@ -71,7 +113,32 @@ def materialize_external_result(
     ctx: Any,
     slots: list[ValueSlot],
 ) -> None:
-    """Write external results into the run context (sync or async path)."""
+    """Realize external outputs on ``ctx`` using binding routes.
+
+    Parameters
+    ----------
+    binding : ExternalComputeBinding
+        Binding with ``output_routes`` (or single implicit slot).
+    res : ExternalComputeResult
+        Quantities and provenance from the external backend.
+    owner : PartInstance
+        Owning part for resolving route refs.
+    model : ConfiguredModel
+        Configuration for ref resolution.
+    ctx
+        :class:`~tg_model.execution.run_context.RunContext` to write into.
+    slots : list[ValueSlot]
+        Output slots for this external node (single- or multi-route).
+
+    Raises
+    ------
+    TypeError
+        If ``value`` shape does not match single vs multi-route binding.
+    ValueError
+        If multi-route keys do not match ``output_routes``.
+    ExternalOpsError
+        From :func:`resolve_attribute_ref_to_slot` when routes are inconsistent.
+    """
     prov = dict(res.provenance)
     routes = binding.output_routes
     if routes is None:

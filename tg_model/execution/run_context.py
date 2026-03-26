@@ -1,7 +1,8 @@
-"""RunContext — per-run mutable state container.
+"""Per-run mutable state: :class:`RunContext`, :class:`SlotRecord`, :class:`ConstraintResult`.
 
-Topology lives on ConfiguredModel; mutable values live here.
-One ConfiguredModel may support many RunContexts.
+Topology and slot identities live on :class:`~tg_model.execution.configured_model.ConfiguredModel`;
+this module holds **values and constraint outcomes** for one evaluation. Behavior helpers may
+push a subtree scope stack so effects/guards only touch allowed slots (see :class:`RunContext`).
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ from tg_model.execution.instances import PartInstance
 
 
 class SlotState(Enum):
+    """Lifecycle state for one :class:`ValueSlot` in a :class:`RunContext`."""
+
     UNBOUND = "unbound"
     BOUND_INPUT = "bound_input"
     PENDING = "pending"  # reserved for deferred external jobs (poll/resume); not used in evaluate_async yet
@@ -22,7 +25,7 @@ class SlotState(Enum):
 
 
 class SlotRecord:
-    """Per-slot mutable state for one run."""
+    """Mutable value cell for a single slot id within one run."""
 
     __slots__ = ("failure", "provenance", "state", "value")
 
@@ -33,38 +36,45 @@ class SlotRecord:
         self.provenance: str | None = None
 
     def bind_input(self, value: Any) -> None:
+        """Mark slot as supplied by caller input."""
         self.state = SlotState.BOUND_INPUT
         self.value = value
         self.provenance = "input"
 
     def realize(self, value: Any, provenance: Any = "computed") -> None:
+        """Store a computed value (``provenance`` is stored for auditing)."""
         self.state = SlotState.REALIZED
         self.value = value
         self.provenance = provenance
 
     def mark_pending(self, note: str = "") -> None:
+        """Reserved for deferred external work (placeholder state)."""
         self.state = SlotState.PENDING
         self.failure = note or None
 
     def fail(self, reason: str) -> None:
+        """Terminal failure (required input missing, evaluation error, ...)."""
         self.state = SlotState.FAILED
         self.failure = reason
 
     def block(self, reason: str) -> None:
+        """Upstream dependency not ready; not a hard failure."""
         self.state = SlotState.BLOCKED
         self.failure = reason
 
     @property
     def is_terminal(self) -> bool:
+        """True for realized, failed, or blocked states."""
         return self.state in (SlotState.REALIZED, SlotState.FAILED, SlotState.BLOCKED)
 
     @property
     def is_ready(self) -> bool:
+        """True when a value is available from input binding or realization."""
         return self.state in (SlotState.BOUND_INPUT, SlotState.REALIZED)
 
 
 class ConstraintResult:
-    """Result of one constraint evaluation."""
+    """Outcome of one constraint or requirement-acceptance check."""
 
     __slots__ = (
         "allocation_target_path",
@@ -83,6 +93,21 @@ class ConstraintResult:
         requirement_path: str | None = None,
         allocation_target_path: str | None = None,
     ) -> None:
+        """Record one constraint or requirement acceptance outcome.
+
+        Parameters
+        ----------
+        name : str
+            Graph/check identifier (often dotted path).
+        passed : bool
+            Whether the predicate evaluated true.
+        evidence : str, optional
+            Human-readable detail or expression result summary.
+        requirement_path : str, optional
+            Set for requirement acceptance rows.
+        allocation_target_path : str, optional
+            Part path where the requirement was allocated.
+        """
         self.name = name
         self.passed = passed
         self.evidence = evidence
@@ -124,12 +149,25 @@ class RunContext:
         self._behavior_scope_stack: list[tuple[str, frozenset[str]]] = []
 
     def push_behavior_effect_scope(self, part: PartInstance) -> None:
-        """Restrict value-slot access to the subtree of ``part`` until :meth:`pop_behavior_effect_scope`."""
+        """Restrict value-slot access to the subtree of ``part`` until :meth:`pop_behavior_effect_scope`.
+
+        Parameters
+        ----------
+        part : PartInstance
+            Active part for guard/effect callables.
+        """
         from tg_model.execution.instances import slot_ids_for_part_subtree
 
         self._behavior_scope_stack.append((part.path_string, slot_ids_for_part_subtree(part)))
 
     def pop_behavior_effect_scope(self) -> None:
+        """Pop the innermost behavior scope pushed by :meth:`push_behavior_effect_scope`.
+
+        Raises
+        ------
+        RuntimeError
+            If the stack is empty.
+        """
         if not self._behavior_scope_stack:
             raise RuntimeError(
                 "pop_behavior_effect_scope() without a matching push_behavior_effect_scope(); "
@@ -170,17 +208,29 @@ class RunContext:
         return self._slot_records[slot_id]
 
     def bind_input(self, slot_id: str, value: Any) -> None:
+        """Bind ``value`` to ``slot_id`` (creates record if needed)."""
         record = self.get_or_create_record(slot_id)
         record.bind_input(value)
 
     def realize(self, slot_id: str, value: Any, provenance: Any = "computed") -> None:
+        """Write computed ``value`` to ``slot_id``."""
         record = self.get_or_create_record(slot_id)
         record.realize(value, provenance)
 
     def mark_pending(self, slot_id: str, note: str = "") -> None:
+        """Mark ``slot_id`` pending (external deferral hook)."""
         self.get_or_create_record(slot_id).mark_pending(note)
 
     def get_value(self, slot_id: str) -> Any:
+        """Return the current value when the slot is in a ready state.
+
+        Raises
+        ------
+        ValueError
+            If the slot has no record or is not ready.
+        RuntimeError
+            If a behavior scope forbids access to this slot.
+        """
         self._enforce_behavior_slot(slot_id)
         record = self._slot_records.get(slot_id)
         if record is None or not record.is_ready:
@@ -188,6 +238,13 @@ class RunContext:
         return record.value
 
     def get_state(self, slot_id: str) -> SlotState:
+        """Return :class:`SlotState` for ``slot_id`` (``UNBOUND`` if no record).
+
+        Raises
+        ------
+        RuntimeError
+            If a behavior effect scope forbids access to this slot.
+        """
         self._enforce_behavior_slot(slot_id)
         record = self._slot_records.get(slot_id)
         if record is None:
@@ -195,34 +252,54 @@ class RunContext:
         return record.state
 
     def add_constraint_result(self, result: ConstraintResult) -> None:
+        """Append one constraint or requirement-acceptance outcome to this run."""
         self._constraint_results.append(result)
 
     @property
     def constraint_results(self) -> list[ConstraintResult]:
+        """Copy of all :class:`ConstraintResult` rows recorded during evaluation."""
         return list(self._constraint_results)
 
     @property
     def all_passed(self) -> bool:
+        """True when every stored :class:`ConstraintResult` has ``passed`` (empty is vacuously true)."""
         return all(r.passed for r in self._constraint_results)
 
     def get_active_behavior_state(self, part_path_string: str) -> str | None:
-        """Current discrete state name for a part instance path (Phase 6), if set."""
+        """Return the current discrete behavior state name for ``part_path_string``, if any.
+
+        Raises
+        ------
+        RuntimeError
+            If called from a behavior effect with an out-of-scope ``part_path_string``.
+        """
         self._enforce_behavior_part_path(part_path_string)
         return self._behavior_active_state.get(part_path_string)
 
     def set_active_behavior_state(self, part_path_string: str, state_name: str) -> None:
-        """Set current discrete state for ``part_path_string`` (``ValueSlot``-style path string)."""
+        """Set discrete behavior state for ``part_path_string`` (dotted instance path).
+
+        Raises
+        ------
+        RuntimeError
+            If a behavior effect scope forbids mutating this part's state.
+        """
         self._enforce_behavior_part_path(part_path_string)
         self._behavior_active_state[part_path_string] = state_name
 
     def prime_item_payload(self, part_path_string: str, event_name: str, payload: Any) -> None:
-        """Stage payload for the next behavioral event on ``part_path_string`` (used by :func:`emit_item`)."""
+        """Stage ``payload`` for the next ``event_name`` on ``part_path_string`` (see :func:`emit_item`).
+
+        Notes
+        -----
+        Not restricted by behavior subtree scope (inter-part delivery).
+        """
         self._behavior_item_payloads[(part_path_string, event_name)] = payload
 
     def peek_item_payload(self, part_path_string: str, event_name: str) -> Any | None:
-        """Return staged item payload for this part/event, if any (does not consume)."""
+        """Return staged payload for ``(part_path_string, event_name)`` without consuming it."""
         return self._behavior_item_payloads.get((part_path_string, event_name))
 
     def clear_item_payload(self, part_path_string: str, event_name: str) -> None:
-        """Drop staged payload after a transition has been processed."""
+        """Remove staged payload for ``(part_path_string, event_name)`` after handling."""
         self._behavior_item_payloads.pop((part_path_string, event_name), None)

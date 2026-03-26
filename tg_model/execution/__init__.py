@@ -1,4 +1,21 @@
-"""Execution subsystem: configured topology, validation, and run execution."""
+"""Execution subsystem: frozen topology, dependency graph, validation, and evaluation.
+
+Typical pipeline: compile element types (``SomeSystem.compile()``), build a
+:class:`~tg_model.execution.configured_model.ConfiguredModel` with
+:func:`~tg_model.execution.configured_model.instantiate`, compile a
+:class:`~tg_model.execution.dependency_graph.DependencyGraph` via
+:func:`~tg_model.execution.graph_compiler.compile_graph`, optionally
+:func:`~tg_model.execution.validation.validate_graph`, then run
+:class:`~tg_model.execution.evaluator.Evaluator` with a fresh
+:class:`~tg_model.execution.run_context.RunContext`.
+
+Notes
+-----
+Behavioral APIs (:func:`~tg_model.execution.behavior.dispatch_event`, etc.) mutate
+:class:`~tg_model.execution.run_context.RunContext` discrete state and optional
+:class:`~tg_model.execution.behavior.BehaviorTrace` records; they do not change
+:class:`~tg_model.execution.configured_model.ConfiguredModel` topology.
+"""
 
 from tg_model.execution.behavior import (
     BehaviorStep,

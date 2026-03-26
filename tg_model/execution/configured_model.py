@@ -1,4 +1,9 @@
-"""ConfiguredModel — the root runtime container for one configured system."""
+"""Frozen configured topology: :class:`ConfiguredModel` and :func:`instantiate`.
+
+A configured model holds the root :class:`~tg_model.execution.instances.PartInstance`,
+registries of handles, structural connections, allocations, and references. It does
+**not** store per-run values—use :class:`~tg_model.execution.run_context.RunContext`.
+"""
 
 from __future__ import annotations
 
@@ -16,10 +21,12 @@ from tg_model.model.identity import derive_declaration_id
 
 
 class ConfiguredModel:
-    """An immutable configured topology built from a compiled type artifact.
+    """Immutable configured topology for one root type instance.
 
-    Topology is frozen after construction. Repeated evaluations create
-    new RunContexts; they do not modify the configured model.
+    Notes
+    -----
+    Evaluations use fresh :class:`~tg_model.execution.run_context.RunContext` objects;
+    this object stays constant. Attribute access delegates to the root part for ergonomics.
     """
 
     def __init__(
@@ -31,16 +38,55 @@ class ConfiguredModel:
         connections: list[ConnectionBinding],
         allocations: list[AllocationBinding],
         references: list[ReferenceBinding],
+        requirement_value_slots: list[ValueSlot] | None = None,
     ) -> None:
+        """Assemble a frozen topology (call via :func:`instantiate`, not directly).
+
+        Parameters
+        ----------
+        root : PartInstance
+            Configured root part instance.
+        path_registry : dict
+            Maps dotted path strings to instances or slots.
+        id_registry : dict
+            Maps ``stable_id`` strings to instances or slots.
+        connections : list[ConnectionBinding]
+            Structural port connections.
+        allocations : list[AllocationBinding]
+            Resolved requirement allocations.
+        references : list[ReferenceBinding]
+            Resolved citation reference edges.
+        requirement_value_slots : list[ValueSlot], optional
+            Derived :class:`~tg_model.execution.value_slots.ValueSlot` nodes for
+            :meth:`tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`
+            declarations (registered in ``path_registry`` / ``id_registry``).
+        """
         self.root = root
         self.path_registry = path_registry
         self.id_registry = id_registry
         self.connections = connections
         self.allocations = allocations
         self.references = references
+        self.requirement_value_slots = requirement_value_slots or []
 
     def handle(self, path: str) -> ElementInstance | ValueSlot:
-        """Look up an instance or slot by its dotted path string."""
+        """Look up an instance or value slot by dotted path string.
+
+        Parameters
+        ----------
+        path : str
+            Instance path such as ``Rocket.tank.mass_kg``.
+
+        Returns
+        -------
+        ElementInstance or ValueSlot
+            Registered topology object.
+
+        Raises
+        ------
+        KeyError
+            If ``path`` is not in ``path_registry``.
+        """
         if path not in self.path_registry:
             raise KeyError(f"No handle found for path '{path}'")
         return self.path_registry[path]
@@ -59,19 +105,38 @@ class ConfiguredModel:
 
 
 def instantiate(root_type: type) -> ConfiguredModel:
-    """Build a ConfiguredModel from a compiled type artifact.
+    """Build a :class:`ConfiguredModel` from a compiled root type.
 
-    Walks the compiled definition depth-first, creating PartInstances,
-    PortInstances, ValueSlots, ConnectionBindings, and AllocationBindings.
-    Registers everything in path and id registries, then freezes topology.
+    Walks the compiled definition depth-first, creating
+    :class:`~tg_model.execution.instances.PartInstance`,
+    :class:`~tg_model.execution.instances.PortInstance`,
+    :class:`~tg_model.execution.value_slots.ValueSlot`, connection bindings, and
+    allocation bindings. Registers handles then freezes all parts.
 
-    Identity rule: all instance IDs are derived from the configured root
-    type + full instance path. This ensures consistent, non-overlapping
-    identifiers regardless of which intermediate type owns the declaration.
+    Parameters
+    ----------
+    root_type : type
+        Compiled :class:`~tg_model.model.elements.System` / :class:`~tg_model.model.elements.Part` subclass.
+
+    Returns
+    -------
+    ConfiguredModel
+        Frozen topology ready for :func:`~tg_model.execution.graph_compiler.compile_graph`.
+
+    Notes
+    -----
+    Stable IDs derive from the configured root type plus full instance path so identities
+    stay unique regardless of which intermediate type owns a declaration.
+
+    See Also
+    --------
+    tg_model.execution.graph_compiler.compile_graph
+    tg_model.execution.evaluator.Evaluator
     """
     compiled = root_type.compile()
     path_registry: dict[str, ElementInstance | ValueSlot] = {}
     id_registry: dict[str, ElementInstance | ValueSlot] = {}
+    requirement_value_slots: list[ValueSlot] = []
 
     root_path = (root_type.__name__,)
     root_id = derive_declaration_id(root_type, *root_path)
@@ -85,7 +150,13 @@ def instantiate(root_type: type) -> ConfiguredModel:
 
     ref_accumulator: list[ReferenceBinding] = []
     _instantiate_children(
-        root_instance, compiled, root_type, path_registry, id_registry, ref_accumulator,
+        root_instance,
+        compiled,
+        root_type,
+        path_registry,
+        id_registry,
+        ref_accumulator,
+        requirement_value_slots,
     )
 
     connections = _instantiate_connections(compiled, root_instance, path_registry, root_type)
@@ -103,6 +174,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
         connections=connections,
         allocations=allocations,
         references=references,
+        requirement_value_slots=requirement_value_slots,
     )
 
 
@@ -113,6 +185,7 @@ def _instantiate_children(
     path_registry: dict[str, ElementInstance | ValueSlot],
     id_registry: dict[str, ElementInstance | ValueSlot],
     ref_accumulator: list[ReferenceBinding] | None = None,
+    requirement_value_slots: list[ValueSlot] | None = None,
 ) -> None:
     """Walk compiled nodes and create child instances under parent."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
@@ -144,6 +217,7 @@ def _instantiate_children(
                     path_registry,
                     id_registry,
                     ref_accumulator,
+                    requirement_value_slots,
                 )
 
         elif kind == "port":
@@ -203,6 +277,7 @@ def _instantiate_children(
                     path_registry,
                     id_registry,
                     ref_accumulator,
+                    requirement_value_slots,
                 )
 
         elif kind == "constraint":
@@ -236,6 +311,7 @@ def _instantiate_requirement_block_children(
     path_registry: dict[str, ElementInstance | ValueSlot],
     id_registry: dict[str, ElementInstance | ValueSlot],
     ref_accumulator: list[ReferenceBinding] | None = None,
+    requirement_value_slots: list[ValueSlot] | None = None,
 ) -> None:
     """Materialize requirements/citations/nested blocks under a requirement_block (no PartInstance parent)."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
@@ -286,7 +362,30 @@ def _instantiate_requirement_block_children(
                     path_registry,
                     id_registry,
                     ref_accumulator,
+                    requirement_value_slots,
                 )
+
+        elif kind == "requirement_attribute":
+            if requirement_value_slots is None:
+                raise ValueError(
+                    "requirement_attribute nodes require requirement_value_slots accumulator"
+                )
+            req_key = metadata["_requirement_key"]
+            aname = metadata["_attr_name"]
+            slot_path = (*prefix_path, req_key, aname)
+            meta = dict(metadata)
+            meta["_requirement_derived"] = True
+            slot = ValueSlot(
+                stable_id=child_id,
+                instance_path=slot_path,
+                kind="attribute",
+                definition_type=definition_root_type,
+                definition_path=tuple(slot_path[1:]),
+                metadata=meta,
+                has_expr="_expr" in meta,
+            )
+            _register_slot(slot, path_registry, id_registry)
+            requirement_value_slots.append(slot)
 
     if ref_accumulator is not None:
         _wire_requirement_block_references(

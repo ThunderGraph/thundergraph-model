@@ -31,7 +31,17 @@ from tg_model.execution.value_slots import ValueSlot
 
 @dataclass(frozen=True)
 class SweepRecord:
-    """One parametric sample: bound parameter values and the resulting run."""
+    """One row from :func:`sweep` / :func:`sweep_async`.
+
+    Attributes
+    ----------
+    index : int
+        Zero-based Cartesian index (deterministic axis ordering).
+    inputs : dict
+        ``ValueSlot.stable_id`` → bound value for that sample.
+    result : RunResult
+        Evaluation outcome for the sample.
+    """
 
     index: int
     inputs: dict[str, Any]
@@ -92,16 +102,31 @@ def sweep(
 ) -> list[SweepRecord]:
     """Cartesian product over ``parameter_values``; one synchronous evaluation per tuple.
 
-    Keys are :class:`ValueSlot` handles (typically parameters). Iteration order over
-    dimensions is sorted by ``stable_id`` for deterministic sweep ordering.
+    Parameters
+    ----------
+    graph, handlers
+        From :func:`~tg_model.execution.graph_compiler.compile_graph`.
+    parameter_values
+        Maps each parameter :class:`~tg_model.execution.value_slots.ValueSlot` to a sequence
+        of values (axes). Dimension order is sorted by ``stable_id``.
+    configured_model : ConfiguredModel, optional
+        When passed, asserts sweep slots match the graph (coherence check).
+    prune_to_slots : sequence of ValueSlot, optional
+        Restricts to upstream closure of these slots (see module warnings).
+    collect : bool, default True
+        When False, return an empty list and stream via ``sink``.
+    sink : callable, optional
+        Receives each :class:`SweepRecord` when provided.
 
-    **collect:** When ``True`` (default), every sample is appended to the returned list.
-    When ``False``, the returned list is empty and ``sink`` must be provided — use this
-    for large studies to avoid retaining all :class:`SweepRecord` objects in memory.
+    Returns
+    -------
+    list of SweepRecord
+        All samples when ``collect`` is True.
 
-    **prune_to_slots:** Upstream dependency closure only. Nodes not needed to realize
-    those slots (including typical constraint checks downstream of unrelated branches)
-    are omitted. This can **skip compliance evaluation**; see module docstring.
+    Raises
+    ------
+    ValueError
+        If ``collect=False`` without ``sink``, or prune targets are not graph nodes.
     """
     if not collect and sink is None:
         raise ValueError("sweep(..., collect=False) requires a sink callable")
@@ -137,10 +162,24 @@ async def sweep_async(
     collect: bool = True,
     sink: Callable[[SweepRecord], None] | None = None,
 ) -> list[SweepRecord]:
-    """Like :func:`sweep` but uses :meth:`Evaluator.evaluate_async` for each sample.
+    """Like :func:`sweep` but awaits :meth:`~tg_model.execution.evaluator.Evaluator.evaluate_async`.
 
-    ``configured_model`` is required (async externals need it) and is always used
-    for graph/slot coherence checks.
+    Parameters
+    ----------
+    configured_model : ConfiguredModel
+        Required for async externals and always used for coherence checks.
+    graph, handlers, parameter_values, prune_to_slots, collect, sink
+        Same semantics as :func:`sweep`.
+
+    Returns
+    -------
+    list of SweepRecord
+        Same as :func:`sweep`.
+
+    Raises
+    ------
+    ValueError
+        Same as :func:`sweep`.
     """
     if not collect and sink is None:
         raise ValueError("sweep_async(..., collect=False) requires a sink callable")

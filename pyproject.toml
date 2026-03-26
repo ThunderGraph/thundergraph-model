@@ -42,6 +42,13 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 
+# Pylance / Pyright: ``commercial_aircraft`` lives under ``examples/`` (same as runtime PYTHONPATH).
+# The wheel still only ships ``tg_model``; this is analysis-only, not a packaged dependency.
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["examples"]
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
@@ -52,4 +59,9 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.15.7",
     "scipy>=1.10.0",
+]
+docs = [
+    "furo>=2024.8.6",
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
 ]

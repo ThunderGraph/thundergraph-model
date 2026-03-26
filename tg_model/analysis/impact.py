@@ -29,7 +29,17 @@ def _slot_ids_for_nodes(graph: DependencyGraph, node_ids: set[str]) -> frozenset
 
 @dataclass(frozen=True)
 class ImpactReport:
-    """Slots whose values may influence, or may be influenced by, ``changed`` slots."""
+    """Value-graph reachability summary from a set of changed slots.
+
+    Attributes
+    ----------
+    changed_paths : tuple[str, ...]
+        :attr:`~tg_model.execution.value_slots.ValueSlot.path_string` for seed slots.
+    upstream_slot_ids : frozenset[str]
+        Other slots that may feed changed slots (excluding seeds).
+    downstream_slot_ids : frozenset[str]
+        Other slots that may depend on changed slots (excluding seeds).
+    """
 
     changed_paths: tuple[str, ...]
     upstream_slot_ids: frozenset[str]
@@ -43,10 +53,30 @@ def dependency_impact(
     upstream: bool = True,
     downstream: bool = True,
 ) -> ImpactReport:
-    """Return value-slot stable_ids reachable upstream and/or downstream of ``changed``.
+    """Return other value slots reachable from ``changed`` on the value graph.
 
-    Seeds are compiled value nodes ``val:<slot.path_string>``. Sets exclude the
-    changed slots' own stable_ids so callers see *other* affected slots.
+    Parameters
+    ----------
+    graph : DependencyGraph
+        Compiled graph for the configuration under study.
+    changed : sequence of ValueSlot
+        Slots whose perturbation you want to analyze.
+    upstream, downstream : bool, default True
+        Include reachability in each direction.
+
+    Returns
+    -------
+    ImpactReport
+        Excludes the changed slots' own ``stable_id`` values from the sets.
+
+    Raises
+    ------
+    ValueError
+        If a changed slot does not map to a ``val:<path>`` node in ``graph``.
+
+    Notes
+    -----
+    This is **dependency reachability only**, not full engineering impact (see module docstring).
     """
     if not changed:
         return ImpactReport((), frozenset(), frozenset())

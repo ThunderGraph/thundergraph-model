@@ -65,7 +65,9 @@ def format_cargo_jet_report(data: dict[str, Any]) -> str:
     if margin_km:
         parts.append(f"  Margin (rounded): ~{margin_km}\n")
     parts.append(f"  Margin ≥ 0: {margin_ok}\n")
-    parts.append("Declared envelope track (MTOW / payload / range vs parameters):\n")
+    parts.append(
+        "Declared envelope track (maximum takeoff weight / payload / range vs parameters):\n"
+    )
     parts.append(f"  Envelope constraints all passed: {envelope_ok}\n")
     parts.append(f"  Evaluator completed without engine failures: {eval_ok}\n")
     failures = data.get("failures") or []
@@ -134,7 +136,7 @@ def format_cargo_jet_report(data: dict[str, Any]) -> str:
         )
     parts.append(_table(("name", "status", "requirement", "allocatee"), rows_c))
 
-    parts.append(_banner("L1 requirements (authoritative text)"))
+    parts.append(_banner("Level-1 requirements (authoritative text)"))
     rows_l1: list[tuple[str, ...]] = []
     for r in data.get("l1_requirements", []):
         stmt = r.get("statement", "")

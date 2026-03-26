@@ -33,7 +33,7 @@ from tg_model.execution.run_context import RunContext
 
 
 class DispatchOutcome(StrEnum):
-    """Why :func:`dispatch_event` did or did not fire a transition."""
+    """Outcome of :func:`dispatch_event` (transition fired vs skipped)."""
 
     FIRED = "fired"
     NO_MATCH = "no_match"
@@ -44,10 +44,16 @@ class DispatchOutcome(StrEnum):
 
 @dataclass(frozen=True)
 class DispatchResult:
-    """Result of :func:`dispatch_event`.
+    """Structured result of :func:`dispatch_event`.
 
-    ``bool(result)`` is true only when a transition fired (same truthiness as the
-    legacy ``bool`` return for success).
+    Attributes
+    ----------
+    outcome : DispatchOutcome
+        Why the dispatcher returned (fired, no match, guard failed).
+
+    Notes
+    -----
+    ``bool(result)`` is true only when a transition fired (legacy truthiness preserved).
     """
 
     outcome: DispatchOutcome
@@ -57,7 +63,7 @@ class DispatchResult:
 
 
 class DecisionDispatchOutcome(StrEnum):
-    """Outcome of :func:`dispatch_decision`."""
+    """Outcome of :func:`dispatch_decision` (action ran vs not)."""
 
     ACTION_RAN = "action_ran"
     """A branch or ``default_action`` ran (name in :attr:`DecisionDispatchResult.chosen_action`)."""
@@ -67,7 +73,21 @@ class DecisionDispatchOutcome(StrEnum):
 
 @dataclass(frozen=True)
 class DecisionDispatchResult:
-    """Result of :func:`dispatch_decision`. ``bool(result)`` is true when an action ran."""
+    """Structured result of :func:`dispatch_decision`.
+
+    Attributes
+    ----------
+    outcome : DecisionDispatchOutcome
+        Whether an action ran.
+    chosen_action : str or None
+        Action name that ran, if any.
+    merge_ran : bool
+        Whether a paired merge continuation executed.
+
+    Notes
+    -----
+    ``bool(result)`` is true when ``chosen_action`` is not ``None``.
+    """
 
     outcome: DecisionDispatchOutcome
     chosen_action: str | None = None
@@ -80,7 +100,21 @@ class DecisionDispatchResult:
 
 @dataclass(frozen=True)
 class BehaviorStep:
-    """One fired transition in causal order."""
+    """One state-machine transition recorded in :class:`BehaviorTrace`.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key across trace lists.
+    part_path : str
+        :attr:`PartInstance.path_string` for the part that fired.
+    event_name : str
+        Declared event name string.
+    from_state, to_state : str
+        Discrete state names before/after.
+    effect_name : str or None
+        Action effect name, if any.
+    """
 
     step_index: int
     part_path: str
@@ -92,7 +126,19 @@ class BehaviorStep:
 
 @dataclass(frozen=True)
 class ItemFlowStep:
-    """Record of an item crossing a structural connection (inter-part behavior)."""
+    """Inter-part item flow across one :class:`~tg_model.execution.connection_bindings.ConnectionBinding`.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key.
+    source_port_path, target_port_path : str
+        Port :attr:`~tg_model.execution.instances.ElementInstance.path_string` values.
+    item_kind : str
+        Item kind / event name.
+    payload : Any or None
+        Opaque staged payload.
+    """
 
     step_index: int
     source_port_path: str
@@ -103,7 +149,19 @@ class ItemFlowStep:
 
 @dataclass(frozen=True)
 class DecisionTraceStep:
-    """Record of a decision node choosing an action branch."""
+    """Record of one :func:`dispatch_decision` invocation.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key.
+    part_path : str
+        Part path string.
+    decision_name : str
+        Declared decision node name.
+    chosen_action : str or None
+        Action that ran, if any.
+    """
 
     step_index: int
     part_path: str
@@ -113,7 +171,17 @@ class DecisionTraceStep:
 
 @dataclass(frozen=True)
 class ForkJoinTraceStep:
-    """Record of a fork/join block executing."""
+    """Record of one :func:`dispatch_fork_join` invocation.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key.
+    part_path : str
+        Part path string.
+    block_name : str
+        Declared fork/join name.
+    """
 
     step_index: int
     part_path: str
@@ -122,7 +190,19 @@ class ForkJoinTraceStep:
 
 @dataclass(frozen=True)
 class MergeTraceStep:
-    """Record of control reaching a merge (shared continuation after branching)."""
+    """Record of one :func:`dispatch_merge` invocation.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key.
+    part_path : str
+        Part path string.
+    merge_name : str
+        Declared merge name.
+    then_action : str or None
+        Continuation action name, if any.
+    """
 
     step_index: int
     part_path: str
@@ -132,7 +212,17 @@ class MergeTraceStep:
 
 @dataclass(frozen=True)
 class SequenceTraceStep:
-    """Record of a linear :class:`sequence` activity region completing."""
+    """Record of one :func:`dispatch_sequence` invocation.
+
+    Attributes
+    ----------
+    step_index : int
+        Global ordering key.
+    part_path : str
+        Part path string.
+    sequence_name : str
+        Declared sequence name.
+    """
 
     step_index: int
     part_path: str
@@ -141,10 +231,27 @@ class SequenceTraceStep:
 
 @dataclass
 class BehaviorTrace:
-    """Append-only trace of discrete behavioral steps (stable ordering by ``step_index``).
+    """Mutable collector for behavioral steps (multiple parallel lists).
 
-    Steps use :attr:`PartInstance.path_string` (instance path) and declared **event**
-    **names** — not :attr:`~tg_model.execution.value_slots.ValueSlot.stable_id`.
+    Attributes
+    ----------
+    steps : list[BehaviorStep]
+        State-machine transitions.
+    item_flows : list[ItemFlowStep]
+        Inter-part item deliveries.
+    decision_steps : list[DecisionTraceStep]
+        Decision dispatches.
+    fork_join_steps : list[ForkJoinTraceStep]
+        Fork/join blocks.
+    merge_steps : list[MergeTraceStep]
+        Merge continuations.
+    sequence_steps : list[SequenceTraceStep]
+        Linear sequences.
+
+    Notes
+    -----
+    Paths are :attr:`PartInstance.path_string` values and declared **names**, not slot stable ids.
+    Global ordering uses ``step_index`` across lists (see :func:`behavior_trace_to_records`).
     """
 
     steps: list[BehaviorStep] = field(default_factory=list)
@@ -214,13 +321,31 @@ def dispatch_event(
 ) -> DispatchResult:
     """Dispatch one discrete event on ``part``'s state machine.
 
-    Returns :class:`DispatchResult` with :attr:`~DispatchResult.outcome` distinguishing
-    **no matching transition** (:attr:`DispatchOutcome.NO_MATCH`) from **guard blocked**
-    (:attr:`DispatchOutcome.GUARD_FAILED`). ``bool(result)`` is true only when a
-    transition fired.
+    Parameters
+    ----------
+    ctx : RunContext
+        Run state (discrete state + optional item payloads).
+    part : PartInstance
+        Part whose compiled type owns transitions.
+    event_name : str
+        Declared event **name** (last segment of the event ref path).
+    trace : BehaviorTrace, optional
+        When passed, appends a :class:`BehaviorStep` on success.
 
-    Guards and effects are arbitrary callables; exceptions propagate. If an effect
-    raises after the state was advanced, the active state is rolled back first.
+    Returns
+    -------
+    DispatchResult
+        :attr:`~DispatchOutcome.NO_MATCH`, :attr:`~DispatchOutcome.GUARD_FAILED`, or fired.
+
+    Raises
+    ------
+    Exception
+        Any guard/effect error propagates; if the effect fails after the state advanced,
+        the prior discrete state is restored first.
+
+    Notes
+    -----
+    ``bool(result)`` is true only when a transition fired.
     """
     spec = _behavior_spec(part)
     if not spec:
@@ -281,12 +406,21 @@ def _run_action_effect(definition_type: type, action_name: str, ctx: RunContext,
 
 
 def behavior_authoring_projection(definition_type: type) -> dict[str, Any]:
-    """Static behavioral data for activity / state / sequence diagram hooks (Phase 6).
+    """Return a JSON-oriented projection of behavioral declarations on ``definition_type``.
 
-    Returns mostly JSON-friendly data: node names by kind, serialized transitions, and
-    structural edges (refs are serialized via ``to_dict()`` as in :func:`compile_type`).
-    Treat as a **projection** for tools, not a hardened JSON schema guarantee for every
-    metadata field on every node.
+    Parameters
+    ----------
+    definition_type : type
+        Compiled part/system type.
+
+    Returns
+    -------
+    dict
+        Node name lists by kind, serialized transitions, and edges (refs via :meth:`~tg_model.model.refs.Ref.to_dict`).
+
+    Notes
+    -----
+    Tooling hook only: not a strict schema for every metadata field.
     """
     compiled = definition_type.compile()
     nodes = compiled["nodes"]
@@ -312,7 +446,15 @@ def behavior_authoring_projection(definition_type: type) -> dict[str, Any]:
 
 
 def scenario_expected_event_names(definition_type: type, scenario_name: str) -> list[str]:
-    """Return authored expected event sequence for a scenario node."""
+    """Return authored ``expected_event_order`` names for a scenario node.
+
+    Raises
+    ------
+    KeyError
+        If the scenario is missing.
+    ValueError
+        If metadata is malformed.
+    """
     compiled = definition_type.compile()
     node = compiled["nodes"].get(scenario_name)
     if node is None or node["kind"] != "scenario":
@@ -332,7 +474,13 @@ def _scenario_node_metadata(definition_type: type, scenario_name: str) -> dict[s
 
 
 def trace_events_chronological(trace: BehaviorTrace) -> list[tuple[str, str]]:
-    """State-machine transition events only, in global ``step_index`` order ``(part_path, event_name)``."""
+    """List ``(part_path, event_name)`` for state-machine steps sorted by ``step_index``.
+
+    Returns
+    -------
+    list[tuple[str, str]]
+        Transition events only (excludes decisions, merges, item flows).
+    """
     ordered = sorted(trace.steps, key=lambda s: s.step_index)
     return [(s.part_path, s.event_name) for s in ordered]
 
@@ -348,27 +496,43 @@ def validate_scenario_trace(
 ) -> tuple[bool, list[str]]:
     """Compare trace slices to an authored scenario (partial contracts).
 
-    This is a **bundle of independent checks**, not a single end-to-end story:
+    Parameters
+    ----------
+    definition_type : type
+        Owner type of the scenario declaration.
+    scenario_name : str
+        Scenario node name on that type.
+    part_path : str
+        Instance path string for transition-focused checks.
+    trace : BehaviorTrace
+        Collected behavioral steps.
+    ctx : RunContext, optional
+        Needed when checking final discrete state.
+    root : PartInstance, optional
+        Configured root when validating ``expected_interaction_order``.
 
-    - **Transition events** for ``part_path`` vs ``expected_event_order``.
-    - Optionally **final / initial** discrete state for that path (needs ``ctx`` for final).
-    - Optionally **global transition order** via :func:`trace_events_chronological` (state-machine
+    Returns
+    -------
+    ok : bool
+        True when every enabled check passes.
+    errors : list[str]
+        Human-readable failure messages (empty when ``ok``).
+
+    Notes
+    -----
+    This is a **bundle of independent checks**, not one end-to-end story:
+
+    - Transition events for ``part_path`` vs ``expected_event_order``.
+    - Optional final/initial discrete state (``ctx`` needed for final).
+    - Optional global transition order via :func:`trace_events_chronological` (state-machine
       steps only — not decisions, merges, or item flows).
-    - Optionally **item kind** order from :class:`ItemFlowStep` only.
+    - Optional item kind order from :class:`ItemFlowStep`.
 
-    Passing all enabled checks does **not** imply the full causal trace (including activity
-    nodes) matches intent; combine with explicit tests or richer tooling as needed.
+    Passing everything still does not prove full causal intent; combine with tests or tooling.
+    Call with ``ctx`` from **outside** behavior effects when checking final state.
 
-    Call with ``ctx`` from **outside** behavior effects when checking final state (scopes on
-    ``RunContext`` can restrict ``get_active_behavior_state`` during an effect).
-
-    When the scenario declares ``expected_interaction_order`` (list of
-    ``(relative_part_path, event_name)`` from the scenario owner root), pass
-    ``root`` (the configured root :class:`~tg_model.execution.instances.PartInstance`)
-    and this compares :func:`trace_events_chronological` to that global ordering.
-
-    When the scenario declares ``expected_item_kind_order``, compares the ordered
-    list of :class:`ItemFlowStep` ``item_kind`` values in the trace.
+    For ``expected_interaction_order``, pass ``root`` (configured root part) so global
+    ordering can be compared. For ``expected_item_kind_order``, compares item flow kinds.
     """
     errors: list[str] = []
     expected = scenario_expected_event_names(definition_type, scenario_name)
@@ -433,14 +597,36 @@ def dispatch_decision(
 ) -> DecisionDispatchResult:
     """Run a declared ``decision``: first branch whose guard passes runs its action.
 
+    Parameters
+    ----------
+    ctx : RunContext
+        Current run state.
+    part : PartInstance
+        Owner of the decision declaration.
+    decision_name : str
+        Declared decision node name.
+    trace : BehaviorTrace, optional
+        Records :class:`DecisionTraceStep` when provided.
+    run_merge : bool, default True
+        When False, skip automatic paired merge (advanced sequencing).
+
+    Raises
+    ------
+    KeyError
+        If ``decision_name`` is not declared on ``part.definition_type``.
+
+    Returns
+    -------
+    DecisionDispatchResult
+        ``outcome`` is :attr:`~DecisionDispatchOutcome.NO_ACTION` only when no branch matched
+        and there is no ``default_action``. ``bool(result)`` is true iff an action ran.
+
+    Notes
+    -----
     If the decision was declared with ``merge_point=`` to a :meth:`merge` node, also runs
     that merge's ``then_action`` after the branch action (unless ``run_merge=False`` for
     manual :func:`dispatch_merge` — do **not** call :func:`dispatch_merge` again for the
     same merge when pairing is enabled, or the continuation runs twice).
-
-    Returns :class:`DecisionDispatchResult`: :attr:`~DecisionDispatchResult.outcome` is
-    :attr:`DecisionDispatchOutcome.NO_ACTION` only when no branch matched and there is no
-    ``default_action``. ``bool(result)`` is true iff an action ran.
 
     Branches with ``guard is None`` match unconditionally (place them last unless you
     intend a catch-all).
@@ -497,6 +683,11 @@ def dispatch_merge(
 ) -> str | None:
     """Continue at a declared ``merge``: runs optional ``then_action`` (shared after branches).
 
+    Raises
+    ------
+    KeyError
+        If ``merge_name`` is not declared.
+
     Call after exclusive branches (e.g. following :func:`dispatch_decision`) to model a
     methodology **Merge** node. If no ``then_action`` was declared, returns ``None`` and
     only records the trace step when ``trace`` is set.
@@ -530,6 +721,11 @@ def dispatch_fork_join(
 ) -> None:
     """Execute a ``fork_join`` block: branches run **one after another** (fixed list order).
 
+    Raises
+    ------
+    KeyError
+        If ``block_name`` is not declared.
+
     v0 semantics are **deterministic serial** execution, not OS-level parallelism or
     arbitrary interleaving; ``fork``/``join`` name the *logical* activity structure.
     """
@@ -561,7 +757,13 @@ def dispatch_sequence(
     *,
     trace: BehaviorTrace | None = None,
 ) -> None:
-    """Run a declared linear ``sequence`` of actions (methodology default simplicity rule)."""
+    """Run a declared linear ``sequence`` of actions (methodology default simplicity rule).
+
+    Raises
+    ------
+    KeyError
+        If ``sequence_name`` is not declared.
+    """
     specs = getattr(part.definition_type, "_tg_sequence_specs", None) or {}
     step_names = specs.get(sequence_name)
     if step_names is None:
@@ -590,18 +792,34 @@ def emit_item(
 ) -> list[DispatchResult]:
     """Send an item from ``source_port`` across structural connections.
 
+    Parameters
+    ----------
+    ctx : RunContext
+        Stages payloads per receiving part/event.
+    cm : ConfiguredModel
+        Supplies ``connections`` and :meth:`~tg_model.execution.configured_model.ConfiguredModel.handle`.
+    source_port : PortInstance
+        Emitting port.
+    item_kind : str
+        Event name / kind matched on receivers; may be filtered by binding ``carrying``.
+    payload : Any
+        Opaque payload for receiver effects.
+    trace : BehaviorTrace, optional
+        Records :class:`ItemFlowStep` rows.
+
+    Returns
+    -------
+    list[DispatchResult]
+        One result per matched connection (may be empty).
+
+    Notes
+    -----
     For each matching :class:`~tg_model.execution.connection_bindings.ConnectionBinding`
-    (same source port; if ``carrying`` is set on the binding it must equal ``item_kind``),
-    dispatches event ``item_kind`` on the **receiving part** (declare a matching
-    ``model.event(item_kind)`` on the receiver). ``payload`` is staged on
-    :class:`~tg_model.execution.run_context.RunContext` (``prime_item_payload``) so the
-    receiver's effect can read it via ``peek_item_payload(part.path_string, item_kind)``
-    during the transition; it is cleared after dispatch completes.
+    (same source port; optional ``carrying`` must match ``item_kind``), dispatches
+    ``item_kind`` on the receiving part. Payload is staged via
+    :meth:`RunContext.prime_item_payload` and cleared if dispatch does not fire.
 
-    **Order:** bindings are visited in ``cm.connections`` list order; multiple matches
-    produce multiple dispatches in that order (deterministic for a frozen ``ConfiguredModel``).
-
-    Inter-part effects use the same :class:`RunContext` and topology as values.
+    Bindings are visited in ``cm.connections`` order (deterministic for a frozen model).
     """
     results: list[DispatchResult] = []
     for cb in cm.connections:
@@ -633,7 +851,18 @@ def emit_item(
 
 
 def behavior_trace_to_records(trace: BehaviorTrace) -> list[dict[str, Any]]:
-    """Flatten a trace into JSON-friendly dicts (export / diagram hook)."""
+    """Flatten ``trace`` into JSON-friendly dict rows sorted by ``step_index``.
+
+    Parameters
+    ----------
+    trace : BehaviorTrace
+        Collected steps from one or more dispatch calls.
+
+    Returns
+    -------
+    list[dict]
+        Each dict has ``kind``, ``step_index``, and kind-specific keys.
+    """
     out: list[dict[str, Any]] = []
     for s in trace.steps:
         out.append({

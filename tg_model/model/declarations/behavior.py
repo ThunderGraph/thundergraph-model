@@ -10,7 +10,18 @@ from typing import Any
 
 
 def check_transition_determinism(transitions: list[dict[str, Any]]) -> None:
-    """At most one transition per (from_state_name, event_name) for v0 determinism."""
+    """Enforce at most one transition per ``(from_state, event)`` pair (v0 determinism).
+
+    Parameters
+    ----------
+    transitions : list[dict]
+        Compiled transition records with ``from_state``, ``on`` refs (see compiler).
+
+    Raises
+    ------
+    ModelDefinitionError
+        If a duplicate pair is found.
+    """
     from tg_model.model.definition_context import ModelDefinitionError
 
     seen: set[tuple[str, str]] = set()

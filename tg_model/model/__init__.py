@@ -1,4 +1,14 @@
-"""Public modeling API and core model objects."""
+"""Public modeling API: elements, definition context, refs, and expression helpers.
+
+Everything here is **definition-time** (``define(cls, model)``): symbolic refs,
+declarations recorded on :class:`~tg_model.model.definition_context.ModelDefinitionContext`,
+and helpers such as :func:`~tg_model.model.expr.sum_attributes` for unitflow-safe roll-ups.
+
+See Also
+--------
+tg_model.execution
+    Configure (instantiate) and evaluate compiled models.
+"""
 
 from tg_model.model.definition_context import ModelDefinitionContext, parameter_ref, requirement_ref
 from tg_model.model.elements import Element, Part, RequirementBlock, System
