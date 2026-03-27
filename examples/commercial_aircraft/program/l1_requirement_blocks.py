@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from unitflow import Quantity
 from unitflow.catalogs.si import kg, m
 
 from tg_model.model.elements import RequirementBlock
@@ -47,7 +46,7 @@ class L1MissionRequirements(RequirementBlock):
         )
         model.requirement_accept_expr(
             r_payload,
-            expr=payload_margin_kg >= Quantity(0, kg),
+            expr=payload_margin_kg >= 0 * kg,
         )
 
         r_range = model.requirement(
@@ -71,7 +70,7 @@ class L1MissionRequirements(RequirementBlock):
         )
         model.requirement_accept_expr(
             r_range,
-            expr=range_margin_m >= Quantity(0, m),
+            expr=range_margin_m >= 0 * m,
         )
 
 

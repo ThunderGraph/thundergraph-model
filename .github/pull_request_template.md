@@ -43,13 +43,6 @@ When your change is under **`thundergraph-model/`** (run commands from that dire
 
 - [ ] `uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html` succeeds (use `-W` for warnings-as-errors if you are touching the docs build in CI).
 
-### Monorepo / other packages
-
-<!-- Add package-specific checks if this PR is not only thundergraph-model, e.g. pytest in `api_server/`, CDK synth, etc. -->
-
-- [ ] _(optional)_ Additional validation performed:
-
-
 
 ---
 

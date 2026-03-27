@@ -8,7 +8,6 @@ from commercial_aircraft.integrations.bindings import make_mission_range_margin_
 from commercial_aircraft.product.aircraft import Aircraft
 from commercial_aircraft.program.l1_requirement_blocks import L1RequirementsRoot
 from commercial_aircraft.program.mission_context import CITATION_RETRIEVED_ISO
-from unitflow import Quantity
 from unitflow.catalogs.si import kg, m
 
 from tg_model.model.definition_context import parameter_ref
@@ -32,7 +31,7 @@ class CargoJetProgram(System):
         )
         model.constraint(
             "mission_range_margin_non_negative",
-            expr=mission_range_margin_m >= Quantity(0, m),
+            expr=mission_range_margin_m >= 0 * m,
         )
 
         citations = {
