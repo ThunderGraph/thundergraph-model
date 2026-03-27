@@ -1,35 +1,35 @@
 ---
 name: Feature request
-description: Propose an enhancement, new capability, or documentation improvement
+description: Propose a new capability, API improvement, or enhancement to ThunderGraph Model
 title: "[feat] "
 labels: []
 assignees: []
 ---
 
-## Area
+## Problem / motivation
 
-<!-- e.g. thundergraph-model (API / execution / docs), api_server, examples, infra -->
-
-
-
-## Problem or motivation
-
-<!-- What pain does this address? What use case is hard today? Omit if purely additive. -->
+<!-- What is hard, missing, or awkward today? Link related issues. -->
 
 
 
 ## Proposed solution
 
-<!-- What you want to see built or changed. Be as concrete as you can. -->
+<!-- What you want built or changed. APIs, ergonomics, docs—be specific. -->
 
 
 
 ## Alternatives considered
 
-<!-- Optional: other approaches you considered -->
+<!-- Optional: other ways to solve the same problem -->
+
+
+
+## Scope notes
+
+<!-- Execution vs authoring (`define`) vs docs—helps triage. -->
 
 
 
 ## Additional context
 
-<!-- Links, prior art, diagrams. Omit if not applicable. -->
+<!-- Prior art, diagrams, notebooks. Omit if N/A. -->

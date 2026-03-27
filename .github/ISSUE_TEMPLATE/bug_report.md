@@ -1,20 +1,20 @@
 ---
 name: Bug report
-description: Report unexpected behavior, regressions, or incorrect results
+description: Report incorrect behavior, crashes, or regressions in ThunderGraph Model
 title: "[bug] "
 labels: []
 assignees: []
 ---
 
-## Area
-
-<!-- e.g. thundergraph-model, api_server, CI, docs, other -->
-
-
-
 ## Summary
 
-<!-- Short description of what went wrong -->
+<!-- What went wrong in one or two sentences -->
+
+
+
+## Version
+
+<!-- Commit SHA, tag, or PyPI version if installed from a release -->
 
 
 
@@ -24,19 +24,21 @@ assignees: []
 2.
 3.
 
-<!-- Code snippet, minimal repro, or notebook path if helpful -->
+```python
+# Minimal repro if possible (imports, model snippet, evaluate path)
+```
 
 
 
 ## Actual behavior
 
-<!-- What happened instead -->
+<!-- What happened: traceback, wrong value, unexpected exception class, etc. -->
 
 
 
 ## Expected behavior
 
-<!-- What you expected -->
+<!-- What you expected instead -->
 
 
 
@@ -44,18 +46,23 @@ assignees: []
 
 - OS:
 - Python version (`python -V`):
-- Commit or branch (if known):
 
-<!-- For `thundergraph-model` issues, include when relevant: -->
+From the **repository root** (this repo):
 
 ```bash
-cd thundergraph-model && uv run pytest -q --no-cov
+uv run pytest -q --no-cov
 ```
 
-<!-- Paste relevant output or “passes” -->
+<!-- Paste relevant failure output or write “see Summary” -->
+
+
+
+## Area (optional)
+
+<!-- e.g. execution / graph compiler / requirements / external compute / docs / examples -->
 
 
 
 ## Additional context
 
-<!-- Logs, screenshots, stack traces. Omit if not applicable. -->
+<!-- Screenshots, notebook path, link to discussion. Omit if N/A. -->
