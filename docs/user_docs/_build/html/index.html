@@ -295,7 +295,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#what-happened">What happened</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#recommended-instantiate-evaluate">Recommended: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#advanced-explicit-compile-graph-evaluator">Advanced: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#what-happened-both-paths">What happened (both paths)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#next-examples">Next examples</a></li>
 </ul>
 </li>
@@ -311,8 +313,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/faq.html">FAQ</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-do-i-need-runcontext-for-each-evaluation">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> for each evaluation?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-are-inputs-bound-by-stable-id">Why are inputs bound by stable id?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/faq.html#when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator">When should I use <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> vs <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-do-i-need-runcontext">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">Why are inputs bound by stable id in the explicit pipeline?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#i-changed-code-in-a-notebook-and-behavior-is-weird">I changed code in a notebook and behavior is weird.</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#when-should-i-use-requirementblock">When should I use <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#what-is-the-difference-between-requirement-input-and-requirement-attribute">What is the difference between <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>?</a></li>
@@ -403,9 +406,10 @@
 <li class="toctree-l1"><a class="reference internal" href="drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#compile-types">1) Compile types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#instantiate-a-configured-topology">2) Instantiate a configured topology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#a-default-run-path-configuredmodel-evaluate-recommended">2a) Default run path: <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> (recommended)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#compile-dependency-graph">3) Compile dependency graph</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#validate-graph-optional-but-recommended">4) Validate graph (optional but recommended)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#evaluate-one-run">5) Evaluate one run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#evaluate-one-run-explicit-pipeline">5) Evaluate one run (explicit pipeline)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#requirement-acceptance-path">Requirement acceptance path</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#behavioral-path">Behavioral path</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/execution_pipeline.html#one-sentence-summary">One sentence summary</a></li>

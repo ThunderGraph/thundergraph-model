@@ -341,58 +341,24 @@ uses <a class="reference internal" href="#tg_model.integrations.ExternalCompute"
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>external</strong> (<em>object</em>)</p></li>
-<li><p><strong>inputs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a><em>]</em>)</p></li>
-<li><p><strong>output_routes</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>inputs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_model.html#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a><em>]</em>)</p></li>
+<li><p><strong>output_routes</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_model.html#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeBinding.external">
-<span class="sig-name descname"><span class="pre">external</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.external" title="Link to this definition">¶</a></dt>
-<dd><p>Implementation satisfying <a class="reference internal" href="#tg_model.integrations.ExternalCompute" title="tg_model.integrations.ExternalCompute"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExternalCompute</span></code></a> or <a class="reference internal" href="#tg_model.integrations.AsyncExternalCompute" title="tg_model.integrations.AsyncExternalCompute"><code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncExternalCompute</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">external</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">object</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.external" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeBinding.inputs">
-<span class="sig-name descname"><span class="pre">inputs</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.inputs" title="Link to this definition">¶</a></dt>
-<dd><p>Logical input name → attribute/parameter ref supplying unitflow symbols at compile time.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict[str, <a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef">AttributeRef</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">inputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="api_model.html#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><span class="pre">AttributeRef</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.inputs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeBinding.output_routes">
-<span class="sig-name descname"><span class="pre">output_routes</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.output_routes" title="Link to this definition">¶</a></dt>
-<dd><p>External output name → attribute refs (may be set after construction via
-<a class="reference internal" href="#tg_model.integrations.link_external_routes" title="tg_model.integrations.link_external_routes"><code class="xref py py-func docutils literal notranslate"><span class="pre">link_external_routes()</span></code></a> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">tg_model.model.definition_context.ModelDefinitionContext.link_external_routes()</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict[str, <a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef">AttributeRef</a>], optional</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">external</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">object</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">inputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef"><span class="pre">AttributeRef</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">output_routes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef"><span class="pre">AttributeRef</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">output_routes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="api_model.html#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><span class="pre">AttributeRef</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeBinding.output_routes" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -412,34 +378,12 @@ uses <a class="reference internal" href="#tg_model.integrations.ExternalCompute"
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeResult.value">
-<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeResult.value" title="Link to this definition">¶</a></dt>
-<dd><p>Single output quantity or mapping of route name → quantity.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Quantity or mapping</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeResult.provenance">
-<span class="sig-name descname"><span class="pre">provenance</span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeResult.provenance" title="Link to this definition">¶</a></dt>
-<dd><p>Opaque structured provenance (tool ids, versions, URIs).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>mapping</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeResult.value" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">provenance</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.integrations.ExternalComputeResult.provenance">
+<span class="sig-name descname"><span class="pre">provenance</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.integrations.ExternalComputeResult.provenance" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -519,7 +463,7 @@ uses <a class="reference internal" href="#tg_model.integrations.ExternalCompute"
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>binding</strong> (<a class="reference internal" href="#tg_model.integrations.ExternalComputeBinding" title="tg_model.integrations.ExternalComputeBinding"><em>ExternalComputeBinding</em></a>) – Target binding.</p></li>
-<li><p><strong>routes</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_root.html#tg_model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a><em>]</em>) – Output name → attribute ref to realize.</p></li>
+<li><p><strong>routes</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="api_model.html#tg_model.model.AttributeRef" title="tg_model.model.AttributeRef"><em>AttributeRef</em></a><em>]</em>) – Output name → attribute ref to realize.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -600,16 +544,11 @@ uses <a class="reference internal" href="#tg_model.integrations.ExternalCompute"
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeBinding.external"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.external</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeBinding.inputs"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.inputs</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeBinding.output_routes"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.output_routes</span></code></a></li>
-<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.external</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.inputs</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">ExternalComputeBinding.output_routes</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeResult"><code class="docutils literal notranslate"><span class="pre">ExternalComputeResult</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeResult.value"><code class="docutils literal notranslate"><span class="pre">ExternalComputeResult.value</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeResult.provenance"><code class="docutils literal notranslate"><span class="pre">ExternalComputeResult.provenance</span></code></a></li>
-<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">ExternalComputeResult.value</span></code></a></li>
-<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">ExternalComputeResult.provenance</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.integrations.ExternalComputeValidationError"><code class="docutils literal notranslate"><span class="pre">ExternalComputeValidationError</span></code></a></li>

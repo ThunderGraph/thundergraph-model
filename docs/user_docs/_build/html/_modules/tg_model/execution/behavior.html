@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -313,11 +318,6 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DispatchResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Structured result of :func:`dispatch_event`.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    outcome : DispatchOutcome</span>
-<span class="sd">        Why the dispatcher returned (fired, no match, guard failed).</span>
-
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    ``bool(result)`` is true only when a transition fired (legacy truthiness preserved).</span>
@@ -348,15 +348,6 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DecisionDispatchResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Structured result of :func:`dispatch_decision`.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    outcome : DecisionDispatchOutcome</span>
-<span class="sd">        Whether an action ran.</span>
-<span class="sd">    chosen_action : str or None</span>
-<span class="sd">        Action name that ran, if any.</span>
-<span class="sd">    merge_ran : bool</span>
-<span class="sd">        Whether a paired merge continuation executed.</span>
-
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    ``bool(result)`` is true when ``chosen_action`` is not ``None``.</span>
@@ -376,21 +367,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.BehaviorStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BehaviorStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;One state-machine transition recorded in :class:`BehaviorTrace`.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key across trace lists.</span>
-<span class="sd">    part_path : str</span>
-<span class="sd">        :attr:`PartInstance.path_string` for the part that fired.</span>
-<span class="sd">    event_name : str</span>
-<span class="sd">        Declared event name string.</span>
-<span class="sd">    from_state, to_state : str</span>
-<span class="sd">        Discrete state names before/after.</span>
-<span class="sd">    effect_name : str or None</span>
-<span class="sd">        Action effect name, if any.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One state-machine transition recorded in :class:`BehaviorTrace`.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">part_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -405,19 +382,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.ItemFlowStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ItemFlowStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inter-part item flow across one :class:`~tg_model.execution.connection_bindings.ConnectionBinding`.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key.</span>
-<span class="sd">    source_port_path, target_port_path : str</span>
-<span class="sd">        Port :attr:`~tg_model.execution.instances.ElementInstance.path_string` values.</span>
-<span class="sd">    item_kind : str</span>
-<span class="sd">        Item kind / event name.</span>
-<span class="sd">    payload : Any or None</span>
-<span class="sd">        Opaque staged payload.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inter-part item flow across one :class:`~tg_model.execution.connection_bindings.ConnectionBinding`.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">source_port_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -431,19 +396,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.DecisionTraceStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DecisionTraceStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_decision` invocation.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key.</span>
-<span class="sd">    part_path : str</span>
-<span class="sd">        Part path string.</span>
-<span class="sd">    decision_name : str</span>
-<span class="sd">        Declared decision node name.</span>
-<span class="sd">    chosen_action : str or None</span>
-<span class="sd">        Action that ran, if any.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_decision` invocation.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">part_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -456,17 +409,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.ForkJoinTraceStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ForkJoinTraceStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_fork_join` invocation.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key.</span>
-<span class="sd">    part_path : str</span>
-<span class="sd">        Part path string.</span>
-<span class="sd">    block_name : str</span>
-<span class="sd">        Declared fork/join name.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_fork_join` invocation.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">part_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -478,19 +421,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.MergeTraceStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MergeTraceStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_merge` invocation.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key.</span>
-<span class="sd">    part_path : str</span>
-<span class="sd">        Part path string.</span>
-<span class="sd">    merge_name : str</span>
-<span class="sd">        Declared merge name.</span>
-<span class="sd">    then_action : str or None</span>
-<span class="sd">        Continuation action name, if any.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_merge` invocation.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">part_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -503,17 +434,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.SequenceTraceStep">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SequenceTraceStep</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_sequence` invocation.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    step_index : int</span>
-<span class="sd">        Global ordering key.</span>
-<span class="sd">    part_path : str</span>
-<span class="sd">        Part path string.</span>
-<span class="sd">    sequence_name : str</span>
-<span class="sd">        Declared sequence name.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Record of one :func:`dispatch_sequence` invocation.&quot;&quot;&quot;</span>
 
     <span class="n">step_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">part_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -526,21 +447,6 @@
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BehaviorTrace</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mutable collector for behavioral steps (multiple parallel lists).</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    steps : list[BehaviorStep]</span>
-<span class="sd">        State-machine transitions.</span>
-<span class="sd">    item_flows : list[ItemFlowStep]</span>
-<span class="sd">        Inter-part item deliveries.</span>
-<span class="sd">    decision_steps : list[DecisionTraceStep]</span>
-<span class="sd">        Decision dispatches.</span>
-<span class="sd">    fork_join_steps : list[ForkJoinTraceStep]</span>
-<span class="sd">        Fork/join blocks.</span>
-<span class="sd">    merge_steps : list[MergeTraceStep]</span>
-<span class="sd">        Merge continuations.</span>
-<span class="sd">    sequence_steps : list[SequenceTraceStep]</span>
-<span class="sd">        Linear sequences.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -998,14 +904,14 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Continue at a declared ``merge``: runs optional ``then_action`` (shared after branches).</span>
 
+<span class="sd">    Call after exclusive branches (e.g. following :func:`dispatch_decision`) to model a</span>
+<span class="sd">    methodology **Merge** node. If no ``then_action`` was declared, returns ``None`` and</span>
+<span class="sd">    only records the trace step when ``trace`` is set.</span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    KeyError</span>
 <span class="sd">        If ``merge_name`` is not declared.</span>
-
-<span class="sd">    Call after exclusive branches (e.g. following :func:`dispatch_decision`) to model a</span>
-<span class="sd">    methodology **Merge** node. If no ``then_action`` was declared, returns ``None`` and</span>
-<span class="sd">    only records the trace step when ``trace`` is set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">specs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">definition_type</span><span class="p">,</span> <span class="s2">&quot;_tg_merge_specs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
     <span class="n">spec</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">merge_name</span><span class="p">)</span>

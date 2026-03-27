@@ -17,7 +17,8 @@ A longer file-level breakdown (Phase 2) lives in {doc}`../drafts/repository_map`
 
 ## Suggested reading order (new contributor)
 
-1. {doc}`../drafts/what_is_thundergraph_model`
-2. {doc}`../drafts/execution_pipeline`
-3. {doc}`architecture` and {doc}`extension_playbook`
-4. Source: `tg_model/model/definition_context.py` → `tg_model/execution/configured_model.py` → `graph_compiler.py` → `evaluator.py`
+1. {doc}`../user/quickstart` — default **`evaluate`** path vs explicit pipeline (read this before diving into compiler details).
+2. {doc}`../drafts/what_is_thundergraph_model`
+3. {doc}`../drafts/execution_pipeline`
+4. {doc}`architecture` and {doc}`extension_playbook`
+5. Source: `tg_model/model/definition_context.py` → `tg_model/execution/configured_model.py` → `graph_compiler.py` → `evaluator.py`

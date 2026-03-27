@@ -10,7 +10,7 @@ ThunderGraph Model lets you model systems as executable code:
 ## Start here
 
 1. {doc}`install`
-2. {doc}`quickstart`
+2. {doc}`quickstart` — recommended path: **`instantiate`** → **`ConfiguredModel.evaluate`** (slot handles + quantities); explicit `compile_graph` + `Evaluator` is the advanced path.
 3. {doc}`mental_model`
 
 ## Concrete concept examples

@@ -1,13 +1,22 @@
 """Frozen configured topology: :class:`ConfiguredModel` and :func:`instantiate`.
 
 A configured model holds the root :class:`~tg_model.execution.instances.PartInstance`,
-registries of handles, structural connections, allocations, and references. It does
-**not** store per-run values—use :class:`~tg_model.execution.run_context.RunContext`.
+registries of handles, structural connections, allocations, and references.
+
+Per-run **values** (slot state for one evaluation) live in
+:class:`~tg_model.execution.run_context.RunContext`, not on the model. The model may cache a
+compiled dependency graph and handlers (see :meth:`ConfiguredModel.evaluate` and
+:func:`~tg_model.execution.graph_compiler.compile_graph`) for reuse; that cache is **not**
+per-run scenario data.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from tg_model.execution.evaluator import RunResult
+    from tg_model.execution.run_context import RunContext
 
 from tg_model.execution.connection_bindings import (
     AllocationBinding,
@@ -25,8 +34,18 @@ class ConfiguredModel:
 
     Notes
     -----
-    Evaluations use fresh :class:`~tg_model.execution.run_context.RunContext` objects;
-    this object stays constant. Attribute access delegates to the root part for ergonomics.
+    Evaluations use fresh :class:`~tg_model.execution.run_context.RunContext` objects per
+    :meth:`evaluate` call; the part tree and registries do not change. A successful compile may
+    be cached on this instance (``_compiled_graph``) for reuse.
+
+    **Thread safety:** Do not call :meth:`evaluate` or :func:`~tg_model.execution.graph_compiler.compile_graph`
+    concurrently on the **same** instance from multiple threads; the cache is not locked.
+
+    **Copy / pickle:** Caching a compiled graph on the instance means copying or unpickling a
+    configured model without clearing ``_compiled_graph`` is **unsupported**; treat cached graphs as
+    invalid across process or deep-copy boundaries unless you add an explicit clear or rebuild.
+
+    Attribute access delegates to the root part for ergonomics.
     """
 
     def __init__(
@@ -68,6 +87,8 @@ class ConfiguredModel:
         self.allocations = allocations
         self.references = references
         self.requirement_value_slots = requirement_value_slots or []
+        #: Cached ``(DependencyGraph, handlers)`` from ``compile_graph``; lazily set.
+        self._compiled_graph: tuple[Any, Any] | None = None
 
     def handle(self, path: str) -> ElementInstance | ValueSlot:
         """Look up an instance or value slot by dotted path string.
@@ -90,6 +111,81 @@ class ConfiguredModel:
         if path not in self.path_registry:
             raise KeyError(f"No handle found for path '{path}'")
         return self.path_registry[path]
+
+    def evaluate(
+        self,
+        inputs: dict[Any, Any] | None = None,
+        *,
+        run_context: RunContext | None = None,
+        validate: bool = True,
+    ) -> RunResult:
+        """Run one synchronous evaluation over the compiled dependency graph.
+
+        Compiles the graph on first use (same cache as :func:`~tg_model.execution.graph_compiler.compile_graph`),
+        optionally runs :func:`~tg_model.execution.validation.validate_graph`, then delegates to
+        :class:`~tg_model.execution.evaluator.Evaluator`.
+
+        Parameters
+        ----------
+        inputs : dict, optional
+            Per-run values keyed by :class:`~tg_model.execution.value_slots.ValueSlot` handles
+            belonging to this model, or by ``str`` giving the
+            :attr:`~tg_model.execution.value_slots.ValueSlot.stable_id` of such a slot **only**
+            (not arbitrary element or part ids). Values are typically :class:`unitflow.Quantity`
+            instances.
+        run_context : RunContext, optional
+            Fresh context per call by default. Supply only for advanced testing or tooling.
+        validate : bool, default True
+            When True, runs :func:`~tg_model.execution.validation.validate_graph` before **each**
+            evaluation (static checks). For tight loops, sweeps, or optimizers, pass
+            ``validate=False`` after you have validated once out-of-band, to avoid repeating that
+            work every run. On validation failure, raises :class:`~tg_model.execution.validation.GraphValidationError`.
+
+        Returns
+        -------
+        RunResult
+            Same aggregate type as :meth:`tg_model.execution.evaluator.Evaluator.evaluate`.
+            Missing inputs, failed constraints, and other **runtime** issues appear in
+            ``failures`` / ``constraint_results`` — not as exceptions from this method.
+
+        Raises
+        ------
+        GraphCompilationError
+            If graph compilation fails (from :func:`~tg_model.execution.graph_compiler.compile_graph`).
+        GraphValidationError
+            If ``validate`` is True and static validation fails (subclass of :class:`Exception`).
+        KeyError
+            If a string key is not present in this model's id registry.
+        TypeError
+            Propagated from the evaluator when an async external is used in sync mode.
+        ValueError
+            If an input key is a :class:`~tg_model.execution.value_slots.ValueSlot` not registered on
+            this model, or a string id that does not refer to a :class:`~tg_model.execution.value_slots.ValueSlot`.
+
+        See Also
+        --------
+        tg_model.execution.graph_compiler.compile_graph
+        tg_model.execution.evaluator.Evaluator
+        """
+        from tg_model.execution.evaluator import Evaluator
+        from tg_model.execution.graph_compiler import compile_graph
+        from tg_model.execution.run_context import RunContext as FreshRunContext
+        from tg_model.execution.validation import GraphValidationError, validate_graph
+
+        graph, handlers = compile_graph(self)
+        if validate:
+            val = validate_graph(graph, configured_model=self)
+            if not val.passed:
+                msg = "; ".join(f"{f.category}: {f.message}" for f in val.failures)
+                raise GraphValidationError(
+                    f"Graph validation failed: {msg}",
+                    result=val,
+                )
+
+        ctx = run_context if run_context is not None else FreshRunContext()
+        bound = _normalize_evaluate_inputs(self, inputs or {})
+        ev = Evaluator(graph, compute_handlers=handlers)
+        return ev.evaluate(ctx, inputs=bound)
 
     def __getattr__(self, name: str) -> Any:
         if name.startswith("_"):
@@ -586,3 +682,32 @@ def _register_slot(
 ) -> None:
     path_registry[slot.path_string] = slot
     id_registry[slot.stable_id] = slot
+
+
+def _normalize_evaluate_inputs(model: ConfiguredModel, inputs: dict[Any, Any]) -> dict[str, Any]:
+    """Map ``ValueSlot`` / slot-id ``str`` keys to ``stable_id`` strings for ``Evaluator``."""
+    out: dict[str, Any] = {}
+    for key, value in inputs.items():
+        if isinstance(key, ValueSlot):
+            reg = model.id_registry.get(key.stable_id)
+            if reg is not key:
+                raise ValueError(
+                    f"ValueSlot {key.path_string!r} is not registered on this ConfiguredModel "
+                    "(foreign slot or stale handle).",
+                )
+            out[key.stable_id] = value
+        elif isinstance(key, str):
+            reg = model.id_registry.get(key)
+            if reg is None:
+                raise KeyError(f"Unknown stable_id {key!r} for this ConfiguredModel")
+            if not isinstance(reg, ValueSlot):
+                raise ValueError(
+                    f"String key {key!r} refers to {type(reg).__name__}, not a ValueSlot; "
+                    "use ValueSlot handles or the stable_id of a parameter/attribute slot.",
+                )
+            out[key] = value
+        else:
+            raise TypeError(
+                f"Input keys must be ValueSlot or str (slot stable_id), got {type(key).__name__}",
+            )
+    return out

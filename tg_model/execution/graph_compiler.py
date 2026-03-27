@@ -65,7 +65,15 @@ def compile_graph(model: ConfiguredModel) -> tuple[DependencyGraph, dict[str, Ca
     -----
     Walks value slots, requirement acceptance, constraints, solve groups, and external nodes.
     Async externals are still scheduled from sync :meth:`~tg_model.execution.evaluator.Evaluator.evaluate_async`.
+
+    Successful results are **cached** on ``model._compiled_graph`` so repeated calls and
+    :meth:`~tg_model.execution.configured_model.ConfiguredModel.evaluate` reuse the same
+    ``(graph, handlers)`` tuple without recompilation.
     """
+    cached = getattr(model, "_compiled_graph", None)
+    if cached is not None:
+        return cached
+
     graph = DependencyGraph()
     handlers: dict[str, Callable] = {}
 
@@ -75,6 +83,7 @@ def compile_graph(model: ConfiguredModel) -> tuple[DependencyGraph, dict[str, Ca
     _compile_requirement_acceptance(model, graph, handlers)
     _compile_solve_groups_for_part(model.root, graph, handlers, model)
 
+    model._compiled_graph = (graph, handlers)
     return graph, handlers
 
 

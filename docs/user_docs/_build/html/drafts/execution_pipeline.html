@@ -288,7 +288,7 @@
 </section>
 <section id="instantiate-a-configured-topology">
 <h2>2) Instantiate a configured topology<a class="headerlink" href="#instantiate-a-configured-topology" title="Link to this heading">¶</a></h2>
-<p>Call <code class="docutils literal notranslate"><span class="pre">instantiate(SomeSystem)</span></code> to get <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>.</p>
+<p>Call <code class="docutils literal notranslate"><span class="pre">instantiate(SomeSystem)</span></code> to get <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>. Equivalent: <code class="docutils literal notranslate"><span class="pre">SomeSystem.instantiate()</span></code> when the root type is a <code class="docutils literal notranslate"><span class="pre">System</span></code> subclass.</p>
 <p>What happens:</p>
 <ul class="simple">
 <li><p>builds concrete <code class="docutils literal notranslate"><span class="pre">PartInstance</span></code>, <code class="docutils literal notranslate"><span class="pre">PortInstance</span></code>, and <code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code> objects</p></li>
@@ -298,6 +298,10 @@
 <li><p>freezes topology (no structural mutation afterward)</p></li>
 </ul>
 <p>Output: one immutable configuration-scoped topology.</p>
+</section>
+<section id="a-default-run-path-configuredmodel-evaluate-recommended">
+<h2>2a) Default run path: <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> (recommended)<a class="headerlink" href="#a-default-run-path-configuredmodel-evaluate-recommended" title="Link to this heading">¶</a></h2>
+<p>Call <code class="docutils literal notranslate"><span class="pre">configured_model.evaluate(inputs={slot:</span> <span class="pre">Quantity,</span> <span class="pre">...})</span></code> with <strong>handles</strong> (<code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code>) on that model. The first call <strong>compiles</strong> the dependency graph (cached on the instance), optionally runs <code class="docutils literal notranslate"><span class="pre">validate_graph</span></code>, then runs the synchronous evaluator. Subsequent calls reuse the same graph. This is the <strong>low-ceremony</strong> path documented in the user <strong>Quickstart</strong> and <strong>FAQ</strong>.</p>
 </section>
 <section id="compile-dependency-graph">
 <h2>3) Compile dependency graph<a class="headerlink" href="#compile-dependency-graph" title="Link to this heading">¶</a></h2>
@@ -321,10 +325,10 @@
 </ul>
 <p>Output: <code class="docutils literal notranslate"><span class="pre">ValidationResult</span></code> (pass/fail + failures list).</p>
 </section>
-<section id="evaluate-one-run">
-<h2>5) Evaluate one run<a class="headerlink" href="#evaluate-one-run" title="Link to this heading">¶</a></h2>
+<section id="evaluate-one-run-explicit-pipeline">
+<h2>5) Evaluate one run (explicit pipeline)<a class="headerlink" href="#evaluate-one-run-explicit-pipeline" title="Link to this heading">¶</a></h2>
 <p>Create fresh <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>, then run <code class="docutils literal notranslate"><span class="pre">Evaluator(graph,</span> <span class="pre">compute_handlers).evaluate(...)</span></code>
-(or <code class="docutils literal notranslate"><span class="pre">.evaluate_async(...)</span></code> for async external backends).</p>
+(or <code class="docutils literal notranslate"><span class="pre">.evaluate_async(...)</span></code> for async external backends). If you already used <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> (step 2a), you are <strong>not</strong> required to do steps 3–5 separately unless you need the explicit objects.</p>
 <p>What happens:</p>
 <ul class="simple">
 <li><p>input parameters are bound into context</p></li>
@@ -413,9 +417,10 @@ and optional <code class="docutils literal notranslate"><span class="pre">Behavi
 <li><a class="reference internal" href="#">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a><ul>
 <li><a class="reference internal" href="#compile-types">1) Compile types</a></li>
 <li><a class="reference internal" href="#instantiate-a-configured-topology">2) Instantiate a configured topology</a></li>
+<li><a class="reference internal" href="#a-default-run-path-configuredmodel-evaluate-recommended">2a) Default run path: <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> (recommended)</a></li>
 <li><a class="reference internal" href="#compile-dependency-graph">3) Compile dependency graph</a></li>
 <li><a class="reference internal" href="#validate-graph-optional-but-recommended">4) Validate graph (optional but recommended)</a></li>
-<li><a class="reference internal" href="#evaluate-one-run">5) Evaluate one run</a></li>
+<li><a class="reference internal" href="#evaluate-one-run-explicit-pipeline">5) Evaluate one run (explicit pipeline)</a></li>
 <li><a class="reference internal" href="#requirement-acceptance-path">Requirement acceptance path</a></li>
 <li><a class="reference internal" href="#behavioral-path">Behavioral path</a></li>
 <li><a class="reference internal" href="#one-sentence-summary">One sentence summary</a></li>

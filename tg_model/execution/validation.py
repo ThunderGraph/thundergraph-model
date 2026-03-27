@@ -36,6 +36,27 @@ class ValidationResult:
         self.failures.append(ValidationFailure(category=category, message=message, path=path))
 
 
+class GraphValidationError(Exception):
+    """Raised when :func:`validate_graph` fails before evaluation.
+
+    Typical source: :meth:`tg_model.execution.configured_model.ConfiguredModel.evaluate`
+    when ``validate=True`` and static checks do not pass.
+
+    Subclasses :class:`Exception` (not :class:`BaseException`) so typical ``except Exception``
+    handlers catch it; use this type or inspect :attr:`result` when you need to distinguish
+    validation from other failures.
+
+    Attributes
+    ----------
+    result : ValidationResult
+        Structured failures from :func:`validate_graph`.
+    """
+
+    def __init__(self, message: str, *, result: ValidationResult) -> None:
+        self.result = result
+        super().__init__(message)
+
+
 def validate_graph(
     graph: DependencyGraph,
     *,

@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -305,15 +310,7 @@
 <a class="viewcode-back" href="../../../api/api_analysis.html#tg_model.analysis.CapturedSlotOutput">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CapturedSlotOutput</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolved output for one ``output_paths`` entry in :class:`VariantComparisonRow`.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    value : Any or None</span>
-<span class="sd">        Value from ``RunResult.outputs`` when present.</span>
-<span class="sd">    present_in_run_outputs : bool</span>
-<span class="sd">        Whether the slot id appeared in ``RunResult.outputs`` (distinguishes missing from ``None``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolved output for one ``output_paths`` entry in :class:`VariantComparisonRow`.&quot;&quot;&quot;</span>
 
     <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">present_in_run_outputs</span><span class="p">:</span> <span class="nb">bool</span>
@@ -329,17 +326,7 @@
 <a class="viewcode-back" href="../../../api/api_analysis.html#tg_model.analysis.VariantComparisonRow">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">VariantComparisonRow</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;One scenario row from :func:`compare_variants`.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    label : str</span>
-<span class="sd">        Scenario label from the input tuple.</span>
-<span class="sd">    outputs : dict</span>
-<span class="sd">        Path string → :class:`CapturedSlotOutput`.</span>
-<span class="sd">    result : RunResult</span>
-<span class="sd">        Full run outcome for that scenario.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One scenario row from :func:`compare_variants`.&quot;&quot;&quot;</span>
 
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">outputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CapturedSlotOutput</span><span class="p">]</span>

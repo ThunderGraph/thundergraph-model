@@ -298,8 +298,9 @@
 <h2>Adding a regression<a class="headerlink" href="#adding-a-regression" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p><strong>Reproduce</strong> the bug or contract with the smallest <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> / graph you can.</p></li>
-<li><p>Place the test next to the subsystem it guards: <strong>compiler</strong> regressions near graph or compile tests; <strong>execution</strong> regressions near evaluator or run context tests.</p></li>
+<li><p>Place the test next to the subsystem it guards: <strong>compiler</strong> regressions near graph or compile tests; <strong>execution</strong> regressions near evaluator, run context, or <strong><code class="docutils literal notranslate"><span class="pre">configured_model</span></code></strong> (facade) tests.</p></li>
 <li><p><strong>Assert</strong> on stable outcomes: <code class="docutils literal notranslate"><span class="pre">RunResult.passed</span></code>, <code class="docutils literal notranslate"><span class="pre">ValidationResult.failures</span></code>, <code class="docutils literal notranslate"><span class="pre">constraint_results</span></code>, or specific slot values via <code class="docutils literal notranslate"><span class="pre">RunContext.get_value</span></code> / stable ids.</p></li>
+<li><p><strong>Facade vs explicit pipeline:</strong> Product-facing behavior is often easiest to exercise with <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code></strong> keys. Use <strong><code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> → <code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate</span></code></strong> when the regression is about graph identity, handler wiring, <strong><code class="docutils literal notranslate"><span class="pre">evaluate_async</span></code></strong>, or parity with the low-level API. Integration tests may compare both paths for the same inputs.</p></li>
 <li><p>Run locally:</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>thundergraph-model
@@ -315,6 +316,7 @@ uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </sp
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
 <ul class="simple">
+<li><p>Execution vocabulary (default vs advanced): <a class="reference internal" href="architecture.html"><span class="doc">Developer architecture</span></a></p></li>
 <li><p>Repository layout: <a class="reference internal" href="repository_map.html"><span class="doc">Repository map</span></a></p></li>
 <li><p>Contributing: <a class="reference internal" href="contributing.html"><span class="doc">Contributing</span></a></p></li>
 </ul>

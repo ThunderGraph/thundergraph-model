@@ -276,12 +276,13 @@
 <p>Execution subsystem: frozen topology, dependency graph, validation, and evaluation.</p>
 <p>Typical pipeline: compile element types (<code class="docutils literal notranslate"><span class="pre">SomeSystem.compile()</span></code>), build a
 <a class="reference internal" href="#tg_model.execution.ConfiguredModel" title="tg_model.execution.configured_model.ConfiguredModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfiguredModel</span></code></a> with
-<code class="xref py py-func docutils literal notranslate"><span class="pre">instantiate()</span></code>, compile a
-<a class="reference internal" href="#tg_model.execution.DependencyGraph" title="tg_model.execution.dependency_graph.DependencyGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyGraph</span></code></a> via
-<code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>, optionally
-<code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code>, then run
+<code class="xref py py-func docutils literal notranslate"><span class="pre">instantiate()</span></code>, then call
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code> (lazy compile + optional
+validation per call) <strong>or</strong> explicitly <code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>,
+optionally <code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code>, then run
 <a class="reference internal" href="#tg_model.execution.Evaluator" title="tg_model.execution.evaluator.Evaluator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evaluator</span></code></a> with a fresh
-<a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.run_context.RunContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunContext</span></code></a>.</p>
+<a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.run_context.RunContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunContext</span></code></a>. Per-run values live in <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>; the
+configured model may cache a compiled graph on the instance.</p>
 <p class="rubric">Notes</p>
 <p>Behavioral APIs (<code class="xref py py-func docutils literal notranslate"><span class="pre">dispatch_event()</span></code>, etc.) mutate
 <a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.run_context.RunContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunContext</span></code></a> discrete state and optional
@@ -344,72 +345,17 @@ names to concrete value slots on the allocated subtree.</p></li>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key across trace lists.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.step_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorStep.part_path">
-<span class="sig-name descname"><span class="pre">part_path</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.part_path" title="Link to this definition">¶</a></dt>
-<dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">PartInstance.path_string</span></code> for the part that fired.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.part_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorStep.event_name">
-<span class="sig-name descname"><span class="pre">event_name</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.event_name" title="Link to this definition">¶</a></dt>
-<dd><p>Declared event name string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">from_state,</span> <span class="pre">to_state</span></span></dt>
-<dd><p>Discrete state names before/after.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.execution.BehaviorStep.effect_name">
-<span class="sig-name descname"><span class="pre">effect_name</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.effect_name" title="Link to this definition">¶</a></dt>
-<dd><p>Action effect name, if any.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">event_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">event_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.event_name" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -423,8 +369,8 @@ names to concrete value slots on the allocated subtree.</p></li>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">effect_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.execution.BehaviorStep.effect_name">
+<span class="sig-name descname"><span class="pre">effect_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.execution.BehaviorStep.effect_name" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -434,6 +380,9 @@ names to concrete value slots on the allocated subtree.</p></li>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">BehaviorTrace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item_flows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decision_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fork_join_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/behavior.html#BehaviorTrace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.BehaviorTrace" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mutable collector for behavioral steps (multiple parallel lists).</p>
+<p class="rubric">Notes</p>
+<p>Paths are <code class="xref py py-attr docutils literal notranslate"><span class="pre">PartInstance.path_string</span></code> values and declared <strong>names</strong>, not slot stable ids.
+Global ordering uses <code class="docutils literal notranslate"><span class="pre">step_index</span></code> across lists (see <a class="reference internal" href="#tg_model.execution.behavior_trace_to_records" title="tg_model.execution.behavior_trace_to_records"><code class="xref py py-func docutils literal notranslate"><span class="pre">behavior_trace_to_records()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -448,101 +397,32 @@ names to concrete value slots on the allocated subtree.</p></li>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.steps">
-<span class="sig-name descname"><span class="pre">steps</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.steps" title="Link to this definition">¶</a></dt>
-<dd><p>State-machine transitions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.BehaviorStep" title="tg_model.execution.BehaviorStep">BehaviorStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.BehaviorStep" title="tg_model.execution.behavior.BehaviorStep"><span class="pre">BehaviorStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.item_flows">
-<span class="sig-name descname"><span class="pre">item_flows</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.item_flows" title="Link to this definition">¶</a></dt>
-<dd><p>Inter-part item deliveries.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.ItemFlowStep" title="tg_model.execution.ItemFlowStep">ItemFlowStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">item_flows</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ItemFlowStep" title="tg_model.execution.behavior.ItemFlowStep"><span class="pre">ItemFlowStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.item_flows" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.decision_steps">
-<span class="sig-name descname"><span class="pre">decision_steps</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.decision_steps" title="Link to this definition">¶</a></dt>
-<dd><p>Decision dispatches.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.DecisionTraceStep" title="tg_model.execution.DecisionTraceStep">DecisionTraceStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">decision_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.DecisionTraceStep" title="tg_model.execution.behavior.DecisionTraceStep"><span class="pre">DecisionTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.decision_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.fork_join_steps">
-<span class="sig-name descname"><span class="pre">fork_join_steps</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.fork_join_steps" title="Link to this definition">¶</a></dt>
-<dd><p>Fork/join blocks.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep" title="tg_model.execution.ForkJoinTraceStep">ForkJoinTraceStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">fork_join_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep" title="tg_model.execution.behavior.ForkJoinTraceStep"><span class="pre">ForkJoinTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.fork_join_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.merge_steps">
-<span class="sig-name descname"><span class="pre">merge_steps</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.merge_steps" title="Link to this definition">¶</a></dt>
-<dd><p>Merge continuations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.MergeTraceStep" title="tg_model.execution.MergeTraceStep">MergeTraceStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">merge_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.MergeTraceStep" title="tg_model.execution.behavior.MergeTraceStep"><span class="pre">MergeTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.merge_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.BehaviorTrace.sequence_steps">
-<span class="sig-name descname"><span class="pre">sequence_steps</span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.sequence_steps" title="Link to this definition">¶</a></dt>
-<dd><p>Linear sequences.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="#tg_model.execution.SequenceTraceStep" title="tg_model.execution.SequenceTraceStep">SequenceTraceStep</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p>Paths are <code class="xref py py-attr docutils literal notranslate"><span class="pre">PartInstance.path_string</span></code> values and declared <strong>names</strong>, not slot stable ids.
-Global ordering uses <code class="docutils literal notranslate"><span class="pre">step_index</span></code> across lists (see <a class="reference internal" href="#tg_model.execution.behavior_trace_to_records" title="tg_model.execution.behavior_trace_to_records"><code class="xref py py-func docutils literal notranslate"><span class="pre">behavior_trace_to_records()</span></code></a>).</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.BehaviorStep" title="tg_model.execution.behavior.BehaviorStep"><span class="pre">BehaviorStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">item_flows</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ItemFlowStep" title="tg_model.execution.behavior.ItemFlowStep"><span class="pre">ItemFlowStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">decision_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.DecisionTraceStep" title="tg_model.execution.behavior.DecisionTraceStep"><span class="pre">DecisionTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id6" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">fork_join_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep" title="tg_model.execution.behavior.ForkJoinTraceStep"><span class="pre">ForkJoinTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id7" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">merge_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.MergeTraceStep" title="tg_model.execution.behavior.MergeTraceStep"><span class="pre">MergeTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id8" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">sequence_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.SequenceTraceStep" title="tg_model.execution.behavior.SequenceTraceStep"><span class="pre">SequenceTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id9" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sequence_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.SequenceTraceStep" title="tg_model.execution.behavior.SequenceTraceStep"><span class="pre">SequenceTraceStep</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.BehaviorTrace.sequence_steps" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -553,8 +433,15 @@ Global ordering uses <code class="docutils literal notranslate"><span class="pre
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Immutable configured topology for one root type instance.</p>
 <p class="rubric">Notes</p>
-<p>Evaluations use fresh <a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.run_context.RunContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunContext</span></code></a> objects;
-this object stays constant. Attribute access delegates to the root part for ergonomics.</p>
+<p>Evaluations use fresh <a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.run_context.RunContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunContext</span></code></a> objects per
+<a class="reference internal" href="#tg_model.execution.ConfiguredModel.evaluate" title="tg_model.execution.ConfiguredModel.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a> call; the part tree and registries do not change. A successful compile may
+be cached on this instance (<code class="docutils literal notranslate"><span class="pre">_compiled_graph</span></code>) for reuse.</p>
+<p><strong>Thread safety:</strong> Do not call <a class="reference internal" href="#tg_model.execution.ConfiguredModel.evaluate" title="tg_model.execution.ConfiguredModel.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a> or <code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>
+concurrently on the <strong>same</strong> instance from multiple threads; the cache is not locked.</p>
+<p><strong>Copy / pickle:</strong> Caching a compiled graph on the instance means copying or unpickling a
+configured model without clearing <code class="docutils literal notranslate"><span class="pre">_compiled_graph</span></code> is <strong>unsupported</strong>; treat cached graphs as
+invalid across process or deep-copy boundaries unless you add an explicit clear or rebuild.</p>
+<p>Attribute access delegates to the root part for ergonomics.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -586,6 +473,53 @@ this object stays constant. Attribute access delegates to the root part for ergo
 <dd class="field-even"><p><strong>KeyError</strong> – If <code class="docutils literal notranslate"><span class="pre">path</span></code> is not in <code class="docutils literal notranslate"><span class="pre">path_registry</span></code>.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tg_model.execution.ConfiguredModel.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/configured_model.html#ConfiguredModel.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.ConfiguredModel.evaluate" title="Link to this definition">¶</a></dt>
+<dd><p>Run one synchronous evaluation over the compiled dependency graph.</p>
+<p>Compiles the graph on first use (same cache as <code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>),
+optionally runs <code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code>, then delegates to
+<a class="reference internal" href="#tg_model.execution.Evaluator" title="tg_model.execution.evaluator.Evaluator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evaluator</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Per-run values keyed by <a class="reference internal" href="#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueSlot</span></code></a> handles
+belonging to this model, or by <code class="docutils literal notranslate"><span class="pre">str</span></code> giving the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">stable_id</span></code> of such a slot <strong>only</strong>
+(not arbitrary element or part ids). Values are typically <code class="xref py py-class docutils literal notranslate"><span class="pre">unitflow.Quantity</span></code>
+instances.</p></li>
+<li><p><strong>run_context</strong> (<a class="reference internal" href="#tg_model.execution.RunContext" title="tg_model.execution.RunContext"><em>RunContext</em></a><em>, </em><em>optional</em>) – Fresh context per call by default. Supply only for advanced testing or tooling.</p></li>
+<li><p><strong>validate</strong> (<em>bool</em><em>, </em><em>default True</em>) – When True, runs <code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code> before <strong>each</strong>
+evaluation (static checks). For tight loops, sweeps, or optimizers, pass
+<code class="docutils literal notranslate"><span class="pre">validate=False</span></code> after you have validated once out-of-band, to avoid repeating that
+work every run. On validation failure, raises <a class="reference internal" href="#tg_model.execution.GraphValidationError" title="tg_model.execution.validation.GraphValidationError"><code class="xref py py-class docutils literal notranslate"><span class="pre">GraphValidationError</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Same aggregate type as <code class="xref py py-meth docutils literal notranslate"><span class="pre">tg_model.execution.evaluator.Evaluator.evaluate()</span></code>.
+Missing inputs, failed constraints, and other <strong>runtime</strong> issues appear in
+<code class="docutils literal notranslate"><span class="pre">failures</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint_results</span></code> — not as exceptions from this method.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#tg_model.execution.RunResult" title="tg_model.execution.RunResult">RunResult</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#tg_model.execution.GraphCompilationError" title="tg_model.execution.GraphCompilationError"><strong>GraphCompilationError</strong></a> – If graph compilation fails (from <code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>).</p></li>
+<li><p><a class="reference internal" href="#tg_model.execution.GraphValidationError" title="tg_model.execution.GraphValidationError"><strong>GraphValidationError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">validate</span></code> is True and static validation fails (subclass of <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code>).</p></li>
+<li><p><strong>KeyError</strong> – If a string key is not present in this model’s id registry.</p></li>
+<li><p><strong>TypeError</strong> – Propagated from the evaluator when an async external is used in sync mode.</p></li>
+<li><p><strong>ValueError</strong> – If an input key is a <a class="reference internal" href="#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueSlot</span></code></a> not registered on
+    this model, or a string id that does not refer to a <a class="reference internal" href="#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueSlot</span></code></a>.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tg_model.execution.graph_compiler.compile_graph</span></code>, <a class="reference internal" href="#tg_model.execution.Evaluator" title="tg_model.execution.evaluator.Evaluator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tg_model.execution.evaluator.Evaluator</span></code></a></p>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -678,7 +612,7 @@ this object stays constant. Attribute access delegates to the root part for ergo
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionDispatchOutcome.ACTION_RAN">
 <span class="sig-name descname"><span class="pre">ACTION_RAN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'action_ran'</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchOutcome.ACTION_RAN" title="Link to this definition">¶</a></dt>
-<dd><p>A branch or <code class="docutils literal notranslate"><span class="pre">default_action</span></code> ran (name in <a class="reference internal" href="#id11" title="tg_model.execution.DecisionDispatchResult.chosen_action"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DecisionDispatchResult.chosen_action</span></code></a>).</p>
+<dd><p>A branch or <code class="docutils literal notranslate"><span class="pre">default_action</span></code> ran (name in <a class="reference internal" href="#tg_model.execution.DecisionDispatchResult.chosen_action" title="tg_model.execution.DecisionDispatchResult.chosen_action"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DecisionDispatchResult.chosen_action</span></code></a>).</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -694,6 +628,8 @@ this object stays constant. Attribute access delegates to the root part for ergo
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">DecisionDispatchResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chosen_action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_ran</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/behavior.html#DecisionDispatchResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Structured result of <a class="reference internal" href="#tg_model.execution.dispatch_decision" title="tg_model.execution.dispatch_decision"><code class="xref py py-func docutils literal notranslate"><span class="pre">dispatch_decision()</span></code></a>.</p>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">bool(result)</span></code> is true when <code class="docutils literal notranslate"><span class="pre">chosen_action</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -705,52 +641,17 @@ this object stays constant. Attribute access delegates to the root part for ergo
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionDispatchResult.outcome">
-<span class="sig-name descname"><span class="pre">outcome</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.outcome" title="Link to this definition">¶</a></dt>
-<dd><p>Whether an action ran.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#tg_model.execution.DecisionDispatchOutcome" title="tg_model.execution.DecisionDispatchOutcome">DecisionDispatchOutcome</a></p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">outcome</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.execution.DecisionDispatchOutcome" title="tg_model.execution.behavior.DecisionDispatchOutcome"><span class="pre">DecisionDispatchOutcome</span></a></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.outcome" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionDispatchResult.chosen_action">
-<span class="sig-name descname"><span class="pre">chosen_action</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.chosen_action" title="Link to this definition">¶</a></dt>
-<dd><p>Action name that ran, if any.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str or None</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">chosen_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.chosen_action" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionDispatchResult.merge_ran">
-<span class="sig-name descname"><span class="pre">merge_ran</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.merge_ran" title="Link to this definition">¶</a></dt>
-<dd><p>Whether a paired merge continuation executed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p><code class="docutils literal notranslate"><span class="pre">bool(result)</span></code> is true when <code class="docutils literal notranslate"><span class="pre">chosen_action</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">outcome</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.execution.DecisionDispatchOutcome" title="tg_model.execution.behavior.DecisionDispatchOutcome"><span class="pre">DecisionDispatchOutcome</span></a></span><a class="headerlink" href="#id10" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">chosen_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id11" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">merge_ran</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#id12" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">merge_ran</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#tg_model.execution.DecisionDispatchResult.merge_ran" title="Link to this definition">¶</a></dt>
 <dd><p>True when a paired merge was executed (after a chosen action).</p>
 </dd></dl>
 
@@ -773,66 +674,22 @@ this object stays constant. Attribute access delegates to the root part for ergo
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionTraceStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.step_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionTraceStep.part_path">
-<span class="sig-name descname"><span class="pre">part_path</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.part_path" title="Link to this definition">¶</a></dt>
-<dd><p>Part path string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.part_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionTraceStep.decision_name">
-<span class="sig-name descname"><span class="pre">decision_name</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.decision_name" title="Link to this definition">¶</a></dt>
-<dd><p>Declared decision node name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">decision_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.decision_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DecisionTraceStep.chosen_action">
-<span class="sig-name descname"><span class="pre">chosen_action</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.chosen_action" title="Link to this definition">¶</a></dt>
-<dd><p>Action that ran, if any.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id13">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id13" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id14" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id15">
-<span class="sig-name descname"><span class="pre">decision_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id15" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id16">
-<span class="sig-name descname"><span class="pre">chosen_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id16" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">chosen_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.execution.DecisionTraceStep.chosen_action" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1075,6 +932,8 @@ this object stays constant. Attribute access delegates to the root part for ergo
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">DispatchResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/behavior.html#DispatchResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.DispatchResult" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Structured result of <a class="reference internal" href="#tg_model.execution.dispatch_event" title="tg_model.execution.dispatch_event"><code class="xref py py-func docutils literal notranslate"><span class="pre">dispatch_event()</span></code></a>.</p>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">bool(result)</span></code> is true only when a transition fired (legacy truthiness preserved).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>outcome</strong> (<a class="reference internal" href="#tg_model.execution.DispatchOutcome" title="tg_model.execution.behavior.DispatchOutcome"><em>DispatchOutcome</em></a>)</p>
@@ -1082,20 +941,7 @@ this object stays constant. Attribute access delegates to the root part for ergo
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.DispatchResult.outcome">
-<span class="sig-name descname"><span class="pre">outcome</span></span><a class="headerlink" href="#tg_model.execution.DispatchResult.outcome" title="Link to this definition">¶</a></dt>
-<dd><p>Why the dispatcher returned (fired, no match, guard failed).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#tg_model.execution.DispatchOutcome" title="tg_model.execution.DispatchOutcome">DispatchOutcome</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p><code class="docutils literal notranslate"><span class="pre">bool(result)</span></code> is true only when a transition fired (legacy truthiness preserved).</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id17">
-<span class="sig-name descname"><span class="pre">outcome</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.execution.DispatchOutcome" title="tg_model.execution.behavior.DispatchOutcome"><span class="pre">DispatchOutcome</span></a></span><a class="headerlink" href="#id17" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">outcome</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.execution.DispatchOutcome" title="tg_model.execution.behavior.DispatchOutcome"><span class="pre">DispatchOutcome</span></a></span><a class="headerlink" href="#tg_model.execution.DispatchResult.outcome" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1245,50 +1091,17 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.ForkJoinTraceStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.step_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.ForkJoinTraceStep.part_path">
-<span class="sig-name descname"><span class="pre">part_path</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.part_path" title="Link to this definition">¶</a></dt>
-<dd><p>Part path string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.part_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.ForkJoinTraceStep.block_name">
-<span class="sig-name descname"><span class="pre">block_name</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.block_name" title="Link to this definition">¶</a></dt>
-<dd><p>Declared fork/join name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id18">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id18" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id19" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id20">
-<span class="sig-name descname"><span class="pre">block_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id20" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">block_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.ForkJoinTraceStep.block_name" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1298,6 +1111,40 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">GraphCompilationError</span></span><a class="reference internal" href="../_modules/tg_model/execution/graph_compiler.html#GraphCompilationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.GraphCompilationError" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Raised when graph compilation cannot resolve symbols, slots, or bindings.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="tg_model.execution.GraphValidationError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">GraphValidationError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/validation.html#GraphValidationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.GraphValidationError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when <a class="reference internal" href="#tg_model.execution.validate_graph" title="tg_model.execution.validate_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code></a> fails before evaluation.</p>
+<p>Typical source: <code class="xref py py-meth docutils literal notranslate"><span class="pre">tg_model.execution.configured_model.ConfiguredModel.evaluate()</span></code>
+when <code class="docutils literal notranslate"><span class="pre">validate=True</span></code> and static checks do not pass.</p>
+<p>Subclasses <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code> (not <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseException</span></code>) so typical <code class="docutils literal notranslate"><span class="pre">except</span> <span class="pre">Exception</span></code>
+handlers catch it; use this type or inspect <a class="reference internal" href="#tg_model.execution.GraphValidationError.result" title="tg_model.execution.GraphValidationError.result"><code class="xref py py-attr docutils literal notranslate"><span class="pre">result</span></code></a> when you need to distinguish
+validation from other failures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<em>str</em>)</p></li>
+<li><p><strong>result</strong> (<a class="reference internal" href="#tg_model.execution.ValidationResult" title="tg_model.execution.ValidationResult"><em>ValidationResult</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tg_model.execution.GraphValidationError.result">
+<span class="sig-name descname"><span class="pre">result</span></span><a class="headerlink" href="#tg_model.execution.GraphValidationError.result" title="Link to this definition">¶</a></dt>
+<dd><p>Structured failures from <a class="reference internal" href="#tg_model.execution.validate_graph" title="tg_model.execution.validate_graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">validate_graph()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#tg_model.execution.ValidationResult" title="tg_model.execution.ValidationResult">ValidationResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1318,51 +1165,7 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.ItemFlowStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">source_port_path,</span> <span class="pre">target_port_path</span></span></dt>
-<dd><p>Port <code class="xref py py-attr docutils literal notranslate"><span class="pre">path_string</span></code> values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.execution.ItemFlowStep.item_kind">
-<span class="sig-name descname"><span class="pre">item_kind</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.item_kind" title="Link to this definition">¶</a></dt>
-<dd><p>Item kind / event name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.execution.ItemFlowStep.payload">
-<span class="sig-name descname"><span class="pre">payload</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.payload" title="Link to this definition">¶</a></dt>
-<dd><p>Opaque staged payload.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Any or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id21">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id21" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.step_index" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -1376,13 +1179,13 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id22">
-<span class="sig-name descname"><span class="pre">item_kind</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id22" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.execution.ItemFlowStep.item_kind">
+<span class="sig-name descname"><span class="pre">item_kind</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.item_kind" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id23">
-<span class="sig-name descname"><span class="pre">payload</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id23" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.execution.ItemFlowStep.payload">
+<span class="sig-name descname"><span class="pre">payload</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.execution.ItemFlowStep.payload" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1404,66 +1207,22 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.MergeTraceStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.step_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.MergeTraceStep.part_path">
-<span class="sig-name descname"><span class="pre">part_path</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.part_path" title="Link to this definition">¶</a></dt>
-<dd><p>Part path string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.part_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.MergeTraceStep.merge_name">
-<span class="sig-name descname"><span class="pre">merge_name</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.merge_name" title="Link to this definition">¶</a></dt>
-<dd><p>Declared merge name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">merge_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.merge_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.MergeTraceStep.then_action">
-<span class="sig-name descname"><span class="pre">then_action</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.then_action" title="Link to this definition">¶</a></dt>
-<dd><p>Continuation action name, if any.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id24">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id24" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id25">
-<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id25" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id26">
-<span class="sig-name descname"><span class="pre">merge_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id26" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id27">
-<span class="sig-name descname"><span class="pre">then_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id27" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">then_action</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.execution.MergeTraceStep.then_action" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1519,7 +1278,7 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 <dt class="sig sig-object py" id="tg_model.execution.PartInstance">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">PartInstance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">stable_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/instances.html#PartInstance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.PartInstance" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.execution.ElementInstance" title="tg_model.execution.instances.ElementInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementInstance</span></code></a></p>
-<p>Materialized <a class="reference internal" href="api_root.html#tg_model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> / <a class="reference internal" href="api_root.html#tg_model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a>.</p>
+<p>Materialized <a class="reference internal" href="api_model.html#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> / <a class="reference internal" href="api_model.html#tg_model.model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a>.</p>
 <p>Owns child parts, ports, and value slots. After <a class="reference internal" href="#tg_model.execution.PartInstance.freeze" title="tg_model.execution.PartInstance.freeze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">freeze()</span></code></a>, structure is immutable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -1678,7 +1437,7 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">RequirementSatisfactionResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allocation_target_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">passed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/requirements.html#RequirementSatisfactionResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Outcome of one requirement acceptance check (one allocation × one compiled check).</p>
+<p>Outcome of one requirement acceptance check (one allocation x one compiled check).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1692,82 +1451,27 @@ Shared helpers only cover non-async steps (see <code class="docutils literal not
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult.requirement_path">
-<span class="sig-name descname"><span class="pre">requirement_path</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.requirement_path" title="Link to this definition">¶</a></dt>
-<dd><p>Dotted requirement path in the configured model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">requirement_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.requirement_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult.allocation_target_path">
-<span class="sig-name descname"><span class="pre">allocation_target_path</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.allocation_target_path" title="Link to this definition">¶</a></dt>
-<dd><p>Part path where the requirement was allocated.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">allocation_target_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.allocation_target_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult.passed">
-<span class="sig-name descname"><span class="pre">passed</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.passed" title="Link to this definition">¶</a></dt>
-<dd><p>Whether the acceptance expression evaluated true.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">passed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.passed" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult.evidence">
-<span class="sig-name descname"><span class="pre">evidence</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.evidence" title="Link to this definition">¶</a></dt>
-<dd><p>Optional evaluator evidence string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">evidence</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.evidence" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RequirementSatisfactionResult.check_name">
-<span class="sig-name descname"><span class="pre">check_name</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.check_name" title="Link to this definition">¶</a></dt>
-<dd><p>Internal constraint/check name from the graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id28">
-<span class="sig-name descname"><span class="pre">requirement_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id28" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id29">
-<span class="sig-name descname"><span class="pre">allocation_target_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id29" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id30">
-<span class="sig-name descname"><span class="pre">passed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#id30" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id31">
-<span class="sig-name descname"><span class="pre">evidence</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id31" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id32">
-<span class="sig-name descname"><span class="pre">check_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id32" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">check_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.RequirementSatisfactionResult.check_name" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2087,50 +1791,17 @@ applies (see class docstring).</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RunResult.outputs">
-<span class="sig-name descname"><span class="pre">outputs</span></span><a class="headerlink" href="#tg_model.execution.RunResult.outputs" title="Link to this definition">¶</a></dt>
-<dd><p>Optional named outputs populated by higher-level runners (core evaluator may leave empty).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.RunResult.outputs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RunResult.constraint_results">
-<span class="sig-name descname"><span class="pre">constraint_results</span></span><a class="headerlink" href="#tg_model.execution.RunResult.constraint_results" title="Link to this definition">¶</a></dt>
-<dd><p>Constraint and requirement-acceptance checks recorded on the context.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of <a class="reference internal" href="#tg_model.execution.ConstraintResult" title="tg_model.execution.ConstraintResult">ConstraintResult</a></p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">constraint_results</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ConstraintResult" title="tg_model.execution.run_context.ConstraintResult"><span class="pre">ConstraintResult</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.RunResult.constraint_results" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.RunResult.failures">
-<span class="sig-name descname"><span class="pre">failures</span></span><a class="headerlink" href="#tg_model.execution.RunResult.failures" title="Link to this definition">¶</a></dt>
-<dd><p>Missing required inputs and other top-level failures.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id33">
-<span class="sig-name descname"><span class="pre">outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id33" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id34">
-<span class="sig-name descname"><span class="pre">constraint_results</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.ConstraintResult" title="tg_model.execution.run_context.ConstraintResult"><span class="pre">ConstraintResult</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id34" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id35">
-<span class="sig-name descname"><span class="pre">failures</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id35" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">failures</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.RunResult.failures" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -2157,50 +1828,17 @@ applies (see class docstring).</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.SequenceTraceStep.step_index">
-<span class="sig-name descname"><span class="pre">step_index</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.step_index" title="Link to this definition">¶</a></dt>
-<dd><p>Global ordering key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.step_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.SequenceTraceStep.part_path">
-<span class="sig-name descname"><span class="pre">part_path</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.part_path" title="Link to this definition">¶</a></dt>
-<dd><p>Part path string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.part_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.execution.SequenceTraceStep.sequence_name">
-<span class="sig-name descname"><span class="pre">sequence_name</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.sequence_name" title="Link to this definition">¶</a></dt>
-<dd><p>Declared sequence name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id36">
-<span class="sig-name descname"><span class="pre">step_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id36" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id37">
-<span class="sig-name descname"><span class="pre">part_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id37" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id38">
-<span class="sig-name descname"><span class="pre">sequence_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id38" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sequence_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.execution.SequenceTraceStep.sequence_name" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2447,6 +2085,9 @@ slot, not the per-run mutable value. Per-run state lives in RunContext.</p>
 <p class="rubric">Notes</p>
 <p>Walks value slots, requirement acceptance, constraints, solve groups, and external nodes.
 Async externals are still scheduled from sync <code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate_async()</span></code>.</p>
+<p>Successful results are <strong>cached</strong> on <code class="docutils literal notranslate"><span class="pre">model._compiled_graph</span></code> so repeated calls and
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code> reuse the same
+<code class="docutils literal notranslate"><span class="pre">(graph,</span> <span class="pre">handlers)</span></code> tuple without recompilation.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -2541,6 +2182,9 @@ intend a catch-all).</p>
 <dt class="sig sig-object py" id="tg_model.execution.dispatch_merge">
 <span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">dispatch_merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/behavior.html#dispatch_merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.dispatch_merge" title="Link to this definition">¶</a></dt>
 <dd><p>Continue at a declared <code class="docutils literal notranslate"><span class="pre">merge</span></code>: runs optional <code class="docutils literal notranslate"><span class="pre">then_action</span></code> (shared after branches).</p>
+<p>Call after exclusive branches (e.g. following <a class="reference internal" href="#tg_model.execution.dispatch_decision" title="tg_model.execution.dispatch_decision"><code class="xref py py-func docutils literal notranslate"><span class="pre">dispatch_decision()</span></code></a>) to model a
+methodology <strong>Merge</strong> node. If no <code class="docutils literal notranslate"><span class="pre">then_action</span></code> was declared, returns <code class="docutils literal notranslate"><span class="pre">None</span></code> and
+only records the trace step when <code class="docutils literal notranslate"><span class="pre">trace</span></code> is set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>KeyError</strong> – If <code class="docutils literal notranslate"><span class="pre">merge_name</span></code> is not declared.</p>
@@ -2557,9 +2201,6 @@ intend a catch-all).</p>
 <dd class="field-odd"><p>str | None</p>
 </dd>
 </dl>
-<p>:raises Call after exclusive branches (e.g. following <a class="reference internal" href="#tg_model.execution.dispatch_decision" title="tg_model.execution.dispatch_decision"><code class="xref py py-func docutils literal notranslate"><span class="pre">dispatch_decision()</span></code></a>) to model a:
-:raises methodology <strong>Merge</strong> node. If no <code class="docutils literal notranslate"><span class="pre">then_action</span></code> was declared, returns <code class="docutils literal notranslate"><span class="pre">None</span></code> and:
-:raises only records the trace step when <code class="docutils literal notranslate"><span class="pre">trace</span></code> is set.:</p>
 </dd></dl>
 
 <dl class="py function">
@@ -2625,7 +2266,7 @@ intend a catch-all).</p>
 allocation bindings. Registers handles then freezes all parts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>root_type</strong> (<em>type</em>) – Compiled <a class="reference internal" href="api_root.html#tg_model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a> / <a class="reference internal" href="api_root.html#tg_model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> subclass.</p>
+<dd class="field-odd"><p><strong>root_type</strong> (<em>type</em>) – Compiled <a class="reference internal" href="api_model.html#tg_model.model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a> / <a class="reference internal" href="api_model.html#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> subclass.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Frozen topology ready for <code class="xref py py-func docutils literal notranslate"><span class="pre">compile_graph()</span></code>.</p>
@@ -2848,13 +2489,9 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.BehaviorStep.step_index"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.step_index</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorStep.part_path"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.part_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorStep.event_name"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.event_name</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.execution.BehaviorStep.effect_name"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.effect_name</span></code></a></li>
-<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.part_path</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.event_name</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorStep.from_state"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.from_state</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorStep.to_state"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.to_state</span></code></a></li>
-<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.effect_name</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.BehaviorStep.effect_name"><code class="docutils literal notranslate"><span class="pre">BehaviorStep.effect_name</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorTrace"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace</span></code></a><ul>
@@ -2864,16 +2501,11 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.BehaviorTrace.fork_join_steps"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.fork_join_steps</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorTrace.merge_steps"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.merge_steps</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.BehaviorTrace.sequence_steps"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.sequence_steps</span></code></a></li>
-<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.steps</span></code></a></li>
-<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.item_flows</span></code></a></li>
-<li><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.decision_steps</span></code></a></li>
-<li><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.fork_join_steps</span></code></a></li>
-<li><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.merge_steps</span></code></a></li>
-<li><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">BehaviorTrace.sequence_steps</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.ConfiguredModel"><code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.execution.ConfiguredModel.handle"><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.handle()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.ConfiguredModel.evaluate"><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.ConnectionBinding"><code class="docutils literal notranslate"><span class="pre">ConnectionBinding</span></code></a><ul>
@@ -2900,9 +2532,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.DecisionDispatchResult.outcome"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.outcome</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.DecisionDispatchResult.chosen_action"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.chosen_action</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.DecisionDispatchResult.merge_ran"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.merge_ran</span></code></a></li>
-<li><a class="reference internal" href="#id10"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.outcome</span></code></a></li>
-<li><a class="reference internal" href="#id11"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.chosen_action</span></code></a></li>
-<li><a class="reference internal" href="#id12"><code class="docutils literal notranslate"><span class="pre">DecisionDispatchResult.merge_ran</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.DecisionTraceStep"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep</span></code></a><ul>
@@ -2910,10 +2539,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.DecisionTraceStep.part_path"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.part_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.DecisionTraceStep.decision_name"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.decision_name</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.DecisionTraceStep.chosen_action"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.chosen_action</span></code></a></li>
-<li><a class="reference internal" href="#id13"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#id14"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.part_path</span></code></a></li>
-<li><a class="reference internal" href="#id15"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.decision_name</span></code></a></li>
-<li><a class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">DecisionTraceStep.chosen_action</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.DependencyGraph"><code class="docutils literal notranslate"><span class="pre">DependencyGraph</span></code></a><ul>
@@ -2947,7 +2572,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 </li>
 <li><a class="reference internal" href="#tg_model.execution.DispatchResult"><code class="docutils literal notranslate"><span class="pre">DispatchResult</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.execution.DispatchResult.outcome"><code class="docutils literal notranslate"><span class="pre">DispatchResult.outcome</span></code></a></li>
-<li><a class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">DispatchResult.outcome</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.ElementInstance"><code class="docutils literal notranslate"><span class="pre">ElementInstance</span></code></a><ul>
@@ -2969,21 +2593,19 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep.step_index"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.step_index</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep.part_path"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.part_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ForkJoinTraceStep.block_name"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.block_name</span></code></a></li>
-<li><a class="reference internal" href="#id18"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#id19"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.part_path</span></code></a></li>
-<li><a class="reference internal" href="#id20"><code class="docutils literal notranslate"><span class="pre">ForkJoinTraceStep.block_name</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.GraphCompilationError"><code class="docutils literal notranslate"><span class="pre">GraphCompilationError</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.GraphValidationError"><code class="docutils literal notranslate"><span class="pre">GraphValidationError</span></code></a><ul>
+<li><a class="reference internal" href="#tg_model.execution.GraphValidationError.result"><code class="docutils literal notranslate"><span class="pre">GraphValidationError.result</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tg_model.execution.ItemFlowStep"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.step_index"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.item_kind"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.item_kind</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.payload"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.payload</span></code></a></li>
-<li><a class="reference internal" href="#id21"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.step_index</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.source_port_path"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.source_port_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.target_port_path"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.target_port_path</span></code></a></li>
-<li><a class="reference internal" href="#id22"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.item_kind</span></code></a></li>
-<li><a class="reference internal" href="#id23"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.payload</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.item_kind"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.item_kind</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.ItemFlowStep.payload"><code class="docutils literal notranslate"><span class="pre">ItemFlowStep.payload</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.MergeTraceStep"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep</span></code></a><ul>
@@ -2991,10 +2613,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.MergeTraceStep.part_path"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.part_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.MergeTraceStep.merge_name"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.merge_name</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.MergeTraceStep.then_action"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.then_action</span></code></a></li>
-<li><a class="reference internal" href="#id24"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#id25"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.part_path</span></code></a></li>
-<li><a class="reference internal" href="#id26"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.merge_name</span></code></a></li>
-<li><a class="reference internal" href="#id27"><code class="docutils literal notranslate"><span class="pre">MergeTraceStep.then_action</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.NodeKind"><code class="docutils literal notranslate"><span class="pre">NodeKind</span></code></a><ul>
@@ -3034,11 +2652,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.RequirementSatisfactionResult.passed"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.passed</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.RequirementSatisfactionResult.evidence"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.evidence</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.RequirementSatisfactionResult.check_name"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.check_name</span></code></a></li>
-<li><a class="reference internal" href="#id28"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.requirement_path</span></code></a></li>
-<li><a class="reference internal" href="#id29"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.allocation_target_path</span></code></a></li>
-<li><a class="reference internal" href="#id30"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.passed</span></code></a></li>
-<li><a class="reference internal" href="#id31"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.evidence</span></code></a></li>
-<li><a class="reference internal" href="#id32"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult.check_name</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.RequirementSatisfactionSummary"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionSummary</span></code></a><ul>
@@ -3070,9 +2683,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.RunResult.outputs"><code class="docutils literal notranslate"><span class="pre">RunResult.outputs</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.RunResult.constraint_results"><code class="docutils literal notranslate"><span class="pre">RunResult.constraint_results</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.RunResult.failures"><code class="docutils literal notranslate"><span class="pre">RunResult.failures</span></code></a></li>
-<li><a class="reference internal" href="#id33"><code class="docutils literal notranslate"><span class="pre">RunResult.outputs</span></code></a></li>
-<li><a class="reference internal" href="#id34"><code class="docutils literal notranslate"><span class="pre">RunResult.constraint_results</span></code></a></li>
-<li><a class="reference internal" href="#id35"><code class="docutils literal notranslate"><span class="pre">RunResult.failures</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.RunResult.passed"><code class="docutils literal notranslate"><span class="pre">RunResult.passed</span></code></a></li>
 </ul>
 </li>
@@ -3080,9 +2690,6 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.SequenceTraceStep.step_index"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.step_index</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.SequenceTraceStep.part_path"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.part_path</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.SequenceTraceStep.sequence_name"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.sequence_name</span></code></a></li>
-<li><a class="reference internal" href="#id36"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.step_index</span></code></a></li>
-<li><a class="reference internal" href="#id37"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.part_path</span></code></a></li>
-<li><a class="reference internal" href="#id38"><code class="docutils literal notranslate"><span class="pre">SequenceTraceStep.sequence_name</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.SlotState"><code class="docutils literal notranslate"><span class="pre">SlotState</span></code></a><ul>

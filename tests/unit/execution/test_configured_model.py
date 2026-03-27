@@ -41,6 +41,18 @@ def setup_function() -> None:
 
 
 class TestInstantiation:
+    def test_system_instantiate_matches_module_instantiate(self) -> None:
+        """``RootType.instantiate()`` matches ``instantiate(RootType)`` (topology + binding counts)."""
+        cm_fn = instantiate(DriveSystem)
+        cm_cls = DriveSystem.instantiate()
+        assert cm_fn.root.stable_id == cm_cls.root.stable_id
+        assert set(cm_fn.path_registry.keys()) == set(cm_cls.path_registry.keys())
+        assert set(cm_fn.id_registry.keys()) == set(cm_cls.id_registry.keys())
+        assert len(cm_fn.connections) == len(cm_cls.connections)
+        assert len(cm_fn.allocations) == len(cm_cls.allocations)
+        assert len(cm_fn.references) == len(cm_cls.references)
+        assert len(cm_fn.requirement_value_slots) == len(cm_cls.requirement_value_slots)
+
     def test_instantiate_returns_configured_model(self) -> None:
         cm = instantiate(DriveSystem)
         assert isinstance(cm, ConfiguredModel)

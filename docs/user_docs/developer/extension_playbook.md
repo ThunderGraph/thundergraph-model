@@ -10,10 +10,13 @@ Where ThunderGraph Model is designed to be extended safely—and where you shoul
 - **`ModelDefinitionContext`** — you do not subclass this; you call its methods **from** `define` on your element types. Public methods are the vocabulary for declarations.
 - **Refs** (`AttributeRef`, `PartRef`, …) — returned by `model` APIs; you **use** them in expressions and `allocate`, not subclass them.
 
-### Execution boundaries (`tg_model.execution`)
+### Execution (`tg_model.execution`)
 
-- **`instantiate`**, **`compile_graph`**, **`validate_graph`**, **`Evaluator`** — call these; do not fork the evaluator unless you are fixing a bug in the library.
-- **`RunContext`** — per-run mutable state; safe to use for multiple evaluations with fresh instances per run.
+**Application code (default):** Prefer **`instantiate(SomeSystem)`** or **`SomeSystem.instantiate()`** to get a **`ConfiguredModel`**, then **`ConfiguredModel.evaluate(inputs={slot: Quantity, …})`**. Compilation is **lazy** (cached on the model), validation runs per the **`evaluate`** policy (default: on), and each call uses a **fresh** **`RunContext`** unless you pass **`run_context=`** for tests or custom runners. Input keys should be **`ValueSlot`** handles from **that** model (or the slot’s **`stable_id`** string for scripts).
+
+**Extensions, tools, async, and debugging (explicit pipeline):** Call **`compile_graph`**, **`validate_graph`**, **`Evaluator`**, and **`RunContext`** directly when you need **`Evaluator.evaluate_async`**, to **reuse** one context across steps, to **inspect** the graph or handlers, or to mirror low-level behavior in tests. Do **not** fork the evaluator unless you are fixing a bug in the library.
+
+**`RunContext`** remains the per-run mutable state carrier; the façade builds one for you on each **`evaluate`** by default.
 
 ### External compute (`tg_model.integrations`)
 
@@ -34,12 +37,14 @@ Where ThunderGraph Model is designed to be extended safely—and where you shoul
 ## Practical workflow
 
 1. Model your domain with **`System` / `Part` / `RequirementBlock`** and `define`.
-2. For tool-backed values, **`ExternalComputeBinding`** + **`validate_graph`** when possible.
-3. Add **tests** under `tests/unit/` or `tests/integration/` that mirror your usage (see {doc}`testing`).
-4. If you need behavior that cannot be expressed with declarations and external compute, **document the gap** and consider a focused PR to `tg_model` rather than monkey-patching.
+2. Run scenarios with **`ConfiguredModel.evaluate`** in product code and notebooks unless you need the explicit pipeline (see **Execution** above).
+3. For tool-backed values, **`ExternalComputeBinding`** + **`validate_graph`** when possible (the façade runs validation before evaluation by default; explicit callers run **`validate_graph`** after **`compile_graph`**).
+4. Add **tests** under `tests/unit/` or `tests/integration/` that mirror your usage (see {doc}`testing`).
+5. If you need behavior that cannot be expressed with declarations and external compute, **document the gap** and consider a focused PR to `tg_model` rather than monkey-patching.
 
 ## References
 
+- End-user narrative: {doc}`../user/quickstart` (recommended **`evaluate`** path vs explicit pipeline).
 - {doc}`architecture`
 - {doc}`../drafts/execution_pipeline`
 - API: {doc}`../api/index`

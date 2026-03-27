@@ -1,8 +1,14 @@
-"""Build plain dicts from :class:`~tg_model.execution.configured_model.ConfiguredModel` + evaluation results.
+"""Build plain dicts from :class:`~tg_model.execution.configured_model.ConfiguredModel` and
+:class:`~tg_model.execution.evaluator.RunResult`.
 
-**Demo coupling:** :func:`_external_provenance_by_slot` and ``slot_states_summary`` read
-private ``_slot_records`` on :class:`~tg_model.execution.run_context.RunContext` That is
-acceptable for this example’s reporting only — not a stable framework API.
+Typical orchestration: ``result = cm.evaluate(inputs={...})`` then
+``extract_cargo_jet_evaluation_report(cm, result)``. Everything needed for the main report
+comes from ``run_result.outputs`` and constraint rows.
+
+**Optional ``ctx``:** Pass ``ctx=...`` only if you want the **demo-only** extras that are not on
+``RunResult``: non-trivial external-compute **provenance** per slot and **slot-state** counts.
+Those require reading private ``_slot_records`` on :class:`~tg_model.execution.run_context.RunContext`
+(acceptable for this example only — not a stable framework API).
 """
 
 from __future__ import annotations
@@ -124,10 +130,19 @@ def _external_provenance_by_slot(ctx: RunContext) -> dict[str, Any]:
     return out
 
 
+def _slot_states_summary(ctx: RunContext) -> dict[str, int]:
+    return {
+        "realized": sum(1 for r in ctx._slot_records.values() if r.state == SlotState.REALIZED),
+        "bound_input": sum(1 for r in ctx._slot_records.values() if r.state == SlotState.BOUND_INPUT),
+        "failed": sum(1 for r in ctx._slot_records.values() if r.state == SlotState.FAILED),
+    }
+
+
 def extract_cargo_jet_evaluation_report(
     cm: ConfiguredModel,
-    ctx: RunContext,
     run_result: RunResult,
+    *,
+    ctx: RunContext | None = None,
 ) -> dict[str, Any]:
     """Flatten scenario, thesis metrics, roll-ups, constraints, and Level-1 metadata for reporting."""
     specs = _L1_REPORT_ROWS
@@ -205,14 +220,6 @@ def extract_cargo_jet_evaluation_report(
         },
         "constraints": constraints,
         "l1_requirements": spec_rows,
-        "external_provenance": _external_provenance_by_slot(ctx),
-        "slot_states_summary": {
-            "realized": sum(
-                1 for r in ctx._slot_records.values() if r.state == SlotState.REALIZED
-            ),
-            "bound_input": sum(
-                1 for r in ctx._slot_records.values() if r.state == SlotState.BOUND_INPUT
-            ),
-            "failed": sum(1 for r in ctx._slot_records.values() if r.state == SlotState.FAILED),
-        },
+        "external_provenance": _external_provenance_by_slot(ctx) if ctx is not None else {},
+        "slot_states_summary": _slot_states_summary(ctx) if ctx is not None else None,
     }

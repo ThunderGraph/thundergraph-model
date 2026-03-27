@@ -273,15 +273,31 @@
         <article role="main" id="furo-main-content">
           <section id="faq">
 <h1>FAQ<a class="headerlink" href="#faq" title="Link to this heading">¶</a></h1>
-<section id="why-do-i-need-runcontext-for-each-evaluation">
-<h2>Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> for each evaluation?<a class="headerlink" href="#why-do-i-need-runcontext-for-each-evaluation" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> is frozen topology. <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> stores per-run mutable values and results.
-Use a fresh context per run.</p>
+<section id="when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator">
+<h2>When should I use <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> vs <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code>?<a class="headerlink" href="#when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator" title="Link to this heading">¶</a></h2>
+<p><strong>Default:</strong> Call <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> on the configured model after <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>. You pass <strong>handles</strong> (<code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code>) and quantities; the library compiles the graph on first use, validates by default, and returns a <strong><code class="docutils literal notranslate"><span class="pre">RunResult</span></code></strong>. That is the path we recommend for applications, notebooks, and most scripts.</p>
+<p><strong>Use the explicit pipeline</strong> (<code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> → <code class="docutils literal notranslate"><span class="pre">validate_graph</span></code> → <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> + <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>) when you need:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_async</span></code> (async external backends)</p></li>
+<li><p>to <strong>inspect or reuse</strong> the <code class="docutils literal notranslate"><span class="pre">DependencyGraph</span></code> or handler map</p></li>
+<li><p>to <strong>control validation timing</strong> (e.g. validate once, then many evaluations with <code class="docutils literal notranslate"><span class="pre">evaluate(...,</span> <span class="pre">validate=False)</span></code> is also available on the façade)</p></li>
+<li><p>to integrate with tooling that already assembles <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> and <code class="docutils literal notranslate"><span class="pre">RunContext</span></code></p></li>
+</ul>
+<p>Both paths share the <strong>same</strong> compiled graph cache on the <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> when you mix them on one instance.</p>
+<p>See <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart (Concrete Example)</span></a> and <a class="reference internal" href="../api/api_execution.html"><span class="doc">tg_model.execution</span></a>.</p>
 </section>
-<section id="why-are-inputs-bound-by-stable-id">
-<h2>Why are inputs bound by stable id?<a class="headerlink" href="#why-are-inputs-bound-by-stable-id" title="Link to this heading">¶</a></h2>
-<p>Stable ids are deterministic and unambiguous for a configured topology.
-You can resolve them from slots (for example <code class="docutils literal notranslate"><span class="pre">cm.root.some_param.stable_id</span></code>).</p>
+<section id="why-do-i-need-runcontext">
+<h2>Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?<a class="headerlink" href="#why-do-i-need-runcontext" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> is frozen topology. <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> stores per-run mutable values and results.</p>
+<ul class="simple">
+<li><p><strong>Default <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> path:</strong> you usually <strong>do not</strong> create a <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>; the method uses a fresh one per call unless you pass <code class="docutils literal notranslate"><span class="pre">run_context=</span></code> for advanced testing.</p></li>
+<li><p><strong>Explicit <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> path:</strong> you create <code class="docutils literal notranslate"><span class="pre">RunContext()</span></code> and pass it to <code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate</span></code> / <code class="docutils literal notranslate"><span class="pre">evaluate_async</span></code>.</p></li>
+</ul>
+</section>
+<section id="why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">
+<h2>Why are inputs bound by stable id in the explicit pipeline?<a class="headerlink" href="#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline" title="Link to this heading">¶</a></h2>
+<p>The evaluator’s wire format is keyed by <strong>stable slot ids</strong> (strings). Stable ids are deterministic and unambiguous for a configured topology.</p>
+<p>On the <strong>facade</strong>, prefer <strong>slot handles</strong> as keys (<code class="docutils literal notranslate"><span class="pre">cm.root.some_param</span></code>) instead of raw strings — same binding, less error-prone. String keys are allowed when they refer to a <strong>parameter/attribute</strong> slot’s <code class="docutils literal notranslate"><span class="pre">stable_id</span></code> (not arbitrary part ids).</p>
 </section>
 <section id="i-changed-code-in-a-notebook-and-behavior-is-weird">
 <h2>I changed code in a notebook and behavior is weird.<a class="headerlink" href="#i-changed-code-in-a-notebook-and-behavior-is-weird" title="Link to this heading">¶</a></h2>
@@ -308,8 +324,9 @@ Then bind model values via <code class="docutils literal notranslate"><span clas
 </section>
 <section id="the-graph-compiled-but-evaluate-failed-or-results-look-wrong">
 <h2>The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong<a class="headerlink" href="#the-graph-compiled-but-evaluate-failed-or-results-look-wrong" title="Link to this heading">¶</a></h2>
-<p>Compilation only builds topology; it does not prove inputs, units, or external bindings are coherent. Call <code class="docutils literal notranslate"><span class="pre">validate_graph(graph,</span> <span class="pre">configured_model=cm)</span></code> after <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> and inspect <code class="docutils literal notranslate"><span class="pre">ValidationResult.failures</span></code> before evaluating. For requirement-heavy models, use <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction(result)</span></code> to see which acceptance rows failed rather than relying on a single boolean.</p>
-<p>If validation passes but evaluation still fails, check missing required parameters, wrong stable ids in the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> map, and external <code class="docutils literal notranslate"><span class="pre">compute</span></code> exceptions — the same <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> / <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> constraint rows usually point to the failing check name.</p>
+<p>Compilation only builds topology; it does not prove inputs, units, or external bindings are coherent. With the <strong>explicit</strong> pipeline, call <code class="docutils literal notranslate"><span class="pre">validate_graph(graph,</span> <span class="pre">configured_model=cm)</span></code> after <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> and inspect <code class="docutils literal notranslate"><span class="pre">ValidationResult.failures</span></code> before evaluating. With <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong>, validation runs automatically unless you pass <code class="docutils literal notranslate"><span class="pre">validate=False</span></code>.</p>
+<p>For requirement-heavy models, use <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction(result)</span></code> to see which acceptance rows failed rather than relying on a single boolean.</p>
+<p>If validation passes but evaluation still fails, check missing required parameters, wrong keys in the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> map, and external <code class="docutils literal notranslate"><span class="pre">compute</span></code> exceptions — the same <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> constraint rows usually point to the failing check name.</p>
 </section>
 </section>
 
@@ -369,8 +386,9 @@ Then bind model values via <code class="docutils literal notranslate"><span clas
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">FAQ</a><ul>
-<li><a class="reference internal" href="#why-do-i-need-runcontext-for-each-evaluation">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> for each evaluation?</a></li>
-<li><a class="reference internal" href="#why-are-inputs-bound-by-stable-id">Why are inputs bound by stable id?</a></li>
+<li><a class="reference internal" href="#when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator">When should I use <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> vs <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code>?</a></li>
+<li><a class="reference internal" href="#why-do-i-need-runcontext">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?</a></li>
+<li><a class="reference internal" href="#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">Why are inputs bound by stable id in the explicit pipeline?</a></li>
 <li><a class="reference internal" href="#i-changed-code-in-a-notebook-and-behavior-is-weird">I changed code in a notebook and behavior is weird.</a></li>
 <li><a class="reference internal" href="#when-should-i-use-requirementblock">When should I use <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code>?</a></li>
 <li><a class="reference internal" href="#what-is-the-difference-between-requirement-input-and-requirement-attribute">What is the difference between <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>?</a></li>

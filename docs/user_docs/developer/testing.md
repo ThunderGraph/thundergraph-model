@@ -12,9 +12,10 @@ Use the same conventions as the rest of the repo: **pytest**, fixtures where the
 ## Adding a regression
 
 1. **Reproduce** the bug or contract with the smallest `ConfiguredModel` / graph you can.
-2. Place the test next to the subsystem it guards: **compiler** regressions near graph or compile tests; **execution** regressions near evaluator or run context tests.
+2. Place the test next to the subsystem it guards: **compiler** regressions near graph or compile tests; **execution** regressions near evaluator, run context, or **`configured_model`** (facade) tests.
 3. **Assert** on stable outcomes: `RunResult.passed`, `ValidationResult.failures`, `constraint_results`, or specific slot values via `RunContext.get_value` / stable ids.
-4. Run locally:
+4. **Facade vs explicit pipeline:** Product-facing behavior is often easiest to exercise with **`ConfiguredModel.evaluate`** and **`ValueSlot`** keys. Use **`compile_graph` → `Evaluator.evaluate`** when the regression is about graph identity, handler wiring, **`evaluate_async`**, or parity with the low-level API. Integration tests may compare both paths for the same inputs.
+5. Run locally:
 
 ```bash
 cd thundergraph-model
@@ -28,5 +29,6 @@ uv run pytest -q
 
 ## References
 
+- Execution vocabulary (default vs advanced): {doc}`architecture`
 - Repository layout: {doc}`repository_map`
 - Contributing: {doc}`contributing`

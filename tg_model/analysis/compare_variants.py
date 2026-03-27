@@ -38,15 +38,7 @@ class CompareVariantsValidationError(Exception):
 
 @dataclass(frozen=True)
 class CapturedSlotOutput:
-    """Resolved output for one ``output_paths`` entry in :class:`VariantComparisonRow`.
-
-    Attributes
-    ----------
-    value : Any or None
-        Value from ``RunResult.outputs`` when present.
-    present_in_run_outputs : bool
-        Whether the slot id appeared in ``RunResult.outputs`` (distinguishes missing from ``None``).
-    """
+    """Resolved output for one ``output_paths`` entry in :class:`VariantComparisonRow`."""
 
     value: Any | None
     present_in_run_outputs: bool
@@ -59,17 +51,7 @@ class CapturedSlotOutput:
 
 @dataclass(frozen=True)
 class VariantComparisonRow:
-    """One scenario row from :func:`compare_variants`.
-
-    Attributes
-    ----------
-    label : str
-        Scenario label from the input tuple.
-    outputs : dict
-        Path string → :class:`CapturedSlotOutput`.
-    result : RunResult
-        Full run outcome for that scenario.
-    """
+    """One scenario row from :func:`compare_variants`."""
 
     label: str
     outputs: dict[str, CapturedSlotOutput]

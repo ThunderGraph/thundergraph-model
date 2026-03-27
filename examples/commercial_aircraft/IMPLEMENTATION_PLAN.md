@@ -135,7 +135,7 @@ These are **representative public** anchors the example can cite.
 | `parameter_ref(RootSystem, ...)` | Nested parts consume **mission** parameters without globals. |
 | `model.citation` + `model.references` | Requirements / key parameters trace to **C-*** nodes (per **Citation policy**). |
 | `model.constraint` | Mass limits, **mission closure** vs scenario, min thrust margin — **tunable** for demo closure. |
-| `instantiate` → `compile_graph` → `Evaluator` | One **evaluation** path with **inputs** map and **report** (see **Reporting snapshot**). |
+| `instantiate` / `System.instantiate()` → **`ConfiguredModel.evaluate`** (handles + quantities) | Default **evaluation** path; lazy compile; **reporting** still uses `RunContext` (pass `run_context=` into `evaluate` for `extract`). Explicit `compile_graph` + `Evaluator` remains for advanced use (see ThunderGraph developer docs). |
 
 ---
 
@@ -283,7 +283,7 @@ Everything else can be **parameterized stubs** with clear docstrings until a lat
 `thundergraph-model/tests/integration/test_commercial_aircraft_smoke.py`
 
 - Import the root `System` type from the example package.
-- `compile()` → `instantiate()` → `compile_graph()` → `Evaluator.evaluate()` with **minimal** inputs.
+- `compile()` → `instantiate()` → **`ConfiguredModel.evaluate()`** with **minimal** inputs (handle keys); parity with explicit `compile_graph` + `Evaluator` is covered in the façade integration test.
 - Assert no throw; optionally assert **one** requirement or constraint outcome for regression.
 
 **Compile-only tests** can live alongside other `tests/unit` patterns that import part types. **Citations:** assert `references` / compile edges using existing ThunderGraph test patterns where applicable.

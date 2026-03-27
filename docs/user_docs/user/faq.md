@@ -1,14 +1,32 @@
 # FAQ
 
-## Why do I need `RunContext` for each evaluation?
+## When should I use `ConfiguredModel.evaluate` vs `compile_graph` + `Evaluator`?
+
+**Default:** Call **`ConfiguredModel.evaluate`** on the configured model after `instantiate`. You pass **handles** (`ValueSlot`) and quantities; the library compiles the graph on first use, validates by default, and returns a **`RunResult`**. That is the path we recommend for applications, notebooks, and most scripts.
+
+**Use the explicit pipeline** (`compile_graph` → `validate_graph` → `Evaluator` + `RunContext`) when you need:
+
+- `Evaluator.evaluate_async` (async external backends)
+- to **inspect or reuse** the `DependencyGraph` or handler map
+- to **control validation timing** (e.g. validate once, then many evaluations with `evaluate(..., validate=False)` is also available on the façade)
+- to integrate with tooling that already assembles `Evaluator` and `RunContext`
+
+Both paths share the **same** compiled graph cache on the `ConfiguredModel` when you mix them on one instance.
+
+See {doc}`quickstart` and {doc}`../api/api_execution`.
+
+## Why do I need `RunContext`?
 
 `ConfiguredModel` is frozen topology. `RunContext` stores per-run mutable values and results.
-Use a fresh context per run.
 
-## Why are inputs bound by stable id?
+- **Default `evaluate()` path:** you usually **do not** create a `RunContext`; the method uses a fresh one per call unless you pass `run_context=` for advanced testing.
+- **Explicit `Evaluator` path:** you create `RunContext()` and pass it to `Evaluator.evaluate` / `evaluate_async`.
 
-Stable ids are deterministic and unambiguous for a configured topology.
-You can resolve them from slots (for example `cm.root.some_param.stable_id`).
+## Why are inputs bound by stable id in the explicit pipeline?
+
+The evaluator’s wire format is keyed by **stable slot ids** (strings). Stable ids are deterministic and unambiguous for a configured topology.
+
+On the **facade**, prefer **slot handles** as keys (`cm.root.some_param`) instead of raw strings — same binding, less error-prone. String keys are allowed when they refer to a **parameter/attribute** slot’s `stable_id` (not arbitrary part ids).
 
 ## I changed code in a notebook and behavior is weird.
 
@@ -34,6 +52,8 @@ Then bind model values via `allocate(..., inputs=...)` for **`requirement_input`
 
 ## The graph compiled but `evaluate` failed or results look wrong
 
-Compilation only builds topology; it does not prove inputs, units, or external bindings are coherent. Call `validate_graph(graph, configured_model=cm)` after `compile_graph` and inspect `ValidationResult.failures` before evaluating. For requirement-heavy models, use `summarize_requirement_satisfaction(result)` to see which acceptance rows failed rather than relying on a single boolean.
+Compilation only builds topology; it does not prove inputs, units, or external bindings are coherent. With the **explicit** pipeline, call `validate_graph(graph, configured_model=cm)` after `compile_graph` and inspect `ValidationResult.failures` before evaluating. With **`ConfiguredModel.evaluate`**, validation runs automatically unless you pass `validate=False`.
 
-If validation passes but evaluation still fails, check missing required parameters, wrong stable ids in the `inputs` map, and external `compute` exceptions — the same `RunContext` / `RunResult` constraint rows usually point to the failing check name.
+For requirement-heavy models, use `summarize_requirement_satisfaction(result)` to see which acceptance rows failed rather than relying on a single boolean.
+
+If validation passes but evaluation still fails, check missing required parameters, wrong keys in the `inputs` map, and external `compute` exceptions — the same `RunResult` constraint rows usually point to the failing check name.

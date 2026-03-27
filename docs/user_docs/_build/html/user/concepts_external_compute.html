@@ -326,6 +326,20 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">total_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">))</span>
 </pre></div>
 </div>
+<section id="same-run-with-evaluate-recommended">
+<h3>Same run with <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> (recommended)<a class="headerlink" href="#same-run-with-evaluate-recommended" title="Link to this heading">¶</a></h3>
+<p>After <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>, you can skip manual <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> / <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> and pass <strong>slot handles</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">dry_kg</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span> <span class="n">kg</span><span class="p">),</span>
+        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="n">kg</span><span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart (Concrete Example)</span></a> and <a class="reference internal" href="faq.html"><span class="doc">FAQ</span></a>.</p>
+</section>
 </section>
 <section id="input-and-output-contract">
 <h2>Input and output contract<a class="headerlink" href="#input-and-output-contract" title="Link to this heading">¶</a></h2>
@@ -401,7 +415,10 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Concept: External Compute (Concrete Binding)</a><ul>
-<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#example">Example</a><ul>
+<li><a class="reference internal" href="#same-run-with-evaluate-recommended">Same run with <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> (recommended)</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#input-and-output-contract">Input and output contract</a></li>
 <li><a class="reference internal" href="#rule-of-thumb">Rule of thumb</a></li>
 </ul>

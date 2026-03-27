@@ -31,17 +31,7 @@ from tg_model.execution.value_slots import ValueSlot
 
 @dataclass(frozen=True)
 class SweepRecord:
-    """One row from :func:`sweep` / :func:`sweep_async`.
-
-    Attributes
-    ----------
-    index : int
-        Zero-based Cartesian index (deterministic axis ordering).
-    inputs : dict
-        ``ValueSlot.stable_id`` → bound value for that sample.
-    result : RunResult
-        Evaluation outcome for the sample.
-    """
+    """One row from :func:`sweep` / :func:`sweep_async`."""
 
     index: int
     inputs: dict[str, Any]

@@ -12,9 +12,12 @@ tg_model.execution.configured_model.instantiate
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from tg_model.model.compile_types import compile_type
+
+if TYPE_CHECKING:
+    from tg_model.execution.configured_model import ConfiguredModel
 
 
 class Element:
@@ -100,3 +103,37 @@ class RequirementBlock(Element):
 
 class System(Element):
     """Top-level system element that composes parts (typical configured root type)."""
+
+    @classmethod
+    def instantiate(cls) -> ConfiguredModel:
+        """Build a :class:`~tg_model.execution.configured_model.ConfiguredModel` for this root type.
+
+        Delegates to :func:`~tg_model.execution.configured_model.instantiate` — same behavior and
+        no extra compilation path.
+
+        Returns
+        -------
+        ConfiguredModel
+            Frozen topology for graph compile and evaluation. A **new** instance on every call;
+            there is no shared singleton configured model.
+
+        Notes
+        -----
+        Call this on a **concrete** ``System`` subclass that implements :meth:`Element.define`
+        for your program root. That is the same requirement as passing that class to
+        :func:`~tg_model.execution.configured_model.instantiate`.
+
+        The base :class:`System` type itself is not a valid configured root; ``System.instantiate()``
+        fails the same way as ``instantiate(System)``.
+
+        Configured roots that are :class:`Part` subclasses still use
+        :func:`~tg_model.execution.configured_model.instantiate` only (no class method on
+        :class:`Part`).
+
+        See Also
+        --------
+        tg_model.execution.configured_model.instantiate
+        """
+        from tg_model.execution.configured_model import instantiate as instantiate_configured
+
+        return instantiate_configured(cls)

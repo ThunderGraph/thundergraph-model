@@ -55,6 +55,22 @@ print(result.passed)
 print(ctx.get_value(cm.root.total_kg.stable_id))
 ```
 
+### Same run with `evaluate` (recommended)
+
+After `instantiate`, you can skip manual `compile_graph` / `Evaluator` and pass **slot handles**:
+
+```python
+result = cm.evaluate(
+    inputs={
+        cm.root.dry_kg: Quantity(10000, kg),
+        cm.root.payload_kg: Quantity(5000, kg),
+    },
+)
+print(result.passed)
+```
+
+See {doc}`quickstart` and {doc}`faq`.
+
 ## Input and output contract
 
 - **Binding keys:** The string keys in `ExternalComputeBinding(..., inputs={"dry": ..., "payload": ...})` are the names your `compute(self, inputs)` receives. Values are `unitflow.Quantity` instances with compatible units for the linked slots.

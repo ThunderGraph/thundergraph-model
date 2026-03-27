@@ -15,21 +15,7 @@ from tg_model.execution.run_context import RunContext
 
 @dataclass(frozen=True)
 class RequirementSatisfactionResult:
-    """Outcome of one requirement acceptance check (one allocation × one compiled check).
-
-    Attributes
-    ----------
-    requirement_path : str
-        Dotted requirement path in the configured model.
-    allocation_target_path : str
-        Part path where the requirement was allocated.
-    passed : bool
-        Whether the acceptance expression evaluated true.
-    evidence : str
-        Optional evaluator evidence string.
-    check_name : str
-        Internal constraint/check name from the graph.
-    """
+    """Outcome of one requirement acceptance check (one allocation x one compiled check)."""
 
     requirement_path: str
     allocation_target_path: str

@@ -18,6 +18,33 @@ export PYTHONPATH="examples${PYTHONPATH:+:$PYTHONPATH}"
 uv run python -c "from commercial_aircraft import CargoJetProgram; print(CargoJetProgram.compile()['owner'])"
 ```
 
+## Run one evaluation (recommended)
+
+After `instantiate(CargoJetProgram)` or `CargoJetProgram.instantiate()`, call **`ConfiguredModel.evaluate`** with **`ValueSlot` handles** as keys and **unitflow** quantities as values (same pattern as the [user quickstart](../../docs/user_docs/user/quickstart.md)). That path **lazy-compiles** the graph and runs **`validate_graph`** by default.
+
+[`reporting/extract.py`](./reporting/extract.py) builds the ASCII report from **`ConfiguredModel`** + **`RunResult`**: `extract_cargo_jet_evaluation_report(cm, result)` after **`evaluate`**. Optional keyword **`ctx=`** adds external-tool **provenance** and **slot-state** counts (reads private context fields — demo-only); omit it if you do not need those lines in the dict / report.
+
+```python
+from tg_model.execution import instantiate
+from unitflow.catalogs.si import kg, m
+from unitflow import Quantity
+
+from commercial_aircraft import CargoJetProgram
+from commercial_aircraft.reporting import extract_cargo_jet_evaluation_report
+
+cm = instantiate(CargoJetProgram)
+ac = cm.aircraft
+inputs = {
+    cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+    cm.scenario_design_range_m: Quantity(8_000_000, m),
+    # ... remaining scenario / aircraft parameters (see integration tests)
+}
+result = cm.evaluate(inputs=inputs)
+report = extract_cargo_jet_evaluation_report(cm, result)
+```
+
+For **`compile_graph` → `Evaluator` → `RunContext`** (async externals, stepping the pipeline, or custom tooling), see the [developer architecture](../../docs/user_docs/developer/architecture.md) and [extension playbook](../../docs/user_docs/developer/extension_playbook.md).
+
 Notebook (from repo root or `thundergraph-model/`; the notebook prepends both the package root and `examples/`):
 
 ```bash

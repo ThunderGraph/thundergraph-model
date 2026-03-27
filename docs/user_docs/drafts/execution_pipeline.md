@@ -17,7 +17,7 @@ Output: class-level compiled artifact (definition data), not an instance topolog
 
 ## 2) Instantiate a configured topology
 
-Call `instantiate(SomeSystem)` to get `ConfiguredModel`.
+Call `instantiate(SomeSystem)` to get `ConfiguredModel`. Equivalent: `SomeSystem.instantiate()` when the root type is a `System` subclass.
 
 What happens:
 
@@ -28,6 +28,10 @@ What happens:
 - freezes topology (no structural mutation afterward)
 
 Output: one immutable configuration-scoped topology.
+
+## 2a) Default run path: `ConfiguredModel.evaluate` (recommended)
+
+Call `configured_model.evaluate(inputs={slot: Quantity, ...})` with **handles** (`ValueSlot`) on that model. The first call **compiles** the dependency graph (cached on the instance), optionally runs `validate_graph`, then runs the synchronous evaluator. Subsequent calls reuse the same graph. This is the **low-ceremony** path documented in the user **Quickstart** and **FAQ**.
 
 ## 3) Compile dependency graph
 
@@ -53,10 +57,10 @@ What happens:
 
 Output: `ValidationResult` (pass/fail + failures list).
 
-## 5) Evaluate one run
+## 5) Evaluate one run (explicit pipeline)
 
 Create fresh `RunContext`, then run `Evaluator(graph, compute_handlers).evaluate(...)`
-(or `.evaluate_async(...)` for async external backends).
+(or `.evaluate_async(...)` for async external backends). If you already used **`ConfiguredModel.evaluate`** (step 2a), you are **not** required to do steps 3–5 separately unless you need the explicit objects.
 
 What happens:
 

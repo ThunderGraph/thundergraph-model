@@ -19,17 +19,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class RunResult:
-    """Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run.
-
-    Attributes
-    ----------
-    outputs : dict
-        Optional named outputs populated by higher-level runners (core evaluator may leave empty).
-    constraint_results : list of ConstraintResult
-        Constraint and requirement-acceptance checks recorded on the context.
-    failures : list of str
-        Missing required inputs and other top-level failures.
-    """
+    """Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run."""
 
     outputs: dict[str, Any] = field(default_factory=dict)
     constraint_results: list[ConstraintResult] = field(default_factory=list)

@@ -279,9 +279,12 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.compile_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_type</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.configured_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfiguredModel</span>
 
 
 <div class="viewcode-block" id="Element">
@@ -383,7 +386,44 @@
 <div class="viewcode-block" id="System">
 <a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.System">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">System</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level system element that composes parts (typical configured root type).&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level system element that composes parts (typical configured root type).&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="System.instantiate">
+<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.System.instantiate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">instantiate</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfiguredModel</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a :class:`~tg_model.execution.configured_model.ConfiguredModel` for this root type.</span>
+
+<span class="sd">        Delegates to :func:`~tg_model.execution.configured_model.instantiate` — same behavior and</span>
+<span class="sd">        no extra compilation path.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ConfiguredModel</span>
+<span class="sd">            Frozen topology for graph compile and evaluation. A **new** instance on every call;</span>
+<span class="sd">            there is no shared singleton configured model.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Call this on a **concrete** ``System`` subclass that implements :meth:`Element.define`</span>
+<span class="sd">        for your program root. That is the same requirement as passing that class to</span>
+<span class="sd">        :func:`~tg_model.execution.configured_model.instantiate`.</span>
+
+<span class="sd">        The base :class:`System` type itself is not a valid configured root; ``System.instantiate()``</span>
+<span class="sd">        fails the same way as ``instantiate(System)``.</span>
+
+<span class="sd">        Configured roots that are :class:`Part` subclasses still use</span>
+<span class="sd">        :func:`~tg_model.execution.configured_model.instantiate` only (no class method on</span>
+<span class="sd">        :class:`Part`).</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        tg_model.execution.configured_model.instantiate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.configured_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">instantiate</span> <span class="k">as</span> <span class="n">instantiate_configured</span>
+
+        <span class="k">return</span> <span class="n">instantiate_configured</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span></div>
+</div>
 
 </pre></div>
         </article>

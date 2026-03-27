@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-225%20passed-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-241%20passed-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](#development)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![mypy](https://img.shields.io/badge/types-mypy--strict-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)
@@ -42,7 +42,7 @@ If you want a library that feels **honest** (fail-fast validation, explicit grap
 | **External computation** | **`ExternalComputeBinding`**, **`attribute(computed_by=...)`**, and graph compilation wire fake or real tools into the same `Evaluator` pipeline as expressions and constraints. |
 | **Citations & references** | `citation` nodes and `references` edges bind standards, reports, or clauses to declared elements — provenance without pretending to be a bibliography manager. |
 | **Discrete behavior** | States, events, guards, sequences, fork/join, item flow across ports — **scenarios** for trace validation. |
-| **Execution** | `instantiate` → `compile_graph` → `Evaluator` on a `RunContext` — one pipeline for constraints, requirement checks, and external compute. |
+| **Execution** | `instantiate` / `System.instantiate()` → optional `compile_graph` → `ConfiguredModel.evaluate(inputs={slot: Quantity(...)})` **or** explicit `Evaluator` + `RunContext` — same pipeline under the hood. |
 
 ---
 
@@ -67,7 +67,7 @@ The **installable wheel** only contains **`tg_model`**. Larger **walkthroughs** 
 
 | Location | What it is |
 |----------|------------|
-| [`examples/commercial_aircraft/`](examples/commercial_aircraft/) | Requirements-first cargo-jet slice: stdlib L1 specs, nested `RequirementBlock`, `allocate(inputs=…)`, roll-ups, two external-compute owners, reporting extract/snapshot. Put **`thundergraph-model/examples`** on `PYTHONPATH` and `import commercial_aircraft`. See that folder’s [`README.md`](examples/commercial_aircraft/README.md). |
+| [`examples/commercial_aircraft/`](examples/commercial_aircraft/) | Requirements-first cargo-jet slice: stdlib L1 specs, nested `RequirementBlock`, `allocate(inputs=…)`, roll-ups, two external-compute owners, reporting extract/snapshot; **`ConfiguredModel.evaluate`** + **`ValueSlot`** keys for runs (see example [`README.md`](examples/commercial_aircraft/README.md)). Put **`thundergraph-model/examples`** on `PYTHONPATH` and `import commercial_aircraft`. |
 | [`notebooks/`](notebooks/) | Jupyter demos (AEV, LEO stack, sodium fast reactor, cargo jet). |
 
 **Notebook demos** (run from `thundergraph-model/` after `uv sync`; dev group includes `ipykernel` / `nbconvert`):
@@ -92,6 +92,7 @@ uv run jupyter nbconvert --to notebook --execute notebooks/cargo_jet_program.ipy
 | Doc | Purpose |
 |-----|---------|
 | [`docs/user_docs/IMPLEMENTATION_PLAN.md`](docs/user_docs/IMPLEMENTATION_PLAN.md) | **Roadmap:** Sphinx HTML site, NumPy docstrings, user vs developer docs, hosting. |
+| [`CHANGELOG.md`](CHANGELOG.md) | **Release notes** intent (e.g. evaluation façade, `System.instantiate`). |
 | [`docs/generation_docs/v0_api.md`](docs/generation_docs/v0_api.md) | Internal design / agent-oriented API draft (not the public manual). |
 | [`docs/generation_docs/implementation_plan.md`](docs/generation_docs/implementation_plan.md) | Historical phased roadmap for library development. |
 | [`docs/generation_docs/logical_architecture.md`](docs/generation_docs/logical_architecture.md) | Conceptual architecture. |
@@ -102,6 +103,7 @@ Build user docs HTML (Phase 3 scaffold):
 ```bash
 uv sync --group docs
 uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html
+uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html -W   # warnings as errors (CI-style)
 ```
 
 ---
@@ -110,9 +112,10 @@ uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html
 
 | Tool | Role |
 |------|------|
-| **pytest** + **pytest-cov** | **225** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
+| **pytest** + **pytest-cov** | **241** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
 | **Ruff** | Lint + import sort (`E`, `F`, `I`, `UP`, `RUF`). |
 | **mypy** | **Strict** typing on `tg_model`. |
+| **pyright** | Optional **Pylance-style** check; dev dependency. The evaluation façade (`ConfiguredModel.evaluate`, `System.instantiate`) is kept **pyright-clean**; full-package `pyright tg_model` may still report pre-existing issues elsewhere until cleaned up. |
 
 Typical loop:
 
@@ -120,6 +123,7 @@ Typical loop:
 uv run pytest
 uv run ruff check tg_model tests && uv run ruff format tg_model tests
 uv run mypy tg_model
+uv run pyright tg_model/execution/configured_model.py tg_model/model/elements.py
 ```
 
 **Coverage** badge (~**87%** for `tg_model` with the current suite) comes from `uv run pytest`; re-run to refresh.

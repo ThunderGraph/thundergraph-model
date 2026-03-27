@@ -291,34 +291,12 @@ only — not program-wide “engineering impact” (see <a class="reference inte
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.CapturedSlotOutput.value">
-<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#tg_model.analysis.CapturedSlotOutput.value" title="Link to this definition">¶</a></dt>
-<dd><p>Value from <code class="docutils literal notranslate"><span class="pre">RunResult.outputs</span></code> when present.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Any or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.analysis.CapturedSlotOutput.present_in_run_outputs">
-<span class="sig-name descname"><span class="pre">present_in_run_outputs</span></span><a class="headerlink" href="#tg_model.analysis.CapturedSlotOutput.present_in_run_outputs" title="Link to this definition">¶</a></dt>
-<dd><p>Whether the slot id appeared in <code class="docutils literal notranslate"><span class="pre">RunResult.outputs</span></code> (distinguishes missing from <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#tg_model.analysis.CapturedSlotOutput.value" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">present_in_run_outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.analysis.CapturedSlotOutput.present_in_run_outputs">
+<span class="sig-name descname"><span class="pre">present_in_run_outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#tg_model.analysis.CapturedSlotOutput.present_in_run_outputs" title="Link to this definition">¶</a></dt>
 <dd><p>True iff the slot’s <code class="docutils literal notranslate"><span class="pre">stable_id</span></code> was present in <code class="docutils literal notranslate"><span class="pre">RunResult.outputs</span></code>.</p>
 </dd></dl>
 
@@ -363,50 +341,17 @@ only — not program-wide “engineering impact” (see <a class="reference inte
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.ImpactReport.changed_paths">
-<span class="sig-name descname"><span class="pre">changed_paths</span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.changed_paths" title="Link to this definition">¶</a></dt>
-<dd><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">path_string</span></code> for seed slots.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[str, …]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">changed_paths</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.changed_paths" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.ImpactReport.upstream_slot_ids">
-<span class="sig-name descname"><span class="pre">upstream_slot_ids</span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.upstream_slot_ids" title="Link to this definition">¶</a></dt>
-<dd><p>Other slots that may feed changed slots (excluding seeds).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>frozenset[str]</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">upstream_slot_ids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.upstream_slot_ids" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.ImpactReport.downstream_slot_ids">
-<span class="sig-name descname"><span class="pre">downstream_slot_ids</span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.downstream_slot_ids" title="Link to this definition">¶</a></dt>
-<dd><p>Other slots that may depend on changed slots (excluding seeds).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>frozenset[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">changed_paths</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">upstream_slot_ids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">downstream_slot_ids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">downstream_slot_ids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.analysis.ImpactReport.downstream_slot_ids" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -427,50 +372,17 @@ only — not program-wide “engineering impact” (see <a class="reference inte
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.SweepRecord.index">
-<span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.index" title="Link to this definition">¶</a></dt>
-<dd><p>Zero-based Cartesian index (deterministic axis ordering).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.SweepRecord.inputs">
-<span class="sig-name descname"><span class="pre">inputs</span></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.inputs" title="Link to this definition">¶</a></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">ValueSlot.stable_id</span></code> → bound value for that sample.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">inputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.inputs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.SweepRecord.result">
-<span class="sig-name descname"><span class="pre">result</span></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.result" title="Link to this definition">¶</a></dt>
-<dd><p>Evaluation outcome for the sample.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.RunResult">RunResult</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">inputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id6" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.evaluator.RunResult"><span class="pre">RunResult</span></a></span><a class="headerlink" href="#id7" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.evaluator.RunResult"><span class="pre">RunResult</span></a></span><a class="headerlink" href="#tg_model.analysis.SweepRecord.result" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -491,50 +403,17 @@ only — not program-wide “engineering impact” (see <a class="reference inte
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.VariantComparisonRow.label">
-<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.label" title="Link to this definition">¶</a></dt>
-<dd><p>Scenario label from the input tuple.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.label" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.VariantComparisonRow.outputs">
-<span class="sig-name descname"><span class="pre">outputs</span></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.outputs" title="Link to this definition">¶</a></dt>
-<dd><p>Path string → <a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput" title="tg_model.analysis.CapturedSlotOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">CapturedSlotOutput</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput" title="tg_model.analysis.compare_variants.CapturedSlotOutput"><span class="pre">CapturedSlotOutput</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.outputs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tg_model.analysis.VariantComparisonRow.result">
-<span class="sig-name descname"><span class="pre">result</span></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.result" title="Link to this definition">¶</a></dt>
-<dd><p>Full run outcome for that scenario.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.RunResult">RunResult</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id8" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">outputs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput" title="tg_model.analysis.compare_variants.CapturedSlotOutput"><span class="pre">CapturedSlotOutput</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id9" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.evaluator.RunResult"><span class="pre">RunResult</span></a></span><a class="headerlink" href="#id10" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="api_execution.html#tg_model.execution.RunResult" title="tg_model.execution.evaluator.RunResult"><span class="pre">RunResult</span></a></span><a class="headerlink" href="#tg_model.analysis.VariantComparisonRow.result" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -793,8 +672,6 @@ of values (axes). Dimension order is sorted by <code class="docutils literal not
 <li><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput.value"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput.value</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput.present_in_run_outputs"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput.present_in_run_outputs</span></code></a></li>
-<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput.value</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput.present_in_run_outputs</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.CapturedSlotOutput.realized"><code class="docutils literal notranslate"><span class="pre">CapturedSlotOutput.realized</span></code></a></li>
 </ul>
 </li>
@@ -803,27 +680,18 @@ of values (axes). Dimension order is sorted by <code class="docutils literal not
 <li><a class="reference internal" href="#tg_model.analysis.ImpactReport.changed_paths"><code class="docutils literal notranslate"><span class="pre">ImpactReport.changed_paths</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.ImpactReport.upstream_slot_ids"><code class="docutils literal notranslate"><span class="pre">ImpactReport.upstream_slot_ids</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.ImpactReport.downstream_slot_ids"><code class="docutils literal notranslate"><span class="pre">ImpactReport.downstream_slot_ids</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">ImpactReport.changed_paths</span></code></a></li>
-<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">ImpactReport.upstream_slot_ids</span></code></a></li>
-<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">ImpactReport.downstream_slot_ids</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.analysis.SweepRecord"><code class="docutils literal notranslate"><span class="pre">SweepRecord</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.analysis.SweepRecord.index"><code class="docutils literal notranslate"><span class="pre">SweepRecord.index</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.SweepRecord.inputs"><code class="docutils literal notranslate"><span class="pre">SweepRecord.inputs</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.SweepRecord.result"><code class="docutils literal notranslate"><span class="pre">SweepRecord.result</span></code></a></li>
-<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">SweepRecord.index</span></code></a></li>
-<li><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">SweepRecord.inputs</span></code></a></li>
-<li><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">SweepRecord.result</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.analysis.VariantComparisonRow"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow</span></code></a><ul>
 <li><a class="reference internal" href="#tg_model.analysis.VariantComparisonRow.label"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.label</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.VariantComparisonRow.outputs"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.outputs</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.analysis.VariantComparisonRow.result"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.result</span></code></a></li>
-<li><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.label</span></code></a></li>
-<li><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.outputs</span></code></a></li>
-<li><a class="reference internal" href="#id10"><code class="docutils literal notranslate"><span class="pre">VariantComparisonRow.result</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.analysis.compare_variants"><code class="docutils literal notranslate"><span class="pre">compare_variants()</span></code></a></li>

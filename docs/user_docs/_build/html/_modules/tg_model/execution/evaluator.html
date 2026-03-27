@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -283,17 +288,7 @@
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.RunResult">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RunResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    outputs : dict</span>
-<span class="sd">        Optional named outputs populated by higher-level runners (core evaluator may leave empty).</span>
-<span class="sd">    constraint_results : list of ConstraintResult</span>
-<span class="sd">        Constraint and requirement-acceptance checks recorded on the context.</span>
-<span class="sd">    failures : list of str</span>
-<span class="sd">        Missing required inputs and other top-level failures.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run.&quot;&quot;&quot;</span>
 
     <span class="n">outputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">constraint_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ConstraintResult</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>

@@ -29,6 +29,14 @@ def setup_function() -> None:
     reset_commercial_aircraft_types()
 
 
+def test_cargo_jet_program_instantiate_classmethod_matches_module() -> None:
+    """Phase 4: ``CargoJetProgram.instantiate()`` matches ``instantiate(CargoJetProgram)``."""
+    cm_fn = instantiate(CargoJetProgram)
+    cm_cls = CargoJetProgram.instantiate()
+    assert cm_fn.root.stable_id == cm_cls.root.stable_id
+    assert set(cm_fn.path_registry.keys()) == set(cm_cls.path_registry.keys())
+
+
 def test_cargo_jet_program_compiles() -> None:
     art = CargoJetProgram.compile()
     assert "nodes" in art
@@ -54,33 +62,66 @@ def test_cargo_jet_program_instantiate_and_evaluate_parameters() -> None:
     ac = cm.aircraft
     # Notional weight book: OEW 140 t, MZFW 240 t → structural payload cap 100 t; MTOW 280 t with 40 t trip fuel.
     inputs = {
-        cm.scenario_payload_mass_kg.stable_id: Quantity(95_000, kg),
-        cm.scenario_design_range_m.stable_id: Quantity(8_000_000, m),
-        cm.mission_desk_baseline_max_range_m.stable_id: Quantity(10_000_000, m),
-        ac.modeled_max_design_range_m.stable_id: Quantity(9_000_000, m),
-        ac.notional_mzfw_kg.stable_id: Quantity(240_000, kg),
-        ac.notional_mtow_kg.stable_id: Quantity(280_000, kg),
-        ac.notional_trip_fuel_kg.stable_id: Quantity(40_000, kg),
-        ac.fuselage.dry_mass_kg.stable_id: Quantity(45_000, kg),
-        ac.wing.dry_mass_kg.stable_id: Quantity(32_000, kg),
-        ac.wing.notional_wing_span_m.stable_id: Quantity(64, m),
-        ac.empennage.dry_mass_kg.stable_id: Quantity(8_000, kg),
-        ac.landing_gear.dry_mass_kg.stable_id: Quantity(12_000, kg),
-        ac.propulsion_installation.dry_mass_kg.stable_id: Quantity(28_000, kg),
-        ac.aircraft_systems.dry_mass_kg.stable_id: Quantity(15_000, kg),
+        cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+        cm.scenario_design_range_m: Quantity(8_000_000, m),
+        cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
+        ac.modeled_max_design_range_m: Quantity(9_000_000, m),
+        ac.notional_mzfw_kg: Quantity(240_000, kg),
+        ac.notional_mtow_kg: Quantity(280_000, kg),
+        ac.notional_trip_fuel_kg: Quantity(40_000, kg),
+        ac.fuselage.dry_mass_kg: Quantity(45_000, kg),
+        ac.wing.dry_mass_kg: Quantity(32_000, kg),
+        ac.wing.notional_wing_span_m: Quantity(64, m),
+        ac.empennage.dry_mass_kg: Quantity(8_000, kg),
+        ac.landing_gear.dry_mass_kg: Quantity(12_000, kg),
+        ac.propulsion_installation.dry_mass_kg: Quantity(28_000, kg),
+        ac.aircraft_systems.dry_mass_kg: Quantity(15_000, kg),
     }
-    graph, handlers = compile_graph(cm)
-    val = validate_graph(graph)
-    assert val.passed, val.failures
-    ctx = RunContext()
-    result = Evaluator(graph, compute_handlers=handlers).evaluate(ctx, inputs=inputs)
+    result = cm.evaluate(inputs=inputs)
     assert not result.failures, result.failures
     assert cm.root is not None
-    margin = ctx.get_value(cm.mission_range_margin_m.stable_id)
+    out = result.outputs
+    margin = out[cm.mission_range_margin_m.stable_id]
     assert margin > Quantity(2_000_000, m)
     assert margin < Quantity(2_100_000, m)
-    wing_i = ctx.get_value(ac.wing.wing_structural_intensity_kg_per_m.stable_id)
+    wing_i = out[ac.wing.wing_structural_intensity_kg_per_m.stable_id]
     assert wing_i.is_close(Quantity(975, kg / m))
+
+
+def test_cargo_jet_configured_model_evaluate_facade() -> None:
+    """Facade evaluate() matches explicit pipeline: externals, requirements, constraint outcomes."""
+    cm = instantiate(CargoJetProgram)
+    ac = cm.aircraft
+    inputs = {
+        cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+        cm.scenario_design_range_m: Quantity(8_000_000, m),
+        cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
+        ac.modeled_max_design_range_m: Quantity(9_000_000, m),
+        ac.notional_mzfw_kg: Quantity(240_000, kg),
+        ac.notional_mtow_kg: Quantity(280_000, kg),
+        ac.notional_trip_fuel_kg: Quantity(40_000, kg),
+        ac.fuselage.dry_mass_kg: Quantity(45_000, kg),
+        ac.wing.dry_mass_kg: Quantity(32_000, kg),
+        ac.wing.notional_wing_span_m: Quantity(64, m),
+        ac.empennage.dry_mass_kg: Quantity(8_000, kg),
+        ac.landing_gear.dry_mass_kg: Quantity(12_000, kg),
+        ac.propulsion_installation.dry_mass_kg: Quantity(28_000, kg),
+        ac.aircraft_systems.dry_mass_kg: Quantity(15_000, kg),
+    }
+    result_facade = cm.evaluate(inputs=inputs)
+    graph, handlers = compile_graph(cm)
+    assert validate_graph(graph, configured_model=cm).passed
+    inputs_by_id = {slot.stable_id: val for slot, val in inputs.items()}
+    result_explicit = Evaluator(graph, compute_handlers=handlers).evaluate(
+        RunContext(),
+        inputs=inputs_by_id,
+    )
+    assert result_facade.passed == result_explicit.passed
+    assert result_facade.failures == result_explicit.failures
+    assert len(result_facade.constraint_results) == len(result_explicit.constraint_results)
+    assert [c.passed for c in result_facade.constraint_results] == [
+        c.passed for c in result_explicit.constraint_results
+    ]
 
 
 def test_requirement_allocate_edges_exist() -> None:
@@ -103,30 +144,29 @@ def test_cargo_jet_extract_and_snapshot_report() -> None:
     cm = instantiate(CargoJetProgram)
     ac = cm.aircraft
     inputs = {
-        cm.scenario_payload_mass_kg.stable_id: Quantity(95_000, kg),
-        cm.scenario_design_range_m.stable_id: Quantity(8_000_000, m),
-        cm.mission_desk_baseline_max_range_m.stable_id: Quantity(10_000_000, m),
-        ac.modeled_max_design_range_m.stable_id: Quantity(9_000_000, m),
-        ac.notional_mzfw_kg.stable_id: Quantity(240_000, kg),
-        ac.notional_mtow_kg.stable_id: Quantity(280_000, kg),
-        ac.notional_trip_fuel_kg.stable_id: Quantity(40_000, kg),
-        ac.fuselage.dry_mass_kg.stable_id: Quantity(45_000, kg),
-        ac.wing.dry_mass_kg.stable_id: Quantity(32_000, kg),
-        ac.wing.notional_wing_span_m.stable_id: Quantity(64, m),
-        ac.empennage.dry_mass_kg.stable_id: Quantity(8_000, kg),
-        ac.landing_gear.dry_mass_kg.stable_id: Quantity(12_000, kg),
-        ac.propulsion_installation.dry_mass_kg.stable_id: Quantity(28_000, kg),
-        ac.aircraft_systems.dry_mass_kg.stable_id: Quantity(15_000, kg),
+        cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+        cm.scenario_design_range_m: Quantity(8_000_000, m),
+        cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
+        ac.modeled_max_design_range_m: Quantity(9_000_000, m),
+        ac.notional_mzfw_kg: Quantity(240_000, kg),
+        ac.notional_mtow_kg: Quantity(280_000, kg),
+        ac.notional_trip_fuel_kg: Quantity(40_000, kg),
+        ac.fuselage.dry_mass_kg: Quantity(45_000, kg),
+        ac.wing.dry_mass_kg: Quantity(32_000, kg),
+        ac.wing.notional_wing_span_m: Quantity(64, m),
+        ac.empennage.dry_mass_kg: Quantity(8_000, kg),
+        ac.landing_gear.dry_mass_kg: Quantity(12_000, kg),
+        ac.propulsion_installation.dry_mass_kg: Quantity(28_000, kg),
+        ac.aircraft_systems.dry_mass_kg: Quantity(15_000, kg),
     }
-    graph, handlers = compile_graph(cm)
-    assert validate_graph(graph).passed
-    ctx = RunContext()
-    result = Evaluator(graph, compute_handlers=handlers).evaluate(ctx, inputs=inputs)
+    result = cm.evaluate(inputs=inputs)
     assert result.passed, result.failures
-    data = extract_cargo_jet_evaluation_report(cm, ctx, result)
+    data = extract_cargo_jet_evaluation_report(cm, result)
     assert data["evaluation_passed"]
     assert data["thesis"]["margin_non_negative"]
     assert data["thesis"]["declared_envelope_constraints_passed"]
+    assert data["external_provenance"] == {}
+    assert data["slot_states_summary"] is None
     assert " m" in data["thesis"]["mission_range_margin_m"]
     assert "km" in data["thesis"]["mission_range_margin_km"].lower()
     text = format_cargo_jet_report(data)
@@ -136,7 +176,34 @@ def test_cargo_jet_extract_and_snapshot_report() -> None:
     assert "req_cargo_design_mission_payload_closure" in text
     assert "req_cargo_design_mission_range_closure" in text
     assert "executable_acceptance" in text
+
+
+def test_extract_cargo_jet_includes_provenance_when_ctx_passed() -> None:
+    """Optional ``ctx=`` on extract fills demo-only provenance / slot summaries from the run context."""
+    cm = instantiate(CargoJetProgram)
+    ac = cm.aircraft
+    inputs = {
+        cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+        cm.scenario_design_range_m: Quantity(8_000_000, m),
+        cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
+        ac.modeled_max_design_range_m: Quantity(9_000_000, m),
+        ac.notional_mzfw_kg: Quantity(240_000, kg),
+        ac.notional_mtow_kg: Quantity(280_000, kg),
+        ac.notional_trip_fuel_kg: Quantity(40_000, kg),
+        ac.fuselage.dry_mass_kg: Quantity(45_000, kg),
+        ac.wing.dry_mass_kg: Quantity(32_000, kg),
+        ac.wing.notional_wing_span_m: Quantity(64, m),
+        ac.empennage.dry_mass_kg: Quantity(8_000, kg),
+        ac.landing_gear.dry_mass_kg: Quantity(12_000, kg),
+        ac.propulsion_installation.dry_mass_kg: Quantity(28_000, kg),
+        ac.aircraft_systems.dry_mass_kg: Quantity(15_000, kg),
+    }
+    ctx = RunContext()
+    result = cm.evaluate(inputs=inputs, run_context=ctx)
+    data = extract_cargo_jet_evaluation_report(cm, result, ctx=ctx)
     assert data["external_provenance"]
+    assert data["slot_states_summary"] is not None
+    assert data["slot_states_summary"]["realized"] >= 1
 
 
 def test_stress_scenario_negative_mission_margin() -> None:
@@ -144,29 +211,26 @@ def test_stress_scenario_negative_mission_margin() -> None:
     cm = instantiate(CargoJetProgram)
     ac = cm.aircraft
     inputs = {
-        cm.scenario_payload_mass_kg.stable_id: Quantity(95_000, kg),
-        cm.scenario_design_range_m.stable_id: Quantity(8_000_000, m),
-        cm.mission_desk_baseline_max_range_m.stable_id: Quantity(6_000_000, m),
-        ac.modeled_max_design_range_m.stable_id: Quantity(9_000_000, m),
-        ac.notional_mzfw_kg.stable_id: Quantity(240_000, kg),
-        ac.notional_mtow_kg.stable_id: Quantity(280_000, kg),
-        ac.notional_trip_fuel_kg.stable_id: Quantity(40_000, kg),
-        ac.fuselage.dry_mass_kg.stable_id: Quantity(45_000, kg),
-        ac.wing.dry_mass_kg.stable_id: Quantity(32_000, kg),
-        ac.wing.notional_wing_span_m.stable_id: Quantity(64, m),
-        ac.empennage.dry_mass_kg.stable_id: Quantity(8_000, kg),
-        ac.landing_gear.dry_mass_kg.stable_id: Quantity(12_000, kg),
-        ac.propulsion_installation.dry_mass_kg.stable_id: Quantity(28_000, kg),
-        ac.aircraft_systems.dry_mass_kg.stable_id: Quantity(15_000, kg),
+        cm.scenario_payload_mass_kg: Quantity(95_000, kg),
+        cm.scenario_design_range_m: Quantity(8_000_000, m),
+        cm.mission_desk_baseline_max_range_m: Quantity(6_000_000, m),
+        ac.modeled_max_design_range_m: Quantity(9_000_000, m),
+        ac.notional_mzfw_kg: Quantity(240_000, kg),
+        ac.notional_mtow_kg: Quantity(280_000, kg),
+        ac.notional_trip_fuel_kg: Quantity(40_000, kg),
+        ac.fuselage.dry_mass_kg: Quantity(45_000, kg),
+        ac.wing.dry_mass_kg: Quantity(32_000, kg),
+        ac.wing.notional_wing_span_m: Quantity(64, m),
+        ac.empennage.dry_mass_kg: Quantity(8_000, kg),
+        ac.landing_gear.dry_mass_kg: Quantity(12_000, kg),
+        ac.propulsion_installation.dry_mass_kg: Quantity(28_000, kg),
+        ac.aircraft_systems.dry_mass_kg: Quantity(15_000, kg),
     }
-    graph, handlers = compile_graph(cm)
-    assert validate_graph(graph).passed
-    ctx = RunContext()
-    result = Evaluator(graph, compute_handlers=handlers).evaluate(ctx, inputs=inputs)
+    result = cm.evaluate(inputs=inputs)
     assert not result.passed
-    margin = ctx.get_value(cm.mission_range_margin_m.stable_id)
+    margin = result.outputs[cm.mission_range_margin_m.stable_id]
     assert margin < Quantity(0, m)
-    data = extract_cargo_jet_evaluation_report(cm, ctx, result)
+    data = extract_cargo_jet_evaluation_report(cm, result)
     assert not data["thesis"]["margin_non_negative"]
     text = format_cargo_jet_report(data)
     assert "FAIL" in text

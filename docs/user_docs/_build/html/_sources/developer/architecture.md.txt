@@ -9,23 +9,31 @@ The core engine lives in:
 - `tg_model.integrations` — external compute protocols and bindings.
 - `tg_model.analysis` — sweeps, variant comparison, value-graph impact (multi-run tooling on top of execution outputs).
 
-Canonical narrative flow (with more detail): {doc}`../drafts/execution_pipeline`.
+Canonical narrative flow (with more detail): {doc}`../drafts/execution_pipeline`. Application-oriented summary: {doc}`../user/quickstart`.
 
 ## Pipeline sequences
 
 1. **Compile types** — `Element.compile()` / `define` fills a `ModelDefinitionContext`; output is a **class-level** compiled artifact (not a runnable graph).
-2. **Instantiate** — `instantiate(SomeSystem)` → `ConfiguredModel`: **frozen** topology, stable ids, registries.
-3. **Compile graph** — `compile_graph(cm)` → `DependencyGraph` + handlers (evaluation order, compute nodes).
+2. **Instantiate** — `instantiate(SomeSystem)` or `SomeSystem.instantiate()` → `ConfiguredModel`: **frozen** topology, stable ids, registries.
+
+**Default path (application authors):**
+
+3. **`ConfiguredModel.evaluate`** — On first call, **compiles** the graph (lazy, cached on the instance — same cache as explicit `compile_graph`), optionally runs **`validate_graph`**, then **`Evaluator.evaluate`** with a **fresh** `RunContext`. Inputs are keyed by **`ValueSlot`** handles (or slot **`stable_id`** strings).
+
+**Explicit path (extensions, tooling, async, debugging):**
+
+3. **Compile graph** — `compile_graph(cm)` → `DependencyGraph` + handlers (evaluation order, compute nodes); populates the same instance cache as step 3 above when used on the same `ConfiguredModel`.
 4. **Validate (recommended)** — `validate_graph(graph, configured_model=cm)` before expensive or remote evaluation.
-5. **Evaluate** — fresh `RunContext` per run; `Evaluator.evaluate` / `evaluate_async` fills values and constraint rows.
+5. **Evaluate** — fresh `RunContext` per run; `Evaluator.evaluate` / `evaluate_async`; `inputs` keyed by **`stable_id`** strings.
 
 Behavior APIs (`dispatch_event`, …) read/write **run** state and traces; they do **not** change `ConfiguredModel` topology.
 
 ## Invariants (mental checklist for contributors)
 
 - **Topology is frozen** after `instantiate`; graphs are built **from** that topology, not mutated structurally during evaluation.
-- **Stable ids** identify value slots across compile and run; inputs to `evaluate` are keyed by those ids.
-- **`RunContext` is per run** — do not reuse across parallel evaluations without a clear concurrency story.
+- **Stable ids** identify value slots across compile and run. The **facade** accepts **`ValueSlot`** keys (normalized internally); the **explicit** `Evaluator` API uses **`stable_id`** strings in the `inputs` mapping.
+- **One compiled graph per `ConfiguredModel`** — lazy **`evaluate`** and explicit **`compile_graph`** share the same cached `(DependencyGraph, handlers)` after the first successful compile on that instance.
+- **`RunContext` is per run** — the façade creates a new context each **`evaluate`** unless **`run_context=`** is passed; do not reuse contexts across parallel evaluations without a clear concurrency story (see **`ConfiguredModel`** docstring on threading).
 - **Requirement acceptance** is part of the same constraint/evaluation pass when requirements are allocated and wired with inputs.
 
 ## Extension points

@@ -55,6 +55,7 @@ dev = [
     "mypy>=1.19.1",
     "nbconvert>=7.17.0",
     "numpy>=1.24.0",
+    "pyright>=1.1.400",
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.7",

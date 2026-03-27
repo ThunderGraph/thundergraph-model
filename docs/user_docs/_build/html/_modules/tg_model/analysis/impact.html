@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -293,17 +298,7 @@
 <a class="viewcode-back" href="../../../api/api_analysis.html#tg_model.analysis.ImpactReport">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ImpactReport</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Value-graph reachability summary from a set of changed slots.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    changed_paths : tuple[str, ...]</span>
-<span class="sd">        :attr:`~tg_model.execution.value_slots.ValueSlot.path_string` for seed slots.</span>
-<span class="sd">    upstream_slot_ids : frozenset[str]</span>
-<span class="sd">        Other slots that may feed changed slots (excluding seeds).</span>
-<span class="sd">    downstream_slot_ids : frozenset[str]</span>
-<span class="sd">        Other slots that may depend on changed slots (excluding seeds).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Value-graph reachability summary from a set of changed slots.&quot;&quot;&quot;</span>
 
     <span class="n">changed_paths</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">upstream_slot_ids</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>

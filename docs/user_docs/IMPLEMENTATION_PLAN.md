@@ -372,6 +372,7 @@ Descriptions only—**not** executable test code in this document.
 | Location | Role |
 |----------|------|
 | `docs/generation_docs/` | Design history, v0 API draft for agents, methodology notes—not the default user manual. |
+| `docs/generation_docs/evaluation_api_facade_implementation_plan.md` | Internal phased plan for the `evaluate`/`System.instantiate` façade; user-facing narrative lives under `docs/user_docs/user/` (quickstart, FAQ, mental model); developer-facing guidance under `docs/user_docs/developer/` (architecture, extension_playbook, testing). |
 | `docs/user_docs/` | Canonical user + developer + API reference. |
 
 When user docs supersede a portion of `v0_api.md`, add a short **banner** at that portion pointing to the canonical Sphinx page—avoid two conflicting truths.

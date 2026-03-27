@@ -2,12 +2,13 @@
 
 Typical pipeline: compile element types (``SomeSystem.compile()``), build a
 :class:`~tg_model.execution.configured_model.ConfiguredModel` with
-:func:`~tg_model.execution.configured_model.instantiate`, compile a
-:class:`~tg_model.execution.dependency_graph.DependencyGraph` via
-:func:`~tg_model.execution.graph_compiler.compile_graph`, optionally
-:func:`~tg_model.execution.validation.validate_graph`, then run
+:func:`~tg_model.execution.configured_model.instantiate`, then call
+:meth:`~tg_model.execution.configured_model.ConfiguredModel.evaluate` (lazy compile + optional
+validation per call) **or** explicitly :func:`~tg_model.execution.graph_compiler.compile_graph`,
+optionally :func:`~tg_model.execution.validation.validate_graph`, then run
 :class:`~tg_model.execution.evaluator.Evaluator` with a fresh
-:class:`~tg_model.execution.run_context.RunContext`.
+:class:`~tg_model.execution.run_context.RunContext`. Per-run values live in ``RunContext``; the
+configured model may cache a compiled graph on the instance.
 
 Notes
 -----
@@ -59,7 +60,7 @@ from tg_model.execution.requirements import (
     summarize_requirement_satisfaction,
 )
 from tg_model.execution.run_context import ConstraintResult, RunContext, SlotState
-from tg_model.execution.validation import ValidationResult, validate_graph
+from tg_model.execution.validation import GraphValidationError, ValidationResult, validate_graph
 from tg_model.execution.value_slots import ValueSlot
 
 __all__ = [
@@ -80,6 +81,7 @@ __all__ = [
     "Evaluator",
     "ForkJoinTraceStep",
     "GraphCompilationError",
+    "GraphValidationError",
     "ItemFlowStep",
     "MergeTraceStep",
     "NodeKind",

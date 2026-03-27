@@ -29,17 +29,7 @@ def _slot_ids_for_nodes(graph: DependencyGraph, node_ids: set[str]) -> frozenset
 
 @dataclass(frozen=True)
 class ImpactReport:
-    """Value-graph reachability summary from a set of changed slots.
-
-    Attributes
-    ----------
-    changed_paths : tuple[str, ...]
-        :attr:`~tg_model.execution.value_slots.ValueSlot.path_string` for seed slots.
-    upstream_slot_ids : frozenset[str]
-        Other slots that may feed changed slots (excluding seeds).
-    downstream_slot_ids : frozenset[str]
-        Other slots that may depend on changed slots (excluding seeds).
-    """
+    """Value-graph reachability summary from a set of changed slots."""
 
     changed_paths: tuple[str, ...]
     upstream_slot_ids: frozenset[str]

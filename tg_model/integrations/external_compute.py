@@ -24,15 +24,7 @@ class ExternalComputeValidationError(ValueError):
 
 @dataclass(frozen=True)
 class ExternalComputeResult:
-    """Return value from :meth:`ExternalCompute.compute` / :meth:`AsyncExternalCompute.compute`.
-
-    Attributes
-    ----------
-    value : Quantity or mapping
-        Single output quantity or mapping of route name → quantity.
-    provenance : mapping
-        Opaque structured provenance (tool ids, versions, URIs).
-    """
+    """Return value from :meth:`ExternalCompute.compute` / :meth:`AsyncExternalCompute.compute`."""
 
     value: Quantity | Mapping[str, Quantity]
     provenance: Mapping[str, Any] = field(default_factory=dict)
@@ -40,18 +32,7 @@ class ExternalComputeResult:
 
 @dataclass
 class ExternalComputeBinding:
-    """Bind a callable to named input refs and optional output route refs.
-
-    Attributes
-    ----------
-    external : object
-        Implementation satisfying :class:`ExternalCompute` or :class:`AsyncExternalCompute`.
-    inputs : dict[str, AttributeRef]
-        Logical input name → attribute/parameter ref supplying unitflow symbols at compile time.
-    output_routes : dict[str, AttributeRef], optional
-        External output name → attribute refs (may be set after construction via
-        :func:`link_external_routes` or :meth:`tg_model.model.definition_context.ModelDefinitionContext.link_external_routes`).
-    """
+    """Bind a callable to named input refs and optional output route refs."""
 
     external: object
     inputs: dict[str, AttributeRef]

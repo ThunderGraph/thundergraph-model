@@ -46,11 +46,6 @@ class DispatchOutcome(StrEnum):
 class DispatchResult:
     """Structured result of :func:`dispatch_event`.
 
-    Attributes
-    ----------
-    outcome : DispatchOutcome
-        Why the dispatcher returned (fired, no match, guard failed).
-
     Notes
     -----
     ``bool(result)`` is true only when a transition fired (legacy truthiness preserved).
@@ -75,15 +70,6 @@ class DecisionDispatchOutcome(StrEnum):
 class DecisionDispatchResult:
     """Structured result of :func:`dispatch_decision`.
 
-    Attributes
-    ----------
-    outcome : DecisionDispatchOutcome
-        Whether an action ran.
-    chosen_action : str or None
-        Action name that ran, if any.
-    merge_ran : bool
-        Whether a paired merge continuation executed.
-
     Notes
     -----
     ``bool(result)`` is true when ``chosen_action`` is not ``None``.
@@ -100,21 +86,7 @@ class DecisionDispatchResult:
 
 @dataclass(frozen=True)
 class BehaviorStep:
-    """One state-machine transition recorded in :class:`BehaviorTrace`.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key across trace lists.
-    part_path : str
-        :attr:`PartInstance.path_string` for the part that fired.
-    event_name : str
-        Declared event name string.
-    from_state, to_state : str
-        Discrete state names before/after.
-    effect_name : str or None
-        Action effect name, if any.
-    """
+    """One state-machine transition recorded in :class:`BehaviorTrace`."""
 
     step_index: int
     part_path: str
@@ -126,19 +98,7 @@ class BehaviorStep:
 
 @dataclass(frozen=True)
 class ItemFlowStep:
-    """Inter-part item flow across one :class:`~tg_model.execution.connection_bindings.ConnectionBinding`.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key.
-    source_port_path, target_port_path : str
-        Port :attr:`~tg_model.execution.instances.ElementInstance.path_string` values.
-    item_kind : str
-        Item kind / event name.
-    payload : Any or None
-        Opaque staged payload.
-    """
+    """Inter-part item flow across one :class:`~tg_model.execution.connection_bindings.ConnectionBinding`."""
 
     step_index: int
     source_port_path: str
@@ -149,19 +109,7 @@ class ItemFlowStep:
 
 @dataclass(frozen=True)
 class DecisionTraceStep:
-    """Record of one :func:`dispatch_decision` invocation.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key.
-    part_path : str
-        Part path string.
-    decision_name : str
-        Declared decision node name.
-    chosen_action : str or None
-        Action that ran, if any.
-    """
+    """Record of one :func:`dispatch_decision` invocation."""
 
     step_index: int
     part_path: str
@@ -171,17 +119,7 @@ class DecisionTraceStep:
 
 @dataclass(frozen=True)
 class ForkJoinTraceStep:
-    """Record of one :func:`dispatch_fork_join` invocation.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key.
-    part_path : str
-        Part path string.
-    block_name : str
-        Declared fork/join name.
-    """
+    """Record of one :func:`dispatch_fork_join` invocation."""
 
     step_index: int
     part_path: str
@@ -190,19 +128,7 @@ class ForkJoinTraceStep:
 
 @dataclass(frozen=True)
 class MergeTraceStep:
-    """Record of one :func:`dispatch_merge` invocation.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key.
-    part_path : str
-        Part path string.
-    merge_name : str
-        Declared merge name.
-    then_action : str or None
-        Continuation action name, if any.
-    """
+    """Record of one :func:`dispatch_merge` invocation."""
 
     step_index: int
     part_path: str
@@ -212,17 +138,7 @@ class MergeTraceStep:
 
 @dataclass(frozen=True)
 class SequenceTraceStep:
-    """Record of one :func:`dispatch_sequence` invocation.
-
-    Attributes
-    ----------
-    step_index : int
-        Global ordering key.
-    part_path : str
-        Part path string.
-    sequence_name : str
-        Declared sequence name.
-    """
+    """Record of one :func:`dispatch_sequence` invocation."""
 
     step_index: int
     part_path: str
@@ -232,21 +148,6 @@ class SequenceTraceStep:
 @dataclass
 class BehaviorTrace:
     """Mutable collector for behavioral steps (multiple parallel lists).
-
-    Attributes
-    ----------
-    steps : list[BehaviorStep]
-        State-machine transitions.
-    item_flows : list[ItemFlowStep]
-        Inter-part item deliveries.
-    decision_steps : list[DecisionTraceStep]
-        Decision dispatches.
-    fork_join_steps : list[ForkJoinTraceStep]
-        Fork/join blocks.
-    merge_steps : list[MergeTraceStep]
-        Merge continuations.
-    sequence_steps : list[SequenceTraceStep]
-        Linear sequences.
 
     Notes
     -----
@@ -683,14 +584,14 @@ def dispatch_merge(
 ) -> str | None:
     """Continue at a declared ``merge``: runs optional ``then_action`` (shared after branches).
 
+    Call after exclusive branches (e.g. following :func:`dispatch_decision`) to model a
+    methodology **Merge** node. If no ``then_action`` was declared, returns ``None`` and
+    only records the trace step when ``trace`` is set.
+
     Raises
     ------
     KeyError
         If ``merge_name`` is not declared.
-
-    Call after exclusive branches (e.g. following :func:`dispatch_decision`) to model a
-    methodology **Merge** node. If no ``then_action`` was declared, returns ``None`` and
-    only records the trace step when ``trace`` is set.
     """
     specs = getattr(part.definition_type, "_tg_merge_specs", None) or {}
     spec = specs.get(merge_name)
