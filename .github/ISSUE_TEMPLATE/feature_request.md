@@ -1,9 +1,7 @@
 ---
 name: Feature request
-description: Propose a new capability, API improvement, or enhancement to ThunderGraph Model
+about: Propose a new capability, API improvement, or enhancement to ThunderGraph Model
 title: "[feat] "
-labels: []
-assignees: []
 ---
 
 ## Problem / motivation

@@ -1,9 +1,7 @@
 ---
 name: Documentation
-description: Report unclear, missing, or incorrect user or API documentation
+about: Report unclear, missing, or incorrect user or API documentation
 title: "[docs] "
-labels: []
-assignees: []
 ---
 
 ## Link or location

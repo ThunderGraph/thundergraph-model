@@ -1,9 +1,7 @@
 ---
 name: Bug report
-description: Report incorrect behavior, crashes, or regressions in ThunderGraph Model
+about: Report incorrect behavior, crashes, or regressions in ThunderGraph Model
 title: "[bug] "
-labels: []
-assignees: []
 ---
 
 ## Summary
