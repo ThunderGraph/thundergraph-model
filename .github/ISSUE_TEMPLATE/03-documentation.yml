@@ -1,0 +1,58 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+name: Documentation
+description: Report unclear, missing, or incorrect documentation
+title: "[docs] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Point us to the **exact page or module** so we can fix it quickly.
+
+  - type: input
+    id: location
+    attributes:
+      label: Link or path
+      description: URL to built docs, or path under `docs/user_docs/`, or `tg_module` for API docstrings.
+      placeholder: e.g. docs/user_docs/user/quickstart.md or tg_model.execution.configured_model
+    validations:
+      required: true
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Kind of issue
+      options:
+        - Wrong or outdated content
+        - Missing section / gap
+        - Typo / formatting
+        - Broken internal link (Sphinx)
+        - Example / code snippet wrong
+        - Other
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong?
+      description: What did you read, and why was it confusing or incorrect?
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix (optional)
+      description: How you would like it to read, or offer to open a PR.
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+    validations:
+      required: false

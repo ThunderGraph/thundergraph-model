@@ -1,0 +1,62 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+name: Feature request
+description: Propose a new capability, API improvement, or enhancement
+title: "[feat] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the **problem** and your **proposed solution** so maintainers can triage quickly.
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem / motivation
+      description: What is hard, missing, or awkward today? Link related issues with `#123`.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: APIs, ergonomics, docs — be as specific as you can.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional — other ways to solve the same problem.
+      render: markdown
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary scope
+      description: Where this mainly applies.
+      options:
+        - Runtime / execution / evaluation
+        - Authoring API (`define`, context, …)
+        - Requirements / constraints
+        - External compute
+        - Analysis tooling
+        - Documentation / examples
+        - Other / not sure
+      default: 6
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Prior art, diagrams, notebook references.
+      render: markdown
+    validations:
+      required: false

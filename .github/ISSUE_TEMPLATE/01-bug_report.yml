@@ -1,0 +1,110 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+name: Bug report
+description: Report incorrect behavior, crashes, or regressions
+title: "[bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. A **minimal repro** (code snippet or small test) helps a lot.
+
+  - type: checkboxes
+    id: dup_check
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues for duplicates
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong in one or two sentences?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Commit SHA, tag, or PyPI release (if applicable).
+      placeholder: e.g. v0.2.0 or abc1234
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. Include a minimal code snippet if you can.
+      placeholder: |
+        1.
+        2.
+        3.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Traceback, wrong value, unexpected exception, etc.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and Python version help narrow things down.
+      value: |
+        - OS:
+        - Python (`python -V`):
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: pytest
+    attributes:
+      label: Test output (optional)
+      description: From the repo root, if relevant — `uv run pytest -q --no-cov`
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Rough bucket for triage (pick the closest match).
+      options:
+        - Execution / evaluator / run context
+        - Graph compiler / dependency graph
+        - Model authoring / define / refs
+        - Requirements / constraints
+        - External compute / integrations
+        - Analysis (sweep, impact, …)
+        - Documentation
+        - Examples / notebooks
+        - Unsure / other
+      default: 8
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Screenshots, notebook paths, links to discussions.
+    validations:
+      required: false
