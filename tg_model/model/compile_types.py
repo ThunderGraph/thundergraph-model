@@ -11,6 +11,7 @@ from typing import Any
 from tg_model.model.declarations.behavior import check_transition_determinism
 from tg_model.model.definition_context import ModelDefinitionError, NodeDecl
 from tg_model.model.identity import qualified_name
+from tg_model.model.refs import AttributeRef
 
 
 def _requirement_block_compiled_artifact(block_type: type) -> dict[str, Any]:
@@ -432,6 +433,33 @@ def _validate_requirement_pkg_expr_symbol(
     )
 
 
+def _validate_requirement_pkg_attribute_ref_expr(
+    owner_name: str,
+    ctx: Any,
+    frozen: frozenset[str],
+    expr: AttributeRef,
+    attr_name: str,
+) -> None:
+    """Require package attribute ``expr=`` :class:`~tg_model.model.refs.AttributeRef` to name a prior slot."""
+    if expr.owner_type is not ctx.symbol_owner:
+        raise ModelDefinitionError(
+            f"{owner_name}: attribute {attr_name!r} expr= AttributeRef must reference slots owned by "
+            f"{ctx.symbol_owner.__name__!r} (same configured-root threading as package parameters)"
+        )
+    prefix = tuple(ctx.symbol_path_prefix)
+    if len(expr.path) != len(prefix) + 1 or expr.path[:-1] != prefix:
+        raise ModelDefinitionError(
+            f"{owner_name}: attribute {attr_name!r} AttributeRef path {expr.path!r} must be "
+            f"(*symbol_path_prefix, '<prior_name>') = {(*prefix, '<prior_name>')!r} for this package"
+        )
+    leaf = expr.path[-1]
+    if leaf not in frozen:
+        raise ModelDefinitionError(
+            f"{owner_name}: attribute {attr_name!r} references {leaf!r} but allowed prior "
+            f"package parameters/attributes (in declaration order) are {sorted(frozen)!r}"
+        )
+
+
 def _validate_requirement_package_value_exprs(ctx: Any) -> None:
     """Compile-time checks for ``parameter`` / ``attribute`` / ``constraint`` exprs on packages.
 
@@ -452,10 +480,13 @@ def _validate_requirement_package_value_exprs(ctx: Any) -> None:
             allowed.add(name)
         elif decl.kind == "attribute":
             expr = decl.metadata.get("_expr")
-            if expr is not None and hasattr(expr, "free_symbols"):
-                frozen = frozenset(allowed)
-                for sym in expr.free_symbols:
-                    _validate_requirement_pkg_expr_symbol(owner_name, ctx, frozen, sym, f"attribute {name!r}")
+            frozen = frozenset(allowed)
+            if expr is not None:
+                if isinstance(expr, AttributeRef):
+                    _validate_requirement_pkg_attribute_ref_expr(owner_name, ctx, frozen, expr, name)
+                elif hasattr(expr, "free_symbols") and expr.free_symbols:
+                    for sym in expr.free_symbols:
+                        _validate_requirement_pkg_expr_symbol(owner_name, ctx, frozen, sym, f"attribute {name!r}")
             allowed.add(name)
         elif decl.kind == "constraint":
             expr = decl.metadata.get("_expr")

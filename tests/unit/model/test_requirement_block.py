@@ -149,6 +149,34 @@ def test_requirement_package_instantiate_graph_evaluate() -> None:
     assert not result_handles.failures
 
 
+def test_requirement_package_attribute_passthrough_attributeref_expr() -> None:
+    """Package attribute may use bare ``AttributeRef`` as ``expr=`` (identity passthrough)."""
+
+    class _R(Requirement):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            x = model.parameter("x_m", unit=m)
+            _ = model.attribute("copy_m", expr=x, unit=m)
+
+    class _S(System):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            model.requirement_package("pkg", _R)
+
+    _S._reset_compilation()
+    _R._reset_compilation()
+    cm = instantiate(_S)
+    graph, handlers = compile_graph(cm)
+    assert validate_graph(graph).passed
+    result = Evaluator(graph, compute_handlers=handlers).evaluate(
+        RunContext(),
+        inputs={cm.pkg.x_m.stable_id: Quantity(2.25, m)},
+    )
+    assert not result.failures
+    out = result.outputs[cm.pkg.copy_m.stable_id]
+    assert out.is_close(Quantity(2.25, m))
+
+
 def test_requirement_package_constraint_requires_expr() -> None:
     """Composable requirement package constraints must not omit ``expr``."""
 
@@ -338,6 +366,58 @@ def test_requirement_package_attribute_rejects_undeclared_slot() -> None:
                 metadata={"unit": m},
             )
             model.attribute("bad", expr=p + ghost, unit=m)
+
+    class _S(System):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            model.requirement_package("pkg", _R)
+
+    _S._reset_compilation()
+    _R._reset_compilation()
+    with pytest.raises(ModelDefinitionError, match="allowed prior"):
+        _S.compile()
+
+
+def test_requirement_package_attribute_rejects_attributeref_wrong_owner() -> None:
+    """Bare ``AttributeRef`` in ``attribute`` ``expr=`` must use configured-root owner, not ``Requirement`` type."""
+
+    class _R(Requirement):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            model.parameter("p", unit=m)
+            bad = AttributeRef(
+                owner_type=cls,
+                path=("pkg", "p"),
+                kind="parameter",
+                metadata={"unit": m},
+            )
+            model.attribute("bad", expr=bad, unit=m)
+
+    class _S(System):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            model.requirement_package("pkg", _R)
+
+    _S._reset_compilation()
+    _R._reset_compilation()
+    with pytest.raises(ModelDefinitionError, match="must reference slots owned by"):
+        _S.compile()
+
+
+def test_requirement_package_attribute_rejects_attributeref_undeclared_leaf() -> None:
+    """Bare ``AttributeRef`` must name a parameter or attribute declared earlier in the package."""
+
+    class _R(Requirement):
+        @classmethod
+        def define(cls, model):  # type: ignore[override]
+            _ = model.parameter("p", unit=m)
+            bad = AttributeRef(
+                owner_type=_S,
+                path=("pkg", "ghost"),
+                kind="parameter",
+                metadata={"unit": m},
+            )
+            model.attribute("bad", expr=bad, unit=m)
 
     class _S(System):
         @classmethod

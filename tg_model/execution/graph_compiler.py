@@ -33,6 +33,7 @@ from tg_model.integrations.external_compute import (
     ExternalComputeResult,
     assert_sync_external,
 )
+from tg_model.model.refs import AttributeRef
 
 
 def _alloc_target_as_part(target: ElementInstance, *, where: str) -> PartInstance:
@@ -177,6 +178,20 @@ def _compile_slot(
         )
     )
     graph.add_edge(expr_node_id, slot_node_id)
+
+    if isinstance(expr, AttributeRef):
+        dep_slot = _resolve_attribute_ref_to_slot(expr, owner, model)
+        dep_node_id = f"val:{dep_slot.path_string}"
+        graph.add_edge(dep_node_id, expr_node_id)
+
+        def make_ref_passthrough_handler(dnid: str) -> Callable[..., Any]:
+            def handler(dep_values: dict[str, Any]) -> Any:
+                return dep_values[dnid]
+
+            return handler
+
+        handlers[expr_node_id] = make_ref_passthrough_handler(dep_node_id)
+        return
 
     if hasattr(expr, "free_symbols") and expr.free_symbols:
         for sym in expr.free_symbols:

@@ -12,6 +12,7 @@ Where ThunderGraph Model is designed to be extended safely—and where you shoul
   - **Implementation note:** compiled artifacts still use internal node **`kind`** **`"requirement_block"`** for backward compatibility — when reading JSON or debugging **`compile_type`**, do not assume the string matches the public type name.
 - **`ModelDefinitionContext`** — you do not subclass this; you call its methods **from** `define` on your element types. Public methods are the vocabulary for declarations.
 - **Refs** (`AttributeRef`, `PartRef`, …) — returned by `model` APIs; you **use** them in expressions and `allocate`, not subclass them.
+  - **`AttributeRef` passthrough:** for **`attribute(..., expr=…)`**, another slot's ref alone copies that slot at evaluation time; use **`.sym`** when mixing that slot into unitflow **Expr** arithmetic.
 
 ### Execution (`tg_model.execution`)
 

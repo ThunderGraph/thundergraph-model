@@ -10,7 +10,12 @@ tg_model.execution
     Configure (instantiate) and evaluate compiled models.
 """
 
-from tg_model.model.definition_context import ModelDefinitionContext, parameter_ref, requirement_ref
+from tg_model.model.definition_context import (
+    ModelDefinitionContext,
+    attribute_ref,
+    parameter_ref,
+    requirement_ref,
+)
 from tg_model.model.elements import Element, Part, Requirement, System
 from tg_model.model.expr import as_expr_leaf, sum_attributes
 from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref, RequirementRef
@@ -27,6 +32,7 @@ __all__ = [
     "RequirementRef",
     "System",
     "as_expr_leaf",
+    "attribute_ref",
     "parameter_ref",
     "requirement_ref",
     "sum_attributes",

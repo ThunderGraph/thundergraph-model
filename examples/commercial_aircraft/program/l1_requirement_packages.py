@@ -13,9 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from unitflow import Quantity
 from unitflow.catalogs.si import kg, m
-from unitflow.expr.expressions import QuantityExpr
 
 from tg_model.model.elements import Requirement
 
@@ -39,17 +37,14 @@ class L1MissionRequirements(Requirement):
             unit=kg,
             required=True,
         )
-        reporting_headroom_kg = model.attribute(  # noqa: F841
+        reporting_headroom_kg = model.attribute(
             "reporting_headroom_kg",
             unit=kg,
             expr=reserved_operational_buffer_kg,
         )
-        # Slot: ``cm.l1.mission.reporting_headroom_kg``. Constraint below uses the parameter only (evaluator).
-        # Constraint uses the parameter (not the package attribute) so evaluation matches root-level
-        # constraint handling today; the attribute still demonstrates package-level ``attribute``.
         model.constraint(
             "mission_package_reserved_buffer_non_negative",
-            expr=reserved_operational_buffer_kg > QuantityExpr(Quantity(-1, kg)),
+            expr=reporting_headroom_kg >= 0 * kg,
         )
 
         r_payload = model.requirement(

@@ -60,6 +60,7 @@ def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
     See Also
     --------
     ModelDefinitionContext.parameter_ref
+    attribute_ref
     requirement_ref
     """
     meta: dict[str, Any]
@@ -103,6 +104,54 @@ def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
     )
 
 
+def attribute_ref(root_block_type: type, name: str) -> AttributeRef:
+    """Return a reference to an **attribute** on the configured (or compiling) root type.
+
+    Same resolution order as :func:`parameter_ref`, but the named node must be ``kind='attribute'``.
+    Use when a nested ``Requirement`` (or part) should derive package slots from root-level
+    ``model.attribute`` values (for example outputs of ``computed_by=`` external bindings).
+    """
+    meta: dict[str, Any]
+
+    compiled = getattr(root_block_type, "_compiled_definition", None)
+    if compiled is not None:
+        node = compiled.get("nodes", {}).get(name)
+        if node is None:
+            raise ModelDefinitionError(f"attribute_ref({root_block_type.__name__}, {name!r}): no such node")
+        if node.get("kind") != "attribute":
+            raise ModelDefinitionError(
+                f"attribute_ref({root_block_type.__name__}, {name!r}): expected kind 'attribute', "
+                f"got {node.get('kind')!r}"
+            )
+        meta = dict(node.get("metadata", {}))
+    else:
+        active = getattr(root_block_type, "_tg_definition_context", None)
+        if active is None:
+            raise ModelDefinitionError(
+                f"attribute_ref({root_block_type.__name__}, {name!r}): type is not compiling and "
+                f"not compiled; call {root_block_type.__name__}.compile() first, or declare "
+                f"attributes on the root before nested types that reference them."
+            )
+        decl: NodeDecl | None = active.nodes.get(name)
+        if decl is None:
+            raise ModelDefinitionError(
+                f"attribute_ref({root_block_type.__name__}, {name!r}): no such attribute "
+                f"(declare it on the root before nested types that reference it)."
+            )
+        if decl.kind != "attribute":
+            raise ModelDefinitionError(
+                f"attribute_ref({root_block_type.__name__}, {name!r}): expected kind 'attribute', got {decl.kind!r}"
+            )
+        meta = dict(decl.metadata)
+
+    return AttributeRef(
+        owner_type=root_block_type,
+        path=(name,),
+        kind="attribute",
+        metadata=meta,
+    )
+
+
 def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     """Return a :class:`~tg_model.model.refs.Ref` to a requirement under the root type.
 
@@ -139,6 +188,7 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     See Also
     --------
     parameter_ref
+    attribute_ref
     ModelDefinitionContext.requirement_ref
     """
     if not path:
@@ -543,6 +593,10 @@ class ModelDefinitionContext:
     def parameter_ref(self, root_block_type: type, name: str) -> AttributeRef:
         """Call :func:`parameter_ref` (same resolution rules and errors)."""
         return parameter_ref(root_block_type, name)
+
+    def attribute_ref(self, root_block_type: type, name: str) -> AttributeRef:
+        """Call :func:`attribute_ref` (same resolution rules and errors)."""
+        return attribute_ref(root_block_type, name)
 
     def requirement_ref(self, root_block_type: type, path: tuple[str, ...]) -> Ref:
         """Call :func:`requirement_ref` (same resolution rules and errors)."""

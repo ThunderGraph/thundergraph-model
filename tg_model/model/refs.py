@@ -89,7 +89,13 @@ _symbol_id_to_path: dict[int, tuple[type, tuple[str, ...]]] = {}
 
 
 class AttributeRef(Ref):
-    """Reference to a declared attribute or parameter (value slot at configure time)."""
+    """Reference to a declared attribute or parameter (value slot at configure time).
+
+    For :meth:`~tg_model.model.definition_context.ModelDefinitionContext.attribute` ``expr=``,
+    passing another slot's ref compiles as an identity passthrough. Use :attr:`sym` when you need
+    that slot inside unitflow :class:`~unitflow.expr.expressions.Expr` arithmetic (for example
+    ``other.sym + …``).
+    """
 
     @property
     def sym(self) -> Any:
