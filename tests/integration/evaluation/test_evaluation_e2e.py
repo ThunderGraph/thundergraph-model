@@ -53,7 +53,14 @@ def _build_graph_for_drive_system(cm):  # type: ignore[no-untyped-def]
     torque_slot = cm.motor.torque
     power_slot = cm.motor.shaft_power
 
-    g.add_node(DependencyNode("voltage", NodeKind.INPUT_PARAMETER, slot_id=voltage_slot.stable_id, metadata={"required": False}))
+    g.add_node(
+        DependencyNode(
+            "voltage",
+            NodeKind.INPUT_PARAMETER,
+            slot_id=voltage_slot.stable_id,
+            metadata={"required": False},
+        ),
+    )
     g.add_node(DependencyNode("speed", NodeKind.INPUT_PARAMETER, slot_id=speed_slot.stable_id))
     g.add_node(DependencyNode("torque", NodeKind.INPUT_PARAMETER, slot_id=torque_slot.stable_id))
     g.add_node(DependencyNode("power_expr", NodeKind.LOCAL_EXPRESSION, slot_id=power_slot.stable_id))
@@ -88,10 +95,13 @@ class TestEndToEndEvaluation:
         evaluator = Evaluator(g, compute_handlers=handlers)
 
         ctx = RunContext()
-        result = evaluator.evaluate(ctx, inputs={
-            speed_id: 3000.0,
-            torque_id: 50.0,
-        })
+        result = evaluator.evaluate(
+            ctx,
+            inputs={
+                speed_id: 3000.0,
+                torque_id: 50.0,
+            },
+        )
 
         assert result.passed
         assert ctx.get_value(power_id) == 150000.0

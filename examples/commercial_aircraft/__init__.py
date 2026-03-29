@@ -7,7 +7,7 @@ from commercial_aircraft.program.cargo_jet_program import CargoJetProgram
 
 def reset_commercial_aircraft_types() -> None:
     """Clear cached ``compile()`` artifacts on example element types (tests / notebook re-runs)."""
-    from commercial_aircraft.program.l1_requirement_blocks import (
+    from commercial_aircraft.program.l1_requirement_packages import (
         L1AirworthinessRequirements,
         L1MissionRequirements,
         L1ProductRequirements,

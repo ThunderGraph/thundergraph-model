@@ -95,9 +95,7 @@ def _collect_outputs(cm: ConfiguredModel, result: RunResult, paths: Sequence[str
     for path in paths:
         handle = cm.handle(path)
         if not isinstance(handle, ValueSlot):
-            raise TypeError(
-                f"output_paths entry {path!r} must resolve to a ValueSlot, got {type(handle).__name__}"
-            )
+            raise TypeError(f"output_paths entry {path!r} must resolve to a ValueSlot, got {type(handle).__name__}")
         sid = handle.stable_id
         present = sid in result.outputs
         out[path] = CapturedSlotOutput(
@@ -152,7 +150,9 @@ def compare_variants(
     rows: list[VariantComparisonRow] = []
     for label, cm, inputs in scenarios:
         graph, handlers = _compile_and_maybe_validate(
-            label, cm, validate_before_run=validate_before_run,
+            label,
+            cm,
+            validate_before_run=validate_before_run,
         )
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()
@@ -181,7 +181,9 @@ async def compare_variants_async(
     rows: list[VariantComparisonRow] = []
     for label, cm, inputs in scenarios:
         graph, handlers = _compile_and_maybe_validate(
-            label, cm, validate_before_run=validate_before_run,
+            label,
+            cm,
+            validate_before_run=validate_before_run,
         )
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()

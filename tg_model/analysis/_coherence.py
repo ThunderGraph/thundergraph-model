@@ -43,10 +43,7 @@ def assert_slots_align_with_graph(
             )
         reg = configured_model.id_registry[s.stable_id]
         if not isinstance(reg, ValueSlot):
-            raise ValueError(
-                f"{context}: id_registry[{s.stable_id!r}] is not a ValueSlot "
-                f"(got {type(reg).__name__})."
-            )
+            raise ValueError(f"{context}: id_registry[{s.stable_id!r}] is not a ValueSlot (got {type(reg).__name__}).")
         if reg.path_string != s.path_string:
             raise ValueError(
                 f"{context}: slot path mismatch for stable_id {s.stable_id!r}: "

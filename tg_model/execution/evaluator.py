@@ -117,9 +117,7 @@ class Evaluator:
                     )
                 elif node.kind == NodeKind.EXTERNAL_COMPUTATION:
                     for sid in node.metadata.get("output_slot_ids", ()):
-                        ctx.get_or_create_record(sid).block(
-                            f"Blocked: upstream dependency not ready for '{node_id}'"
-                        )
+                        ctx.get_or_create_record(sid).block(f"Blocked: upstream dependency not ready for '{node_id}'")
                 continue
 
             if node.kind == NodeKind.LOCAL_EXPRESSION or node.kind == NodeKind.ROLLUP_COMPUTATION:
@@ -190,9 +188,7 @@ class Evaluator:
                     )
                 elif node.kind == NodeKind.EXTERNAL_COMPUTATION:
                     for sid in node.metadata.get("output_slot_ids", ()):
-                        ctx.get_or_create_record(sid).block(
-                            f"Blocked: upstream dependency not ready for '{node_id}'"
-                        )
+                        ctx.get_or_create_record(sid).block(f"Blocked: upstream dependency not ready for '{node_id}'")
                 continue
 
             if node.kind == NodeKind.LOCAL_EXPRESSION or node.kind == NodeKind.ROLLUP_COMPUTATION:
@@ -219,9 +215,7 @@ class Evaluator:
     def _finalize_run(ctx: RunContext, result: RunResult) -> RunResult:
         result.constraint_results = ctx.constraint_results
         result.outputs = {
-            slot_id: ctx.get_value(slot_id)
-            for slot_id, record in ctx._slot_records.items()
-            if record.is_ready
+            slot_id: ctx.get_value(slot_id) for slot_id, record in ctx._slot_records.items() if record.is_ready
         }
         return result
 
@@ -235,7 +229,11 @@ class Evaluator:
         return True
 
     def _evaluate_expression(
-        self, node_id: str, node: Any, ctx: RunContext, result: RunResult,
+        self,
+        node_id: str,
+        node: Any,
+        ctx: RunContext,
+        result: RunResult,
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
@@ -260,7 +258,11 @@ class Evaluator:
             result.failures.append(f"Evaluation failed for '{node_id}': {e}")
 
     def _evaluate_external(
-        self, node_id: str, node: Any, ctx: RunContext, result: RunResult,
+        self,
+        node_id: str,
+        node: Any,
+        ctx: RunContext,
+        result: RunResult,
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
@@ -337,9 +339,7 @@ class Evaluator:
                 res = ext.compute(inputs_dict)
 
             if not isinstance(res, ExternalComputeResult):
-                raise TypeError(
-                    f"External compute must return ExternalComputeResult, got {type(res).__name__}"
-                )
+                raise TypeError(f"External compute must return ExternalComputeResult, got {type(res).__name__}")
             materialize_external_result(binding, res, owner, cm, ctx, slots)
         except Exception as e:
             msg = str(e)
@@ -348,7 +348,11 @@ class Evaluator:
             result.failures.append(f"External compute '{node_id}' failed: {msg}")
 
     def _evaluate_solve_group(
-        self, node_id: str, node: Any, ctx: RunContext, result: RunResult,
+        self,
+        node_id: str,
+        node: Any,
+        ctx: RunContext,
+        result: RunResult,
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
@@ -374,7 +378,11 @@ class Evaluator:
                 ctx.get_or_create_record(slot_id).fail(str(e))
 
     def _evaluate_constraint(
-        self, node_id: str, node: Any, ctx: RunContext, result: RunResult,
+        self,
+        node_id: str,
+        node: Any,
+        ctx: RunContext,
+        result: RunResult,
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
@@ -390,18 +398,22 @@ class Evaluator:
 
             passed = handler(dep_values)
             constraint_name = node.metadata.get("name", node_id)
-            ctx.add_constraint_result(ConstraintResult(
-                name=constraint_name,
-                passed=bool(passed),
-                requirement_path=node.metadata.get("requirement_path"),
-                allocation_target_path=node.metadata.get("allocation_target_path"),
-            ))
+            ctx.add_constraint_result(
+                ConstraintResult(
+                    name=constraint_name,
+                    passed=bool(passed),
+                    requirement_path=node.metadata.get("requirement_path"),
+                    allocation_target_path=node.metadata.get("allocation_target_path"),
+                )
+            )
         except Exception as e:
-            ctx.add_constraint_result(ConstraintResult(
-                name=node_id,
-                passed=False,
-                evidence=str(e),
-                requirement_path=node.metadata.get("requirement_path"),
-                allocation_target_path=node.metadata.get("allocation_target_path"),
-            ))
+            ctx.add_constraint_result(
+                ConstraintResult(
+                    name=node_id,
+                    passed=False,
+                    evidence=str(e),
+                    requirement_path=node.metadata.get("requirement_path"),
+                    allocation_target_path=node.metadata.get("allocation_target_path"),
+                )
+            )
             result.failures.append(f"Constraint failed for '{node_id}': {e}")

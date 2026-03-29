@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-241%20passed-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-256%20passed-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](#development)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![mypy](https://img.shields.io/badge/types-mypy--strict-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)
@@ -35,9 +35,9 @@ If you want a library that feels **honest** (fail-fast validation, explicit grap
 
 | Capability | What it means for engineering |
 |------------|--------------------------------|
-| **Structured authoring** | `System` / `Part` / `RequirementBlock` with `define(cls, model)` — declare ports, parameters, attributes, constraints, behavior, and **nested requirement blocks** in one place. |
+| **Structured authoring** | `System` / `Part` / `Requirement` with `define(cls, model)` — declare ports, parameters, attributes, constraints, behavior, and **nested composable requirement packages** in one place. |
 | **Unit-aware expressions** | Parameters and attributes use **unitflow**; constraints and requirement acceptance evaluate on real quantities. |
-| **Requirements + allocation** | Requirements can live in **nested** `RequirementBlock` trees (dot-path refs). `allocate` links them to **parts** or the configured root; optional **`requirement_input` / `requirement_accept_expr`** plus **`allocate(..., inputs={...})`** bind part values into acceptance without globals. |
+| **Requirements + allocation** | Requirements can live in **nested** `Requirement` packages registered with **`requirement_package`** (dot-path refs). `allocate` links them to **parts** or the configured root; optional **`requirement_input` / `requirement_accept_expr`** plus **`allocate(..., inputs={...})`** bind part values into acceptance without globals. |
 | **Cross-hierarchy parameters** | **`parameter_ref(RootType, "param_name")`** lets nested `define()` bodies read scenario or program parameters in a compile-safe way. |
 | **External computation** | **`ExternalComputeBinding`**, **`attribute(computed_by=...)`**, and graph compilation wire fake or real tools into the same `Evaluator` pipeline as expressions and constraints. |
 | **Citations & references** | `citation` nodes and `references` edges bind standards, reports, or clauses to declared elements — provenance without pretending to be a bibliography manager. |
@@ -67,8 +67,9 @@ The **installable wheel** only contains **`tg_model`**. Larger **walkthroughs** 
 
 | Location | What it is |
 |----------|------------|
-| [`examples/commercial_aircraft/`](examples/commercial_aircraft/) | Requirements-first cargo-jet slice: stdlib L1 specs, nested `RequirementBlock`, `allocate(inputs=…)`, roll-ups, two external-compute owners, reporting extract/snapshot; **`ConfiguredModel.evaluate`** + **`ValueSlot`** keys for runs (see example [`README.md`](examples/commercial_aircraft/README.md)). Put **`thundergraph-model/examples`** on `PYTHONPATH` and `import commercial_aircraft`. |
-| [`notebooks/`](notebooks/) | Jupyter demos (AEV, LEO stack, sodium fast reactor, cargo jet). |
+| [`examples/commercial_aircraft/`](examples/commercial_aircraft/) | Requirements-first cargo-jet slice: stdlib L1 specs, nested **`Requirement`** packages, `allocate(inputs=…)`, roll-ups, two external-compute owners, reporting extract/snapshot; **`ConfiguredModel.evaluate`** + **`ValueSlot`** keys for runs (see example [`README.md`](examples/commercial_aircraft/README.md)). Put **`thundergraph-model/examples`** on `PYTHONPATH` and `import commercial_aircraft`. |
+| [`examples/hpc_datacenter/`](examples/hpc_datacenter/) | Small **notional colocation** electrical model: two atomic Level-1 power requirements (`requirement_input` / `requirement_attribute` / `requirement_accept_expr`) for teaching **parameter sweeps** with **`evaluate(..., validate=False)`** after one validation pass. |
+| [`notebooks/`](notebooks/) | Jupyter demos (AEV, LEO stack, sodium fast reactor, cargo jet, **HPC datacenter sweep**). |
 
 **Notebook demos** (run from `thundergraph-model/` after `uv sync`; dev group includes `ipykernel` / `nbconvert`):
 
@@ -77,12 +78,14 @@ uv run jupyter lab notebooks/autonomous_electric_vehicle.ipynb
 uv run jupyter lab notebooks/leo_launch_vehicle_deep_stack.ipynb
 uv run jupyter lab notebooks/sodium_fast_reactor_demo.ipynb
 uv run jupyter lab notebooks/cargo_jet_program.ipynb
+uv run jupyter lab notebooks/hpc_datacenter_parameter_sweep.ipynb
 ```
 
 Headless check:
 
 ```bash
 uv run jupyter nbconvert --to notebook --execute notebooks/cargo_jet_program.ipynb --stdout > /dev/null
+uv run jupyter nbconvert --to notebook --execute notebooks/hpc_datacenter_parameter_sweep.ipynb --stdout > /dev/null
 ```
 
 ---
@@ -112,7 +115,7 @@ uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html -W   # war
 
 | Tool | Role |
 |------|------|
-| **pytest** + **pytest-cov** | **241** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
+| **pytest** + **pytest-cov** | **258** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, **hpc_datacenter smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
 | **Ruff** | Lint + import sort (`E`, `F`, `I`, `UP`, `RUF`). |
 | **mypy** | **Strict** typing on `tg_model`. |
 | **pyright** | Optional **Pylance-style** check; dev dependency. The evaluation façade (`ConfiguredModel.evaluate`, `System.instantiate`) is kept **pyright-clean**; full-package `pyright tg_model` may still report pre-existing issues elsewhere until cleaned up. |

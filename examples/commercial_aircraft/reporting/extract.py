@@ -20,11 +20,11 @@ from tg_model.execution.evaluator import RunResult
 from tg_model.execution.run_context import RunContext, SlotState
 
 # Rows for the printed "Level-1 requirements" table only. Requirement text lives in
-# ``commercial_aircraft.program.l1_requirement_blocks`` — keep ``node_name`` and ``statement`` aligned.
+# ``commercial_aircraft.program.l1_requirement_packages`` — keep ``node_name``, ``package``, and ``statement`` aligned.
 _L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
     {
         "node_name": "req_cargo_design_mission_payload_closure",
-        "block": "mission",
+        "package": "mission",
         "allocate_to": "aircraft",
         "verification_kind": "executable_acceptance",
         "mission_closure_acceptance": True,
@@ -35,7 +35,7 @@ _L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
     },
     {
         "node_name": "req_cargo_design_mission_range_closure",
-        "block": "mission",
+        "package": "mission",
         "allocate_to": "aircraft",
         "verification_kind": "executable_acceptance",
         "mission_closure_acceptance": True,
@@ -46,7 +46,7 @@ _L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
     },
     {
         "node_name": "req_transport_category_part25",
-        "block": "airworthiness",
+        "package": "airworthiness",
         "allocate_to": "program_root",
         "verification_kind": "context_citations_only",
         "mission_closure_acceptance": False,
@@ -58,7 +58,7 @@ _L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
     },
     {
         "node_name": "req_airport_planning_representative",
-        "block": "product",
+        "package": "product",
         "allocate_to": "aircraft",
         "verification_kind": "context_citations_only",
         "mission_closure_acceptance": False,
@@ -70,18 +70,18 @@ _L1_REPORT_ROWS: tuple[dict[str, Any], ...] = (
     },
     {
         "node_name": "req_verification_traceability",
-        "block": "product",
+        "package": "product",
         "allocate_to": "aircraft",
         "verification_kind": "evidenced_by_constraints",
         "mission_closure_acceptance": False,
         "statement": (
             "Demonstrated mass and performance results in the model shall be traceable to declared "
-            "parameters, computed attributes, or constraints under the allocated aircraft block."
+            "parameters, computed attributes, or constraints under the allocated aircraft."
         ),
     },
     {
         "node_name": "req_flight_test_methodology_alignment",
-        "block": "airworthiness",
+        "package": "airworthiness",
         "allocate_to": "program_root",
         "verification_kind": "context_citations_only",
         "mission_closure_acceptance": False,

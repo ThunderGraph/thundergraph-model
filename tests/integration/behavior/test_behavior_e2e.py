@@ -75,9 +75,9 @@ def test_root_controller_effect_writes_slot() -> None:
     ctx = RunContext()
     trace = BehaviorTrace()
     mid = cm.marker.stable_id
-    assert dispatch_event(ctx, cm, "start", trace=trace).outcome is DispatchOutcome.FIRED
+    assert dispatch_event(ctx, cm.root, "start", trace=trace).outcome is DispatchOutcome.FIRED
     assert ctx.get_value(mid) == 1.0
-    assert dispatch_event(ctx, cm, "stop", trace=trace).outcome is DispatchOutcome.FIRED
+    assert dispatch_event(ctx, cm.root, "stop", trace=trace).outcome is DispatchOutcome.FIRED
     assert ctx.get_value(mid) == 0.0
 
 
@@ -102,7 +102,7 @@ def test_behavior_then_graph_evaluate_same_context() -> None:
     graph, handlers = compile_graph(cm)
     assert validate_graph(graph).passed
     ctx = RunContext()
-    assert dispatch_event(ctx, cm, "start").outcome is DispatchOutcome.FIRED
+    assert dispatch_event(ctx, cm.root, "start").outcome is DispatchOutcome.FIRED
     ev = Evaluator(graph, compute_handlers=handlers)
     result = ev.evaluate(ctx, inputs={})
     assert result.passed
@@ -119,7 +119,7 @@ def test_evaluate_then_behavior_same_context() -> None:
     result = ev.evaluate(ctx, inputs={cm.marker.stable_id: 5.0})
     assert result.passed
     assert ctx.get_value(cm.marker.stable_id) == 5.0
-    assert dispatch_event(ctx, cm, "start").outcome is DispatchOutcome.FIRED
+    assert dispatch_event(ctx, cm.root, "start").outcome is DispatchOutcome.FIRED
     assert ctx.get_value(cm.marker.stable_id) == 5.0
-    assert dispatch_event(ctx, cm, "stop").outcome is DispatchOutcome.FIRED
+    assert dispatch_event(ctx, cm.root, "stop").outcome is DispatchOutcome.FIRED
     assert ctx.get_value(cm.marker.stable_id) == 0.0

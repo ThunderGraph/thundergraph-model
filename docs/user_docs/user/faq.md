@@ -33,10 +33,15 @@ On the **facade**, prefer **slot handles** as keys (`cm.root.some_param`) instea
 If declarations changed, restart kernel and re-run compile/instantiate cells.
 Old class artifacts may still be cached.
 
-## When should I use `RequirementBlock`?
+## When should I use `Requirement` (composable requirement package)?
 
-Use it when requirements need structure, ownership, and local acceptance logic.
-Then bind model values via `allocate(..., inputs=...)` for **`requirement_input`** slots, and use **`requirement_attribute`** when the requirement needs its **own** derived quantities (sums, margins, intermediate checks) before acceptance. See {doc}`concepts_requirements`.
+Use **`Requirement`** when requirements need **structure**, **ownership**, and **local** acceptance logic—same idea as using **`Part`** for structure, but for requirement namespaces.
+
+Register packages with **`model.requirement_package(name, type)`**. Bind design values with **`allocate(..., inputs=...)`** for **`requirement_input`** slots; use **`requirement_attribute`** when a **leaf** requirement needs its **own** derived quantities before acceptance; use **package-level** **`parameter`** / **`attribute`** / **`constraint`** when the **whole package** owns shared limits or derived values (see {doc}`concepts_requirements` and {doc}`quickstart`).
+
+### Upgrading from thundergraph-model before 0.2.0
+
+**0.2.0** removed the temporary compatibility names **`RequirementBlock`**, **`RequirementBlockRef`**, and **`ModelDefinitionContext.requirement_block(...)`**. Use **`Requirement`**, **`RequirementRef`**, and **`requirement_package`** instead. **Internal** compiled node **`kind`** is still the string **`"requirement_block"`** — that is not a Python API and did not change.
 
 ## What is the difference between `requirement_input` and `requirement_attribute`?
 

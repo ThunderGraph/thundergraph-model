@@ -1,7 +1,7 @@
 # Glossary
 
 ## Element
-Base authoring type. `System`, `Part`, and `RequirementBlock` derive from this.
+Base authoring type. `System`, `Part`, and `Requirement` derive from this.
 
 ## System
 Top-level composition type (often configured root).
@@ -9,13 +9,13 @@ Top-level composition type (often configured root).
 ## Part
 Composable structural type under a system.
 
-## RequirementBlock
-Nested requirements subtree type. Supports requirements, citations, nested blocks, and requirement-local inputs.
+## Requirement
+Composable **requirements package** type (nested leaf requirements, inputs, attributes, citations). Register on the root with **`model.requirement_package`**.
 
 ## ModelDefinitionContext
 The `model` argument in `define(cls, model)`. Records declarations and edges during type authoring.
 
-## Ref / PartRef / AttributeRef / RequirementBlockRef
+## Ref / PartRef / AttributeRef / RequirementRef
 Symbolic references created at definition time. Not runtime instances.
 
 ## compile (type compile)
@@ -49,10 +49,10 @@ Executable requirement check compiled from acceptance expressions + allocations.
 Links a requirement to a target model element. Optional `inputs=` binds requirement-local input names to slot refs.
 
 ## requirement_input
-RequirementBlock-only declaration of requirement-local symbolic inputs.
+Composable **`Requirement`** authoring only: declaration of requirement-local symbolic inputs.
 
 ## requirement_accept_expr
-RequirementBlock-only method that attaches executable acceptance expression to a requirement.
+Composable **`Requirement`** authoring only: attaches executable acceptance expression to a requirement.
 
 ## ExternalComputeBinding
 Binding from internal refs to external compute backend inputs/outputs.

@@ -170,8 +170,7 @@ class RunContext:
         """
         if not self._behavior_scope_stack:
             raise RuntimeError(
-                "pop_behavior_effect_scope() without a matching push_behavior_effect_scope(); "
-                "scope stack is empty."
+                "pop_behavior_effect_scope() without a matching push_behavior_effect_scope(); scope stack is empty."
             )
         self._behavior_scope_stack.pop()
 

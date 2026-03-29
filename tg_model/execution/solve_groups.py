@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from unitflow.core.quantities import Quantity
+from unitflow.core.units import Unit
 from unitflow.expr.compile import compile_residual
 from unitflow.expr.symbols import Symbol
 
@@ -46,8 +48,8 @@ def build_solve_group_handler(
         If a given is not a :class:`~unitflow.core.quantities.Quantity`.
     """
     try:
-        from scipy.optimize import root
         import numpy as np
+        from scipy.optimize import root
     except ImportError:
         raise RuntimeError("scipy and numpy are required for solve group execution")
 
@@ -56,18 +58,17 @@ def build_solve_group_handler(
     if not unknowns:
         raise ValueError("Solve group requires at least one unknown")
     if len(equations) != len(unknowns):
-        raise ValueError(
-            f"Underdetermined/overdetermined system: "
-            f"{len(equations)} equations, {len(unknowns)} unknowns"
-        )
+        raise ValueError(f"Underdetermined/overdetermined system: {len(equations)} equations, {len(unknowns)} unknowns")
 
     all_syms = unknowns + givens
-    reference_units = {sym: sym.unit for sym in all_syms}
+    reference_units: dict[Symbol, Unit] = {}
+    for sym in all_syms:
+        u = sym.unit
+        if u is None:
+            raise ValueError(f"Solve group symbol {sym.name!r} has no unit")
+        reference_units[sym] = u
 
-    residual_fns = [
-        compile_residual(eq, all_syms, reference_units)
-        for eq in equations
-    ]
+    residual_fns = [compile_residual(eq, all_syms, reference_units) for eq in equations]
 
     def handler(dep_values: dict[str, Any]) -> dict[str, Quantity]:
         given_floats = []
@@ -94,8 +95,7 @@ def build_solve_group_handler(
             slot_id = sym_to_slot_id.get(id(sym))
             if slot_id is None:
                 raise RuntimeError(
-                    f"Unknown symbol '{sym.name}' has no stable_id mapping. "
-                    f"This is a graph compilation error."
+                    f"Unknown symbol '{sym.name}' has no stable_id mapping. This is a graph compilation error."
                 )
             solved[slot_id] = Quantity(float(res.x[i]), reference_units[sym])
 

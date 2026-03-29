@@ -1,8 +1,25 @@
 # Concept: Requirements (inputs, derived attributes, acceptance)
 
-This page covers the usual pattern for **executable** requirement acceptance: symbols stay local to a `RequirementBlock`, and the graph evaluates acceptance like any other constraint.
+This page covers **executable** requirement acceptance: symbols stay scoped to a composable **`Requirement`** package, and the graph evaluates acceptance like any other constraint.
 
-There are two complementary ways to introduce **values** under a requirement:
+## Leaf `model.requirement(...)` vs composable `Requirement`
+
+- **`Requirement`** is the **type** of a composable requirements **package**. You implement **`define(cls, model)`** on a subclass, register it from a **`System`** or **`Part`** with **`model.requirement_package(name, YourType)`**, and navigate with **`RequirementRef`** dot access (e.g. **`reqs.mission_range`**).
+- **`model.requirement(id, text)`** is a **declaration** that creates one **leaf** requirement inside such a package. It returns a ref used with **`requirement_input`**, **`requirement_attribute`**, and **`requirement_accept_expr`**. It is not an alternative to subclassing **`Requirement`** for a reusable package.
+
+Keeping those two straight avoids confusion with the class name **`Requirement`**.
+
+## Package-level parameters, attributes, and constraints
+
+Inside **`Requirement.define()`**, you may declare **`parameter`**, **`attribute`**, and **`constraint`** at **package** scope (not only on leaf requirements). They compile and instantiate like other value nodes, with symbols resolved under the package’s path prefix. After **`instantiate`**, access them from the configured **`PartInstance`** (typically the root) via the package name, e.g. **`cm.root.my_pkg.my_param`**.
+
+**Limitations (today):** package-level slots do not support **`computed_by=`** or rollups in graph compilation; every package **`constraint`** must supply **`expr=`** (constant expressions are allowed). See the **`Requirement`** class docstring in the API reference for the authoritative list.
+
+**Product alignment:** package-scoped values are a good match for models where **requirements own parameters and derived quantities** as first-class nodes (the same mental model as “attributes as nodes” in graph databases). This library does not ship a Neo4j schema change; it only exposes the authoring and execution shape.
+
+## Values on a leaf requirement
+
+There are two complementary ways to introduce **values** on a **leaf** requirement (the ref returned by **`model.requirement`**):
 
 - **`requirement_input`** — slots you **wire from the design** with `allocate(..., inputs={...})` (scenario parameters, part attributes, and so on).
 - **`requirement_attribute`** — **requirement-owned derived values** with an `expr=` (sums, margins, normalized quantities, intermediate checks) that may depend on inputs, earlier attributes on the same requirement, and root/part symbols.
@@ -15,7 +32,7 @@ This is the simplest pattern when acceptance only needs values **mapped from** t
 
 ```python
 from unitflow import km
-from tg_model import RequirementBlock, System
+from tg_model import Requirement, System
 from tg_model.execution import (
     Evaluator,
     RunContext,
@@ -26,7 +43,7 @@ from tg_model.execution import (
 )
 
 
-class RangeReqs(RequirementBlock):
+class RangeReqs(Requirement):
     @classmethod
     def define(cls, model):
         r = model.requirement("mission_range", "Aircraft shall support mission range.")
@@ -42,7 +59,7 @@ class Aircraft(System):
         mission_km = model.parameter("mission_required_km", unit=km, required=True)
         achieved_km = model.attribute("achieved_km", unit=km, expr=9000 * km)
 
-        reqs = model.requirement_block("reqs", RangeReqs)
+        reqs = model.requirement_package("reqs", RangeReqs)
         model.allocate(
             reqs.mission_range,
             root,
@@ -71,7 +88,7 @@ for row in req.results:
 
 ### Why this pattern
 
-- Requirement expression is local to the `RequirementBlock`.
+- Requirement expression is local to the `Requirement` package.
 - Part values are explicitly mapped by `allocate(..., inputs=...)`.
 - Acceptance runs in normal graph evaluation (same pass as constraints).
 
@@ -92,11 +109,11 @@ Derived attributes are materialized as value slots on the configured root; **`Co
 ```python
 from unitflow import Quantity, QuantityExpr
 from unitflow.catalogs.si import m
-from tg_model import RequirementBlock, System
+from tg_model import Requirement, System
 from tg_model.execution import Evaluator, RunContext, compile_graph, instantiate, validate_graph
 
 
-class SumReqs(RequirementBlock):
+class SumReqs(Requirement):
     @classmethod
     def define(cls, model):
         r = model.requirement("positive_span", "Span sum shall be positive.")
@@ -112,7 +129,7 @@ class Demo(System):
         root = model.part()
         la = model.parameter("len_a_m", unit=m)
         lb = model.parameter("len_b_m", unit=m)
-        blk = model.requirement_block("reqs", SumReqs)
+        blk = model.requirement_package("reqs", SumReqs)
         model.allocate(
             blk.positive_span,
             root,

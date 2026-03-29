@@ -26,13 +26,35 @@ from tg_model.execution.external_ops import (
 from tg_model.execution.external_ops import (
     resolve_attribute_ref_to_slot as _resolve_attr_ref_core,
 )
-from tg_model.execution.instances import ElementInstance, PartInstance
+from tg_model.execution.instances import ElementInstance, PartInstance, RequirementPackageInstance
 from tg_model.execution.value_slots import ValueSlot
 from tg_model.integrations.external_compute import (
     ExternalComputeBinding,
     ExternalComputeResult,
     assert_sync_external,
 )
+
+
+def _alloc_target_as_part(target: ElementInstance, *, where: str) -> PartInstance:
+    """Narrow allocation targets to :class:`PartInstance` with a single graph-level check."""
+    if not isinstance(target, PartInstance):
+        raise GraphCompilationError(f"{where}: allocation target must be PartInstance, got {type(target).__name__}")
+    return target
+
+
+def _first_value_slot_under_requirement_package(
+    pkg: RequirementPackageInstance,
+) -> ValueSlot | None:
+    """First package :class:`ValueSlot` in stable name order (including nested packages)."""
+    for key in sorted(pkg._members.keys()):
+        m = pkg._members[key]
+        if isinstance(m, ValueSlot):
+            return m
+        if isinstance(m, RequirementPackageInstance):
+            inner = _first_value_slot_under_requirement_package(m)
+            if inner is not None:
+                return inner
+    return None
 
 
 class GraphCompilationError(Exception):
@@ -78,6 +100,7 @@ def compile_graph(model: ConfiguredModel) -> tuple[DependencyGraph, dict[str, Ca
     handlers: dict[str, Callable] = {}
 
     _compile_part(model.root, graph, handlers, model)
+    _compile_requirement_packages_from_parts(model.root, graph, handlers, model)
     _compile_constraints_for_part(model.root, graph, handlers, model)
     _compile_requirement_derived_slots(model, graph, handlers)
     _compile_requirement_acceptance(model, graph, handlers)
@@ -110,32 +133,49 @@ def _compile_slot(
     slot_node_id = f"val:{slot.path_string}"
 
     if slot.is_parameter:
-        graph.add_node(DependencyNode(
-            slot_node_id, NodeKind.INPUT_PARAMETER, slot_id=slot.stable_id,
-        ))
+        graph.add_node(
+            DependencyNode(
+                slot_node_id,
+                NodeKind.INPUT_PARAMETER,
+                slot_id=slot.stable_id,
+            )
+        )
         return
 
     expr = slot.metadata.get("_expr")
 
     if expr is None:
-        graph.add_node(DependencyNode(
-            slot_node_id, NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id,
-        ))
+        graph.add_node(
+            DependencyNode(
+                slot_node_id,
+                NodeKind.ATTRIBUTE_VALUE,
+                slot_id=slot.stable_id,
+            )
+        )
         return
 
     from tg_model.model.declarations.values import RollupDecl
+
     if isinstance(expr, RollupDecl):
         _compile_rollup(slot, slot_node_id, expr, owner, graph, handlers)
         return
 
-    graph.add_node(DependencyNode(
-        slot_node_id, NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            slot_node_id,
+            NodeKind.ATTRIBUTE_VALUE,
+            slot_id=slot.stable_id,
+        )
+    )
 
     expr_node_id = f"expr:{slot.path_string}"
-    graph.add_node(DependencyNode(
-        expr_node_id, NodeKind.LOCAL_EXPRESSION, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            expr_node_id,
+            NodeKind.LOCAL_EXPRESSION,
+            slot_id=slot.stable_id,
+        )
+    )
     graph.add_edge(expr_node_id, slot_node_id)
 
     if hasattr(expr, "free_symbols") and expr.free_symbols:
@@ -153,6 +193,7 @@ def _compile_slot(
                     if dep_node_id in dep_values:
                         context[sym] = dep_values[dep_node_id]
                 return expression.evaluate(context)
+
             return handler
 
         handlers[expr_node_id] = make_expr_handler(expr, owner, model)
@@ -188,13 +229,10 @@ def _compile_external_for_part(
             continue
         if not isinstance(cb, ExternalComputeBinding):
             raise GraphCompilationError(
-                f"computed_by must be an ExternalComputeBinding at '{slot.path_string}', "
-                f"got {type(cb).__name__}"
+                f"computed_by must be an ExternalComputeBinding at '{slot.path_string}', got {type(cb).__name__}"
             )
         if slot.metadata.get("_expr") is not None:
-            raise GraphCompilationError(
-                f"Attribute '{slot.path_string}' cannot combine expr= with computed_by="
-            )
+            raise GraphCompilationError(f"Attribute '{slot.path_string}' cannot combine expr= with computed_by=")
         groups.setdefault(id(cb), []).append(slot)
 
     for slots in groups.values():
@@ -310,9 +348,7 @@ def _make_external_handler(
                 raise TypeError("external object has no compute()")
             res = compute_fn(inputs_dict)
             if not isinstance(res, ExternalComputeResult):
-                raise TypeError(
-                    f"External compute must return ExternalComputeResult, got {type(res).__name__}"
-                )
+                raise TypeError(f"External compute must return ExternalComputeResult, got {type(res).__name__}")
             materialize_external_result(binding, res, owner, model, ctx, slots)
         except Exception as e:
             msg = str(e)
@@ -331,14 +367,22 @@ def _compile_rollup(
     graph: DependencyGraph,
     handlers: dict[str, Callable],
 ) -> None:
-    graph.add_node(DependencyNode(
-        slot_node_id, NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            slot_node_id,
+            NodeKind.ATTRIBUTE_VALUE,
+            slot_id=slot.stable_id,
+        )
+    )
 
     expr_node_id = f"rollup:{slot.path_string}"
-    graph.add_node(DependencyNode(
-        expr_node_id, NodeKind.ROLLUP_COMPUTATION, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            expr_node_id,
+            NodeKind.ROLLUP_COMPUTATION,
+            slot_id=slot.stable_id,
+        )
+    )
     graph.add_edge(expr_node_id, slot_node_id)
 
     child_slots: list[str] = []
@@ -353,6 +397,7 @@ def _compile_rollup(
             pass
 
     from tg_model.execution.rollups import build_rollup_handler
+
     handlers[expr_node_id] = build_rollup_handler(expr.kind, expr.value_func, child_slots)
 
 
@@ -495,7 +540,11 @@ def _resolve_sym_for_requirement_expr(
         rtail = tuple(req_inst.instance_path[1:])
         if len(tg_path) == len(rtail) + 1 and tg_path[: len(rtail)] == rtail:
             return _resolve_symbol_for_requirement_acceptance(
-                sym, allocate_target, requirement_definition_type, model, alloc,
+                sym,
+                allocate_target,
+                requirement_definition_type,
+                model,
+                alloc,
             )
     if sym_owner is model.root.definition_type:
         return _resolve_symbol_to_slot(sym, model.root, model)
@@ -527,19 +576,31 @@ def _compile_requirement_attribute_slot(
 
     expr = slot.metadata.get("_expr")
     if expr is None:
-        graph.add_node(DependencyNode(
-            f"val:{slot.path_string}", NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id,
-        ))
+        graph.add_node(
+            DependencyNode(
+                f"val:{slot.path_string}",
+                NodeKind.ATTRIBUTE_VALUE,
+                slot_id=slot.stable_id,
+            )
+        )
         return
 
     slot_node_id = f"val:{slot.path_string}"
-    graph.add_node(DependencyNode(
-        slot_node_id, NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            slot_node_id,
+            NodeKind.ATTRIBUTE_VALUE,
+            slot_id=slot.stable_id,
+        )
+    )
     expr_node_id = f"expr:{slot.path_string}"
-    graph.add_node(DependencyNode(
-        expr_node_id, NodeKind.LOCAL_EXPRESSION, slot_id=slot.stable_id,
-    ))
+    graph.add_node(
+        DependencyNode(
+            expr_node_id,
+            NodeKind.LOCAL_EXPRESSION,
+            slot_id=slot.stable_id,
+        )
+    )
     graph.add_edge(expr_node_id, slot_node_id)
 
     if hasattr(expr, "free_symbols") and expr.free_symbols:
@@ -551,9 +612,14 @@ def _compile_requirement_attribute_slot(
         def make_handler(expression: Any, a: AllocationBinding, cm: ConfiguredModel) -> Callable:
             def handler(dep_values: dict[str, Any]) -> Any:
                 context: dict[Any, Any] = {}
+                tgt = _alloc_target_as_part(a.target, where="requirement_attribute expression")
                 for sym in expression.free_symbols:
                     dep_slot = _resolve_sym_for_requirement_expr(
-                        sym, a.target, a.requirement.definition_type, cm, a,
+                        sym,
+                        tgt,
+                        a.requirement.definition_type,
+                        cm,
+                        a,
                     )
                     dep_node_id = f"val:{dep_slot.path_string}"
                     if dep_node_id in dep_values:
@@ -615,6 +681,120 @@ def _compile_requirement_derived_slots(
             _compile_requirement_attribute_slot(slot, alloc, graph, handlers, model)
 
 
+def _compile_requirement_packages_from_parts(
+    part: PartInstance,
+    graph: DependencyGraph,
+    handlers: dict[str, Callable],
+    model: ConfiguredModel,
+) -> None:
+    """Compile value slots and constraints declared on composable requirement packages."""
+    compiled = part.definition_type.compile()
+    tr = compiled.get("_type_registry", {})
+    for name, node in compiled.get("nodes", {}).items():
+        if node.get("kind") != "requirement_block" or tr.get(name) is None:
+            continue
+        sub = getattr(part, name, None)
+        if isinstance(sub, RequirementPackageInstance):
+            _compile_requirement_package_tree(sub, graph, handlers, model)
+    for child in part.children:
+        _compile_requirement_packages_from_parts(child, graph, handlers, model)
+
+
+def _compile_requirement_package_tree(
+    pkg: RequirementPackageInstance,
+    graph: DependencyGraph,
+    handlers: dict[str, Callable],
+    model: ConfiguredModel,
+) -> None:
+    from tg_model.model.declarations.values import RollupDecl
+
+    compiled = pkg.package_type.compile()
+    # Declaration order matches Python 3.7+ dict insertion order (same as compile_type recording).
+    for name, node in compiled["nodes"].items():
+        kind = node["kind"]
+        if kind in ("parameter", "attribute"):
+            slot = getattr(pkg, name)
+            if not isinstance(slot, ValueSlot):
+                raise GraphCompilationError(
+                    f"Expected ValueSlot for {pkg.path_string}.{name}, got {type(slot).__name__}"
+                )
+            if slot.metadata.get("_computed_by") is not None:
+                raise GraphCompilationError(
+                    f"computed_by= is not supported on requirement package slot '{slot.path_string}'"
+                )
+            expr_m = slot.metadata.get("_expr")
+            if isinstance(expr_m, RollupDecl):
+                raise GraphCompilationError(
+                    f"RollupDecl is not supported on requirement package slot '{slot.path_string}'"
+                )
+            _compile_slot(slot, model.root, graph, handlers, model)
+        elif kind == "constraint":
+            _compile_requirement_package_constraint(pkg, name, node, graph, handlers, model)
+        elif kind == "requirement_block":
+            inner = getattr(pkg, name, None)
+            if isinstance(inner, RequirementPackageInstance):
+                _compile_requirement_package_tree(inner, graph, handlers, model)
+
+
+def _compile_requirement_package_constraint(
+    pkg: RequirementPackageInstance,
+    name: str,
+    node: dict[str, Any],
+    graph: DependencyGraph,
+    handlers: dict[str, Callable],
+    model: ConfiguredModel,
+) -> None:
+    constraint_node_id = f"check:{pkg.path_string}.{name}"
+    graph.add_node(
+        DependencyNode(
+            constraint_node_id,
+            NodeKind.CONSTRAINT_CHECK,
+            metadata={"name": f"{pkg.path_string}.{name}"},
+        )
+    )
+    expr = node.get("metadata", {}).get("_expr")
+    if expr is None:
+        raise GraphCompilationError(
+            f"Requirement package constraint '{pkg.path_string}.{name}' has no expr "
+            f"(expected compile-time validation to reject this)."
+        )
+
+    def make_pkg_constraint_handler(
+        constraint_expr: Any,
+        cm: ConfiguredModel,
+    ) -> Callable[..., bool]:
+        def handler(dep_values: dict[str, Any]) -> bool:
+            context: dict[Any, Any] = {}
+            for sym in constraint_expr.free_symbols:
+                dep_slot = _resolve_symbol_to_slot(sym, cm.root, cm)
+                dep_node_id = f"val:{dep_slot.path_string}"
+                if dep_node_id in dep_values:
+                    context[sym] = dep_values[dep_node_id]
+            return constraint_expr.evaluate(context)
+
+        return handler
+
+    if hasattr(expr, "free_symbols") and expr.free_symbols:
+        for sym in expr.free_symbols:
+            dep_slot = _resolve_symbol_to_slot(sym, model.root, model)
+            dep_node_id = f"val:{dep_slot.path_string}"
+            graph.add_edge(dep_node_id, constraint_node_id)
+        handlers[constraint_node_id] = make_pkg_constraint_handler(expr, model)
+    elif hasattr(expr, "evaluate"):
+        handlers[constraint_node_id] = lambda dep_values, e=expr: bool(e.evaluate({}))
+    elif callable(expr):
+        handlers[constraint_node_id] = lambda dep_values, fn=expr: bool(fn(dep_values))
+    else:
+        handlers[constraint_node_id] = lambda dep_values, val=expr: bool(val)
+
+    # Constant / symbol-free constraints need at least one incoming edge so validation does not
+    # treat the check node as orphaned, and so evaluation runs after package inputs exist.
+    if not graph.dependencies_of(constraint_node_id):
+        anchor = _first_value_slot_under_requirement_package(pkg)
+        if anchor is not None:
+            graph.add_edge(f"val:{anchor.path_string}", constraint_node_id)
+
+
 def _compile_constraints_for_part(
     part: PartInstance,
     graph: DependencyGraph,
@@ -628,10 +808,13 @@ def _compile_constraints_for_part(
             continue
 
         constraint_node_id = f"check:{part.path_string}.{name}"
-        graph.add_node(DependencyNode(
-            constraint_node_id, NodeKind.CONSTRAINT_CHECK,
-            metadata={"name": f"{part.path_string}.{name}"},
-        ))
+        graph.add_node(
+            DependencyNode(
+                constraint_node_id,
+                NodeKind.CONSTRAINT_CHECK,
+                metadata={"name": f"{part.path_string}.{name}"},
+            )
+        )
 
         expr = node["metadata"].get("_expr")
         if expr is not None and hasattr(expr, "free_symbols"):
@@ -641,7 +824,9 @@ def _compile_constraints_for_part(
                 graph.add_edge(dep_node_id, constraint_node_id)
 
             def make_constraint_handler(
-                constraint_expr: Any, owner_part: PartInstance, cm: ConfiguredModel,
+                constraint_expr: Any,
+                owner_part: PartInstance,
+                cm: ConfiguredModel,
             ) -> Callable[..., bool]:
                 def handler(dep_values: dict[str, Any]) -> bool:
                     context = {}
@@ -651,6 +836,7 @@ def _compile_constraints_for_part(
                         if dep_node_id in dep_values:
                             context[sym] = dep_values[dep_node_id]
                     return constraint_expr.evaluate(context)
+
                 return handler
 
             handlers[constraint_node_id] = make_constraint_handler(expr, part, model)
@@ -686,16 +872,18 @@ def _compile_requirement_acceptance(
             )
         req_def_type = req.definition_type
         node_id = f"reqcheck:{req.path_string}@{alloc.stable_id}"
-        graph.add_node(DependencyNode(
-            node_id,
-            NodeKind.CONSTRAINT_CHECK,
-            metadata={
-                "name": node_id,
-                "requirement_path": req.path_string,
-                "allocation_target_path": target.path_string,
-                "check_kind": "requirement_acceptance",
-            },
-        ))
+        graph.add_node(
+            DependencyNode(
+                node_id,
+                NodeKind.CONSTRAINT_CHECK,
+                metadata={
+                    "name": node_id,
+                    "requirement_path": req.path_string,
+                    "allocation_target_path": target.path_string,
+                    "check_kind": "requirement_acceptance",
+                },
+            )
+        )
         if not hasattr(expr, "free_symbols"):
             raise GraphCompilationError(
                 f"Requirement '{req.path_string}' acceptance expr has no free_symbols; "
@@ -703,7 +891,11 @@ def _compile_requirement_acceptance(
             )
         for sym in expr.free_symbols:
             dep_slot = _resolve_symbol_for_requirement_acceptance(
-                sym, target, req_def_type, model, alloc,
+                sym,
+                target,
+                req_def_type,
+                model,
+                alloc,
             )
             dep_node_id = f"val:{dep_slot.path_string}"
             graph.add_edge(dep_node_id, node_id)
@@ -727,7 +919,11 @@ def _compile_requirement_acceptance(
                 context: dict[Any, Any] = {}
                 for sym in constraint_expr.free_symbols:
                     dep_slot = _resolve_symbol_for_requirement_acceptance(
-                        sym, owner_part, req_owner_type, cm, binding,
+                        sym,
+                        owner_part,
+                        req_owner_type,
+                        cm,
+                        binding,
                     )
                     dep_node_id = f"val:{dep_slot.path_string}"
                     if dep_node_id in dep_values:
@@ -765,8 +961,7 @@ def _resolve_path_to_slot(
     except AttributeError:
         pass
     raise GraphCompilationError(
-        f"Solve group '{group_name}': path {list(path)} could not be resolved "
-        f"to a ValueSlot under '{part.path_string}'"
+        f"Solve group '{group_name}': path {list(path)} could not be resolved to a ValueSlot under '{part.path_string}'"
     )
 
 
@@ -794,9 +989,7 @@ def _compile_solve_groups_for_part(
         for upath in unknown_paths:
             slot = _resolve_path_to_slot(upath, part, name)
             if slot.stable_id in unknown_slot_ids:
-                raise GraphCompilationError(
-                    f"Solve group '{name}': duplicate unknown '{'.'.join(upath)}'"
-                )
+                raise GraphCompilationError(f"Solve group '{name}': duplicate unknown '{'.'.join(upath)}'")
             unknown_slot_ids.add(slot.stable_id)
             unknown_slot_by_path[tuple(upath)] = slot.stable_id
 
@@ -804,9 +997,7 @@ def _compile_solve_groups_for_part(
         for gpath in given_paths:
             slot = _resolve_path_to_slot(gpath, part, name)
             if slot.stable_id in given_slot_ids:
-                raise GraphCompilationError(
-                    f"Solve group '{name}': duplicate given '{'.'.join(gpath)}'"
-                )
+                raise GraphCompilationError(f"Solve group '{name}': duplicate given '{'.'.join(gpath)}'")
             if slot.stable_id in unknown_slot_ids:
                 raise GraphCompilationError(
                     f"Solve group '{name}': '{'.'.join(gpath)}' declared as both unknown and given"
@@ -814,10 +1005,13 @@ def _compile_solve_groups_for_part(
             given_slot_ids.add(slot.stable_id)
 
         target_slots = {sid: sid for sid in unknown_slot_ids}
-        graph.add_node(DependencyNode(
-            sg_node_id, NodeKind.SOLVE_GROUP,
-            metadata={"name": name, "target_slots": target_slots},
-        ))
+        graph.add_node(
+            DependencyNode(
+                sg_node_id,
+                NodeKind.SOLVE_GROUP,
+                metadata={"name": name, "target_slots": target_slots},
+            )
+        )
 
         unknown_syms: list[Any] = []
         given_syms: list[Any] = []
@@ -860,13 +1054,13 @@ def _compile_solve_groups_for_part(
         missing_givens = given_slot_ids - found_given_ids
         if missing_givens:
             raise GraphCompilationError(
-                f"Solve group '{name}': declared givens not found in any equation. "
-                f"Missing slot IDs: {missing_givens}"
+                f"Solve group '{name}': declared givens not found in any equation. Missing slot IDs: {missing_givens}"
             )
 
         sym_to_slot_id: dict[int, str] = {}
         for sym in unknown_syms:
             from tg_model.model.refs import _symbol_id_to_path
+
             result = _symbol_id_to_path.get(id(sym))
             if result is not None:
                 _, sym_path = result
@@ -875,8 +1069,13 @@ def _compile_solve_groups_for_part(
                     sym_to_slot_id[id(sym)] = slot_id
 
         from tg_model.execution.solve_groups import build_solve_group_handler
+
         handlers[sg_node_id] = build_solve_group_handler(
-            equations, unknown_syms, given_syms, given_to_node_id, sym_to_slot_id,
+            equations,
+            unknown_syms,
+            given_syms,
+            given_to_node_id,
+            sym_to_slot_id,
         )
 
     for child in part.children:

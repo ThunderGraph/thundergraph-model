@@ -36,6 +36,16 @@ Behavior APIs (`dispatch_event`, …) read/write **run** state and traces; they 
 - **`RunContext` is per run** — the façade creates a new context each **`evaluate`** unless **`run_context=`** is passed; do not reuse contexts across parallel evaluations without a clear concurrency story (see **`ConfiguredModel`** docstring on threading).
 - **Requirement acceptance** is part of the same constraint/evaluation pass when requirements are allocated and wired with inputs.
 
+## Composable requirement packages
+
+**Authoring:** A subclass of **`Requirement`** is a **namespace** mounted with **`requirement_package`** (see {doc}`extension_playbook`). **Leaf** statements use **`model.requirement`** inside that **`define()`**; package-level **`parameter`** / **`attribute`** / **`constraint`** live alongside them and participate in the same compile → instantiate → graph pipeline as root/part values.
+
+**Runtime:** After **`instantiate`**, **`RequirementPackageInstance`** hangs under the owning **`PartInstance`** (usually the configured root). **`ConfiguredModel.evaluate`** and **`compile_graph`** share one graph cache; **package** value slots are valid **`ValueSlot`** keys for the façade the same way as root parameters.
+
+**Artifacts:** The compiler still labels composable requirement nodes with internal **`kind`** **`"requirement_block"`**; tests and tooling should not couple user-facing names to that string without reason.
+
+End-user concepts: {doc}`../user/concepts_requirements`.
+
 ## Extension points
 
 See {doc}`extension_playbook` for supported seams (authoring types, external compute, analysis usage) versus internals.

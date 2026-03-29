@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
-from tg_model.execution.evaluator import Evaluator, RunResult
+from tg_model.execution.evaluator import Evaluator
 from tg_model.execution.run_context import RunContext, SlotState
 
 
@@ -74,7 +74,7 @@ class TestFailurePropagation:
         g.add_edge("a", "expr")
         evaluator = Evaluator(g, compute_handlers={"expr": lambda deps: deps["a"] * 2})
         ctx = RunContext()
-        result = evaluator.evaluate(ctx)
+        evaluator.evaluate(ctx)
         assert ctx.get_state("s_out") == SlotState.BLOCKED
 
 

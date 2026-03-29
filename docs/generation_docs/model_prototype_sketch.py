@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 
 # --- 1. Tiny semantic model types ------------------------------------------
@@ -336,8 +336,8 @@ class DriveSystem(System):
         motor = model.part("motor", Motor)
 
         model.connect(
-            source=battery.power_out,
-            target=motor.power_in,
+            source=cast(PortRef, battery.power_out),
+            target=cast(PortRef, motor.power_in),
             carrying="electrical_power",
         )
 

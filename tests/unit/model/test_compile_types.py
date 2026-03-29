@@ -128,8 +128,9 @@ class TestInvalidConnections:
         class BadSystem(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                battery = model.part("battery", Battery)
+                model.part("battery", Battery)
                 from tg_model.model.refs import PortRef
+
                 fake_ref = PortRef(
                     owner_type=BadSystem,
                     path=("battery", "nonexistent_port"),
@@ -146,8 +147,9 @@ class TestInvalidConnections:
         class BadSystem2(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                battery = model.part("battery", Battery)
+                model.part("battery", Battery)
                 from tg_model.model.refs import PortRef
+
                 fake_ref = PortRef(
                     owner_type=BadSystem2,
                     path=("battery", "charge"),

@@ -563,11 +563,7 @@ def dispatch_decision(
     if chosen is not None and merge_name and run_merge:
         dispatch_merge(ctx, part, merge_name, trace=trace)
         merge_ran = True
-    outcome = (
-        DecisionDispatchOutcome.ACTION_RAN
-        if chosen is not None
-        else DecisionDispatchOutcome.NO_ACTION
-    )
+    outcome = DecisionDispatchOutcome.ACTION_RAN if chosen is not None else DecisionDispatchOutcome.NO_ACTION
     return DecisionDispatchResult(
         outcome=outcome,
         chosen_action=chosen,
@@ -766,15 +762,17 @@ def behavior_trace_to_records(trace: BehaviorTrace) -> list[dict[str, Any]]:
     """
     out: list[dict[str, Any]] = []
     for s in trace.steps:
-        out.append({
-            "kind": "transition",
-            "step_index": s.step_index,
-            "part_path": s.part_path,
-            "event_name": s.event_name,
-            "from_state": s.from_state,
-            "to_state": s.to_state,
-            "effect_name": s.effect_name,
-        })
+        out.append(
+            {
+                "kind": "transition",
+                "step_index": s.step_index,
+                "part_path": s.part_path,
+                "event_name": s.event_name,
+                "from_state": s.from_state,
+                "to_state": s.to_state,
+                "effect_name": s.effect_name,
+            }
+        )
     for s in trace.item_flows:
         rec: dict[str, Any] = {
             "kind": "item_flow",
@@ -787,34 +785,42 @@ def behavior_trace_to_records(trace: BehaviorTrace) -> list[dict[str, Any]]:
             rec["payload"] = s.payload
         out.append(rec)
     for s in trace.decision_steps:
-        out.append({
-            "kind": "decision",
-            "step_index": s.step_index,
-            "part_path": s.part_path,
-            "decision_name": s.decision_name,
-            "chosen_action": s.chosen_action,
-        })
+        out.append(
+            {
+                "kind": "decision",
+                "step_index": s.step_index,
+                "part_path": s.part_path,
+                "decision_name": s.decision_name,
+                "chosen_action": s.chosen_action,
+            }
+        )
     for s in trace.fork_join_steps:
-        out.append({
-            "kind": "fork_join",
-            "step_index": s.step_index,
-            "part_path": s.part_path,
-            "block_name": s.block_name,
-        })
+        out.append(
+            {
+                "kind": "fork_join",
+                "step_index": s.step_index,
+                "part_path": s.part_path,
+                "block_name": s.block_name,
+            }
+        )
     for s in trace.merge_steps:
-        out.append({
-            "kind": "merge",
-            "step_index": s.step_index,
-            "part_path": s.part_path,
-            "merge_name": s.merge_name,
-            "then_action": s.then_action,
-        })
+        out.append(
+            {
+                "kind": "merge",
+                "step_index": s.step_index,
+                "part_path": s.part_path,
+                "merge_name": s.merge_name,
+                "then_action": s.then_action,
+            }
+        )
     for s in trace.sequence_steps:
-        out.append({
-            "kind": "sequence",
-            "step_index": s.step_index,
-            "part_path": s.part_path,
-            "sequence_name": s.sequence_name,
-        })
+        out.append(
+            {
+                "kind": "sequence",
+                "step_index": s.step_index,
+                "part_path": s.part_path,
+                "sequence_name": s.sequence_name,
+            }
+        )
     out.sort(key=lambda r: r["step_index"])
     return out

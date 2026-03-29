@@ -1,30 +1,57 @@
-"""Level-1 requirement subtree for :class:`~commercial_aircraft.program.cargo_jet_program.CargoJetProgram`.
+"""Level-1 composable requirement packages for :class:`~commercial_aircraft.program.cargo_jet_program.CargoJetProgram`.
 
-Each nested :class:`~tg_model.model.elements.RequirementBlock` calls the ThunderGraph authoring API
-directly: ``model.requirement(...)``, ``model.requirement_input``,
-``model.requirement_attribute`` (derived quantities on the requirement), ``model.requirement_accept_expr``
-where executable acceptance is needed, and (from :meth:`CargoJetProgram.define`) ``model.references``
-plus ``model.allocate`` / ``model.allocate(..., inputs=...)``.
+Each nested :class:`~tg_model.model.elements.Requirement` uses the full composable surface from the
+requirement-composition plan: **package-level** ``model.parameter``, ``model.attribute``, and
+``model.constraint`` where the package owns shared policy values; **leaf** ``model.requirement``,
+``model.requirement_input``, ``model.requirement_attribute``, ``model.requirement_accept_expr`` for
+atomic acceptance; ``model.requirement_package`` for nested groupings; and (from
+:meth:`CargoJetProgram.define`) ``model.references`` plus ``model.allocate`` /
+``model.allocate(..., inputs=...)``.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from unitflow import Quantity
 from unitflow.catalogs.si import kg, m
+from unitflow.expr.expressions import QuantityExpr
 
-from tg_model.model.elements import RequirementBlock
+from tg_model.model.elements import Requirement
 
 
-class L1MissionRequirements(RequirementBlock):
+class L1MissionRequirements(Requirement):
     """Mission / design-closure obligations (executable acceptance on the aircraft part).
 
     Split into **two** atomic requirements so each has a single verifiable ``shall`` (INCOSE-style
     decomposition): payload mass vs envelope, then design range vs envelope.
+
+    **Package-level** ``parameter`` / ``attribute`` / ``constraint`` below are illustrative policy
+    slots for the mission-closure *package* (not wired through ``allocate``): they show the same
+    authoring surface as ``Part`` / ``System`` for values owned by the composable requirement namespace.
     """
 
     @classmethod
     def define(cls, model: Any) -> None:
+        # --- Package-owned value surface (plan in-scope: parameter / attribute / constraint) ---
+        reserved_operational_buffer_kg = model.parameter(
+            "reserved_operational_buffer_kg",
+            unit=kg,
+            required=True,
+        )
+        reporting_headroom_kg = model.attribute(  # noqa: F841
+            "reporting_headroom_kg",
+            unit=kg,
+            expr=reserved_operational_buffer_kg,
+        )
+        # Slot: ``cm.l1.mission.reporting_headroom_kg``. Constraint below uses the parameter only (evaluator).
+        # Constraint uses the parameter (not the package attribute) so evaluation matches root-level
+        # constraint handling today; the attribute still demonstrates package-level ``attribute``.
+        model.constraint(
+            "mission_package_reserved_buffer_non_negative",
+            expr=reserved_operational_buffer_kg > QuantityExpr(Quantity(-1, kg)),
+        )
+
         r_payload = model.requirement(
             "req_cargo_design_mission_payload_closure",
             (
@@ -74,7 +101,7 @@ class L1MissionRequirements(RequirementBlock):
         )
 
 
-class L1AirworthinessRequirements(RequirementBlock):
+class L1AirworthinessRequirements(Requirement):
     """Regulatory and methodology framing (text + citations; no executable acceptance in this slice)."""
 
     @classmethod
@@ -103,7 +130,7 @@ class L1AirworthinessRequirements(RequirementBlock):
         )
 
 
-class L1ProductRequirements(RequirementBlock):
+class L1ProductRequirements(Requirement):
     """Configuration and traceability obligations on the vehicle block."""
 
     @classmethod
@@ -133,11 +160,11 @@ class L1ProductRequirements(RequirementBlock):
         )
 
 
-class L1RequirementsRoot(RequirementBlock):
+class L1RequirementsRoot(Requirement):
     """Top-level Level-1 grouping: mission, airworthiness context, product-level requirements."""
 
     @classmethod
     def define(cls, model: Any) -> None:
-        model.requirement_block("mission", L1MissionRequirements)
-        model.requirement_block("airworthiness", L1AirworthinessRequirements)
-        model.requirement_block("product", L1ProductRequirements)
+        model.requirement_package("mission", L1MissionRequirements)
+        model.requirement_package("airworthiness", L1AirworthinessRequirements)
+        model.requirement_package("product", L1ProductRequirements)

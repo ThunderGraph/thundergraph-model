@@ -48,9 +48,7 @@ def navigate_to_part(root: PartInstance, path: tuple[str, ...]) -> PartInstance:
     for segment in path[len(root.instance_path) :]:
         current = getattr(current, segment)
     if not isinstance(current, PartInstance):
-        raise ExternalOpsError(
-            f"Path {path!r} did not resolve to a PartInstance (got {type(current).__name__})"
-        )
+        raise ExternalOpsError(f"Path {path!r} did not resolve to a PartInstance (got {type(current).__name__})")
     return current
 
 
@@ -97,12 +95,8 @@ def resolve_attribute_ref_to_slot(
         if isinstance(current, ValueSlot):
             return current
     except AttributeError as e:
-        raise ExternalOpsError(
-            f"Could not resolve AttributeRef path {ref.path} from {start.path_string}: {e}"
-        ) from e
-    raise ExternalOpsError(
-        f"AttributeRef {ref.path} did not resolve to a ValueSlot (got {type(current).__name__})"
-    )
+        raise ExternalOpsError(f"Could not resolve AttributeRef path {ref.path} from {start.path_string}: {e}") from e
+    raise ExternalOpsError(f"AttributeRef {ref.path} did not resolve to a ValueSlot (got {type(current).__name__})")
 
 
 def materialize_external_result(
@@ -143,21 +137,15 @@ def materialize_external_result(
     routes = binding.output_routes
     if routes is None:
         if not isinstance(res.value, Quantity):
-            raise TypeError(
-                "Single-slot external binding requires ExternalComputeResult.value to be a Quantity"
-            )
+            raise TypeError("Single-slot external binding requires ExternalComputeResult.value to be a Quantity")
         ctx.realize(slots[0].stable_id, res.value, provenance=prov)
         return
     if not isinstance(res.value, MappingABC):
-        raise TypeError(
-            "Multi-slot external binding requires ExternalComputeResult.value to be Mapping[str, Quantity]"
-        )
+        raise TypeError("Multi-slot external binding requires ExternalComputeResult.value to be Mapping[str, Quantity]")
     value_keys = set(res.value.keys())
     route_keys = set(routes.keys())
     if value_keys != route_keys:
-        raise ValueError(
-            f"External result keys {value_keys!r} must match output_routes keys {route_keys!r}"
-        )
+        raise ValueError(f"External result keys {value_keys!r} must match output_routes keys {route_keys!r}")
     for key in routes:
         ref = routes[key]
         qty = res.value[key]

@@ -12,7 +12,16 @@ class ValueSlot:
     slot, not the per-run mutable value. Per-run state lives in RunContext.
     """
 
-    __slots__ = ("stable_id", "instance_path", "kind", "metadata", "definition_type", "definition_path", "has_expr", "has_computed_by")
+    __slots__ = (
+        "definition_path",
+        "definition_type",
+        "has_computed_by",
+        "has_expr",
+        "instance_path",
+        "kind",
+        "metadata",
+        "stable_id",
+    )
 
     def __init__(
         self,

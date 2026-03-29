@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import pytest
+from unitflow import Quantity
+from unitflow.catalogs.si import kg, m
+from unitflow.expr.expressions import QuantityExpr
 
 from tg_model.integrations.external_compute import ExternalComputeBinding
 from tg_model.model.definition_context import ModelDefinitionError, parameter_ref
 from tg_model.model.elements import Part, System
 from tg_model.model.identity import qualified_name
-from unitflow import Quantity
-from unitflow.catalogs.si import kg, m
-from unitflow.expr.expressions import QuantityExpr
 
 
 class _StubExt:

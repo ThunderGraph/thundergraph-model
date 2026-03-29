@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, overload
 
-from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref, RequirementBlockRef
+from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref, RequirementRef
 
 
 class ModelDefinitionError(Exception):
@@ -68,9 +68,7 @@ def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
     if compiled is not None:
         node = compiled.get("nodes", {}).get(name)
         if node is None:
-            raise ModelDefinitionError(
-                f"parameter_ref({root_block_type.__name__}, {name!r}): no such node"
-            )
+            raise ModelDefinitionError(f"parameter_ref({root_block_type.__name__}, {name!r}): no such node")
         if node.get("kind") != "parameter":
             raise ModelDefinitionError(
                 f"parameter_ref({root_block_type.__name__}, {name!r}): expected kind 'parameter', "
@@ -93,8 +91,7 @@ def parameter_ref(root_block_type: type, name: str) -> AttributeRef:
             )
         if decl.kind != "parameter":
             raise ModelDefinitionError(
-                f"parameter_ref({root_block_type.__name__}, {name!r}): expected kind 'parameter', "
-                f"got {decl.kind!r}"
+                f"parameter_ref({root_block_type.__name__}, {name!r}): expected kind 'parameter', got {decl.kind!r}"
             )
         meta = dict(decl.metadata)
 
@@ -110,7 +107,7 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     """Return a :class:`~tg_model.model.refs.Ref` to a requirement under the root type.
 
     ``path`` is declaration names from the root (e.g. ``("mission", "range")`` for
-    requirement ``range`` inside block ``mission``). Use from nested ``Part.define()``
+    requirement ``range`` inside package ``mission``). Use from nested ``Part.define()``
     when dot notation from a :class:`~tg_model.model.refs.PartRef` is not available.
 
     Parameters
@@ -118,7 +115,8 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     root_block_type : type
         Configured root type owning the requirement subtree.
     path : tuple[str, ...]
-        Non-empty path of ``requirement_block`` / ``requirement`` segment names.
+        Non-empty path of segments: intermediate steps are **composable requirement packages**
+        (internal compiled kind ``requirement_block``); the last segment is a leaf **requirement**.
 
     Returns
     -------
@@ -135,8 +133,8 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     -----
     Resolution matches :func:`parameter_ref`: prefer the compiled root artifact; while
     compiling, the first segment comes from the active context and nested segments
-    from **compiled** requirement-block artifacts (eager compile when registering
-    via :meth:`ModelDefinitionContext.requirement_block`).
+    from **compiled** composable-requirement artifacts (eager compile when registering
+    via :meth:`ModelDefinitionContext.requirement_package`).
 
     See Also
     --------
@@ -159,8 +157,7 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
             node = nodes.get(segment)
             if node is None:
                 raise ModelDefinitionError(
-                    f"requirement_ref({owner.__name__}, {original_path!r}): no node {segment!r} "
-                    f"at suffix index {i}"
+                    f"requirement_ref({owner.__name__}, {original_path!r}): no node {segment!r} at suffix index {i}"
                 )
             kind = node.get("kind")
             meta = dict(node.get("metadata", {}))
@@ -180,21 +177,19 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
             if kind != "requirement_block":
                 raise ModelDefinitionError(
                     f"requirement_ref({owner.__name__}, {original_path!r}): intermediate segment "
-                    f"{segment!r} must be requirement_block, got {kind!r}"
+                    f"{segment!r} must be a composable requirement package (internal kind "
+                    f"'requirement_block'), got {kind!r}"
                 )
             bt = tr.get(segment)
             if bt is None:
                 raise ModelDefinitionError(
-                    f"requirement_ref({owner.__name__}, {original_path!r}): missing target_type "
-                    f"for block {segment!r}"
+                    f"requirement_ref({owner.__name__}, {original_path!r}): missing target_type for package {segment!r}"
                 )
             from tg_model.model.compile_types import _requirement_block_compiled_artifact
 
             current = _requirement_block_compiled_artifact(bt)
             tr = current.get("_type_registry", {})
-        raise ModelDefinitionError(
-            f"requirement_ref({owner.__name__}, {original_path!r}): unreachable"
-        )
+        raise ModelDefinitionError(f"requirement_ref({owner.__name__}, {original_path!r}): unreachable")
 
     compiled_root = getattr(root_block_type, "_compiled_definition", None)
     if compiled_root is not None:
@@ -203,21 +198,19 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     active = getattr(root_block_type, "_tg_definition_context", None)
     if active is None:
         raise ModelDefinitionError(
-            f"requirement_ref({root_block_type.__name__}, {path!r}): type is not compiling and "
-            f"not compiled."
+            f"requirement_ref({root_block_type.__name__}, {path!r}): type is not compiling and not compiled."
         )
     first = path[0]
     decl = active.nodes.get(first)
     if decl is None:
         raise ModelDefinitionError(
             f"requirement_ref({root_block_type.__name__}, {path!r}): no declaration {first!r} "
-            f"on the root (declare requirement blocks before parts that use requirement_ref)."
+            f"on the root (declare requirement_package entries before parts that use requirement_ref)."
         )
     if len(path) == 1:
         if decl.kind != "requirement":
             raise ModelDefinitionError(
-                f"requirement_ref({root_block_type.__name__}, {path!r}): expected kind 'requirement', "
-                f"got {decl.kind!r}"
+                f"requirement_ref({root_block_type.__name__}, {path!r}): expected kind 'requirement', got {decl.kind!r}"
             )
         return Ref(
             owner_type=root_block_type,
@@ -228,7 +221,8 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     if decl.kind != "requirement_block" or decl.target_type is None:
         raise ModelDefinitionError(
             f"requirement_ref({root_block_type.__name__}, {path!r}): first segment must be "
-            f"requirement_block with target_type for a multi-segment path"
+            f"a composable requirement package (internal kind 'requirement_block') with "
+            f"target_type for a multi-segment path"
         )
     from tg_model.model.compile_types import _requirement_block_compiled_artifact
 
@@ -247,7 +241,7 @@ class NodeDecl:
     kind : str
         Node kind string (``part``, ``parameter``, ``requirement``, ...).
     target_type : type or None
-        Composed type for ``part`` / ``requirement_block`` when applicable.
+        Composed type for ``part`` or composable requirement package (internal kind ``requirement_block``).
     metadata : dict
         Kind-specific metadata (expressions, text, behavior hooks, ...).
     """
@@ -265,7 +259,7 @@ class ModelDefinitionContext:
     All declaration names share one namespace per owner type; duplicates raise
     :class:`ModelDefinitionError`.
 
-    For :class:`~tg_model.model.elements.RequirementBlock`, ``symbol_owner`` and
+    For :class:`~tg_model.model.elements.Requirement`, ``symbol_owner`` and
     ``symbol_path_prefix`` thread the configured root type and path prefix so
     :meth:`requirement_input` builds :class:`~tg_model.model.refs.AttributeRef`
     paths the graph compiler resolves after :meth:`allocate` ``inputs=`` bindings.
@@ -328,9 +322,7 @@ class ModelDefinitionContext:
         """Insert a new node declaration or raise on duplicate name (internal)."""
         self._check_frozen()
         if name in self.nodes:
-            raise ModelDefinitionError(
-                f"Duplicate declaration '{name}' in {self.owner_type.__name__}"
-            )
+            raise ModelDefinitionError(f"Duplicate declaration '{name}' in {self.owner_type.__name__}")
         decl = NodeDecl(name=name, kind=kind, target_type=target_type, metadata=metadata or {})
         self.nodes[name] = decl
         return decl
@@ -499,12 +491,7 @@ class ModelDefinitionContext:
         if computed_by is not None:
             meta["_computed_by"] = computed_by
         self._register_node(name=name, kind="attribute", metadata=meta)
-        return AttributeRef(
-            owner_type=self.owner_type,
-            path=(name,),
-            kind="attribute",
-            metadata=meta,
-        )
+        return self._value_ref_for_current_owner(name, "attribute", meta)
 
     def parameter(self, name: str, **metadata: Any) -> AttributeRef:
         """Declare an externally bindable parameter (input slot at evaluation time).
@@ -527,10 +514,29 @@ class ModelDefinitionContext:
             On duplicate name or frozen context.
         """
         self._register_node(name=name, kind="parameter", metadata=metadata)
+        return self._value_ref_for_current_owner(name, "parameter", dict(metadata))
+
+    def _value_ref_for_current_owner(
+        self,
+        name: str,
+        kind: str,
+        metadata: dict[str, Any],
+    ) -> AttributeRef:
+        """AttributeRef for ``parameter`` / ``attribute``: threaded under root when in a package."""
+        from tg_model.model.elements import Requirement
+
+        if issubclass(self.owner_type, Requirement):
+            path = (*self.symbol_path_prefix, name)
+            return AttributeRef(
+                owner_type=self.symbol_owner,
+                path=path,
+                kind=kind,
+                metadata=metadata,
+            )
         return AttributeRef(
             owner_type=self.owner_type,
             path=(name,),
-            kind="parameter",
+            kind=kind,
             metadata=metadata,
         )
 
@@ -602,7 +608,7 @@ class ModelDefinitionContext:
         -----
         With ``expr=``, symbols must resolve against the :meth:`allocate` target subtree at compile
         time, and an ``allocate`` edge must exist. Prefer :meth:`requirement_input` and
-        :meth:`requirement_accept_expr` inside :class:`~tg_model.model.elements.RequirementBlock`
+        :meth:`requirement_accept_expr` inside :class:`~tg_model.model.elements.Requirement`
         when acceptance should use only requirement-local inputs bound via ``allocate(..., inputs=)``.
         """
         meta = {"text": text, **metadata}
@@ -617,7 +623,7 @@ class ModelDefinitionContext:
         )
 
     def requirement_input(self, requirement: Ref, name: str, **metadata: Any) -> AttributeRef:
-        """Declare an input slot on ``requirement`` (RequirementBlock authoring only).
+        """Declare an input slot on ``requirement`` (composable :class:`~tg_model.model.elements.Requirement` only).
 
         Registers a value-bearing symbol under the configured root (threaded
         ``symbol_owner`` / ``symbol_path_prefix``). Bind each input with
@@ -643,16 +649,12 @@ class ModelDefinitionContext:
             If not inside a requirement block, ``requirement`` is wrong, inputs conflict with
             ``requirement(..., expr=)``, or names duplicate.
         """
-        from tg_model.model.elements import RequirementBlock
+        from tg_model.model.elements import Requirement
 
-        if not issubclass(self.owner_type, RequirementBlock):
-            raise ModelDefinitionError(
-                "requirement_input(...) is only valid inside RequirementBlock.define()"
-            )
+        if not issubclass(self.owner_type, Requirement):
+            raise ModelDefinitionError("requirement_input(...) is only valid inside Requirement.define()")
         if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
-            raise ModelDefinitionError(
-                "requirement_input: first argument must be a requirement Ref from this block"
-            )
+            raise ModelDefinitionError("requirement_input: first argument must be a requirement Ref from this package")
         req_key = requirement.path[-1]
         req_decl = self.nodes.get(req_key)
         if req_decl is None or req_decl.kind != "requirement":
@@ -696,7 +698,7 @@ class ModelDefinitionContext:
         expr: Any,
         **metadata: Any,
     ) -> AttributeRef:
-        """Declare a derived value on ``requirement`` (RequirementBlock authoring only).
+        """Declare a derived value on ``requirement`` (composable :class:`~tg_model.model.elements.Requirement` only).
 
         Registers a requirement-local **attribute** whose value is computed from an
         expression (typically over :meth:`requirement_input` symbols, other
@@ -732,15 +734,13 @@ class ModelDefinitionContext:
             If not in a block, ``requirement`` is wrong, names collide, ``expr`` is
             missing, or acceptance was already set via ``requirement_accept_expr``.
         """
-        from tg_model.model.elements import RequirementBlock
+        from tg_model.model.elements import Requirement
 
-        if not issubclass(self.owner_type, RequirementBlock):
-            raise ModelDefinitionError(
-                "requirement_attribute(...) is only valid inside RequirementBlock.define()"
-            )
+        if not issubclass(self.owner_type, Requirement):
+            raise ModelDefinitionError("requirement_attribute(...) is only valid inside Requirement.define()")
         if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
             raise ModelDefinitionError(
-                "requirement_attribute: first argument must be a requirement Ref from this block"
+                "requirement_attribute: first argument must be a requirement Ref from this package"
             )
         req_key = requirement.path[-1]
         req_decl = self.nodes.get(req_key)
@@ -799,15 +799,13 @@ class ModelDefinitionContext:
             If not in a block, ref is invalid, path is not a single segment, or acceptance
             was already set via ``requirement(..., expr=)`` or a prior call.
         """
-        from tg_model.model.elements import RequirementBlock
+        from tg_model.model.elements import Requirement
 
-        if not issubclass(self.owner_type, RequirementBlock):
-            raise ModelDefinitionError(
-                "requirement_accept_expr(...) is only valid inside RequirementBlock.define()"
-            )
+        if not issubclass(self.owner_type, Requirement):
+            raise ModelDefinitionError("requirement_accept_expr(...) is only valid inside Requirement.define()")
         if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
             raise ModelDefinitionError(
-                "requirement_accept_expr: first argument must be a requirement Ref from this block"
+                "requirement_accept_expr: first argument must be a requirement Ref from this package"
             )
         if len(requirement.path) != 1:
             raise ModelDefinitionError(
@@ -824,49 +822,54 @@ class ModelDefinitionContext:
             )
         decl.metadata["_accept_expr"] = expr
 
-    def requirement_block(self, name: str, block_type: type) -> RequirementBlockRef:
-        """Declare a nested requirements subtree (:class:`~tg_model.model.elements.RequirementBlock`).
+    def requirement_package(self, name: str, package_type: type) -> RequirementRef:
+        """Declare a nested composable requirements package (:class:`~tg_model.model.elements.Requirement`).
 
         Parameters
         ----------
         name : str
-            Block name in this owner's namespace.
-        block_type : type
-            Subclass of :class:`~tg_model.model.elements.RequirementBlock`.
+            Package name in this owner's namespace.
+        package_type : type
+            Subclass of :class:`~tg_model.model.elements.Requirement`.
 
         Returns
         -------
-        RequirementBlockRef
+        RequirementRef
             Dot-access ref to nested requirements.
 
         Raises
         ------
         ModelDefinitionError
-            If ``block_type`` is not a requirement block, on duplicate name, or frozen context.
+            If ``package_type`` is not a composable requirement, on duplicate name, or frozen context.
 
         Notes
         -----
-        Compiles ``block_type`` eagerly so :func:`requirement_ref` and sibling dot access work
-        within the same ``define()`` call.
+        Compiles ``package_type`` eagerly so :func:`requirement_ref` and sibling dot access work
+        within the same ``define()`` call. The internal node kind remains ``requirement_block`` for
+        artifact compatibility.
+
+        Inside ``package_type.define()``, package-level :meth:`parameter`, :meth:`attribute`, and
+        :meth:`constraint` are allowed when :class:`~tg_model.model.elements.Requirement` compile
+        policy permits them.
         """
         from tg_model.model.compile_types import compile_type
-        from tg_model.model.elements import RequirementBlock
+        from tg_model.model.elements import Requirement
 
-        if not issubclass(block_type, RequirementBlock):
+        if not issubclass(package_type, Requirement):
             raise ModelDefinitionError(
-                f"requirement_block({name!r}, ...): {block_type!r} must be a subclass of RequirementBlock"
+                f"requirement_package({name!r}, ...): {package_type!r} must be a subclass of Requirement"
             )
-        self._register_node(name=name, kind="requirement_block", target_type=block_type)
+        self._register_node(name=name, kind="requirement_block", target_type=package_type)
         compile_type(
-            block_type,
+            package_type,
             symbol_anchor_type=self.symbol_owner,
             symbol_path_prefix=(*self.symbol_path_prefix, name),
         )
-        return RequirementBlockRef(
+        return RequirementRef(
             owner_type=self.owner_type,
             path=(name,),
             kind="requirement_block",
-            target_type=block_type,
+            target_type=package_type,
         )
 
     def constraint(self, name: str, *, expr: Any, **metadata: Any) -> Ref:
@@ -1136,9 +1139,7 @@ class ModelDefinitionContext:
             gref, aname = tup
             if gref is not None:
                 if gref.kind != "guard":
-                    raise ModelDefinitionError(
-                        f"decision branch guard must be guard ref, got {gref.kind!r}"
-                    )
+                    raise ModelDefinitionError(f"decision branch guard must be guard ref, got {gref.kind!r}")
                 if gref.owner_type is not self.owner_type:
                     raise ModelDefinitionError("decision guard must belong to this part type")
             if not isinstance(aname, str):
@@ -1307,14 +1308,16 @@ class ModelDefinitionContext:
                 raise ModelDefinitionError(
                     f"transition() reference {r.local_name!r} must belong to {self.owner_type.__name__}"
                 )
-        self.behavior_transitions.append({
-            "from_state": from_state,
-            "to_state": to_state,
-            "on": on,
-            "when": when,
-            "guard_ref": guard,
-            "effect": effect,
-        })
+        self.behavior_transitions.append(
+            {
+                "from_state": from_state,
+                "to_state": to_state,
+                "on": on,
+                "when": when,
+                "guard_ref": guard,
+                "effect": effect,
+            }
+        )
 
     def scenario(
         self,
@@ -1367,9 +1370,7 @@ class ModelDefinitionContext:
                     f"scenario expected_event_order must be event refs, got {r.kind!r} for {r.local_name!r}"
                 )
             if r.owner_type is not self.owner_type:
-                raise ModelDefinitionError(
-                    f"scenario event {r.local_name!r} must belong to {self.owner_type.__name__}"
-                )
+                raise ModelDefinitionError(f"scenario event {r.local_name!r} must belong to {self.owner_type.__name__}")
             order.append(r.path[-1])
         iord: list[list[str]] | None = None
         if expected_interaction_order is not None:
@@ -1461,16 +1462,16 @@ class ModelDefinitionContext:
         """
         self._check_frozen()
         if citation.kind != "citation":
-            raise ModelDefinitionError(
-                f"references(): citation must be a citation ref, got kind={citation.kind!r}"
-            )
+            raise ModelDefinitionError(f"references(): citation must be a citation ref, got kind={citation.kind!r}")
         if source.owner_type is not self.owner_type or citation.owner_type is not self.owner_type:
             raise ModelDefinitionError("references(): source and citation must belong to this type")
-        self.edges.append({
-            "kind": "references",
-            "source": source,
-            "target": citation,
-        })
+        self.edges.append(
+            {
+                "kind": "references",
+                "source": source,
+                "target": citation,
+            }
+        )
 
     def allocate(
         self,
@@ -1558,12 +1559,14 @@ class ModelDefinitionContext:
             raise ModelDefinitionError(
                 f"connect() target must be a PortRef, got {type(target).__name__} with kind '{target.kind}'"
             )
-        self.edges.append({
-            "kind": "connect",
-            "source": source,
-            "target": target,
-            "carrying": carrying,
-        })
+        self.edges.append(
+            {
+                "kind": "connect",
+                "source": source,
+                "target": target,
+                "carrying": carrying,
+            }
+        )
 
     def parts(self) -> Any:
         """Return the internal selector token for “all child parts” in roll-up expressions.

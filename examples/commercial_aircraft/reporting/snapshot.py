@@ -146,7 +146,7 @@ def format_cargo_jet_report(data: dict[str, Any]) -> str:
             (
                 r.get("node_name", ""),
                 vk,
-                r.get("block", ""),
+                r.get("package", ""),
                 r.get("allocate_to", ""),
                 "yes" if r.get("mission_closure_acceptance") else "",
                 short.replace("\n", " "),
@@ -154,7 +154,7 @@ def format_cargo_jet_report(data: dict[str, Any]) -> str:
         )
     parts.append(
         _table(
-            ("id", "verification", "block", "allocate", "closure", "statement (trim)"),
+            ("id", "verification", "package", "allocate", "closure", "statement (trim)"),
             rows_l1,
         ),
     )

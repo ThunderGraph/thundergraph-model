@@ -119,8 +119,7 @@ def _check_empty_rollups(graph: DependencyGraph, result: ValidationResult) -> No
         if len(deps) == 0:
             result.add(
                 "rollup",
-                f"Roll-up '{node_id}' has no child dependencies — "
-                f"the selector resolved to nothing",
+                f"Roll-up '{node_id}' has no child dependencies — the selector resolved to nothing",
                 path=node_id,
             )
 

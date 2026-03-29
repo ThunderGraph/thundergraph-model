@@ -149,7 +149,7 @@ What user docs must make obvious:
 %%{init: {'theme':'dark','themeVariables': { 'primaryColor':'#1e3a5f','primaryTextColor':'#e2e8f0','lineColor':'#94a3b8'}}}%%
 flowchart LR
   subgraph type["Type time"]
-    A["Subclass System Part RequirementBlock"]
+    A["Subclass System Part Requirement"]
     B["define cls model declarations"]
     C["compile cached artifact"]
   end

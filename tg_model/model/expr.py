@@ -7,7 +7,8 @@ unitflow's ``_promote(c)`` — and **AttributeRef** is not a valid operand there
 
 **Ways to write roll-ups (pick one):**
 
-- **Parentheses:** ``a + (b + c)`` so every ``+`` still involves an :class:`~tg_model.model.refs.AttributeRef` on the left.
+- **Parentheses:** ``a + (b + c)`` so every ``+`` still involves an
+  :class:`~tg_model.model.refs.AttributeRef` on the left.
 - **Explicit symbols:** ``a.sym + b.sym + c.sym`` (what ``AttributeRef.__add__`` does internally for the left operand).
 - **This module:** :func:`sum_attributes` / :func:`as_expr_leaf` — same thing, obvious intent for ME/MBSE authors.
 """

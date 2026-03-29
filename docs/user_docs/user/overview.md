@@ -4,7 +4,7 @@ ThunderGraph Model lets you model systems as executable code:
 
 - structure (`System`, `Part`, ports)
 - values (parameters, attributes, constraints)
-- requirements (`RequirementBlock`, `requirement_input`, `requirement_attribute`, allocations, acceptance)
+- requirements (`Requirement` / `requirement_package`, `requirement_input`, `requirement_attribute`, allocations, acceptance)
 - behavior (events, transitions, decisions, sequences, item flow)
 
 ## Start here

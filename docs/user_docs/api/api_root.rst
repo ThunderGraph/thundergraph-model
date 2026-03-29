@@ -6,5 +6,5 @@ Execution APIs live in :mod:`tg_model.execution` (``ConfiguredModel``, ``instant
 
 .. automodule:: tg_model
    :members:
-   :exclude-members: AttributeRef, Element, ModelDefinitionContext, ModelDefinitionError, Part, PartRef, PortRef, Ref, RequirementBlock, RequirementBlockRef, System, parameter_ref, requirement_ref, rollup
+   :exclude-members: AttributeRef, Element, ModelDefinitionContext, ModelDefinitionError, Part, PartRef, PortRef, Ref, Requirement, RequirementRef, System, parameter_ref, requirement_ref, rollup
    :show-inheritance:

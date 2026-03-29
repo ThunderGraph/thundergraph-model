@@ -8,7 +8,7 @@ This is the Phase 2 map for readers who need orientation before Sphinx pages exi
   - `__init__.py`: primary exports
   - `model/`: authoring-time API and compile pipeline
     - `definition_context.py`: declarations and edges
-    - `elements.py`: `Element`, `System`, `Part`, `RequirementBlock`
+    - `elements.py`: `Element`, `System`, `Part`, `Requirement`
     - `refs.py`: symbolic references
     - `compile_types.py`: compile engine and validation
     - `expr.py`: expression helpers

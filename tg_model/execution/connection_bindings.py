@@ -35,10 +35,7 @@ class ConnectionBinding:
         self.carrying = carrying
 
     def __repr__(self) -> str:
-        return (
-            f"<ConnectionBinding: {self.source.path_string} -> "
-            f"{self.target.path_string} carrying={self.carrying!r}>"
-        )
+        return f"<ConnectionBinding: {self.source.path_string} -> {self.target.path_string} carrying={self.carrying!r}>"
 
 
 class ReferenceBinding:
@@ -58,10 +55,7 @@ class ReferenceBinding:
         self.citation = citation
 
     def __repr__(self) -> str:
-        return (
-            f"<ReferenceBinding: {self.source.path_string} -> "
-            f"{self.citation.path_string}>"
-        )
+        return f"<ReferenceBinding: {self.source.path_string} -> {self.citation.path_string}>"
 
 
 class AllocationBinding:
@@ -90,7 +84,4 @@ class AllocationBinding:
         self.input_bindings = input_bindings or {}
 
     def __repr__(self) -> str:
-        return (
-            f"<AllocationBinding: {self.requirement.path_string} -> "
-            f"{self.target.path_string}>"
-        )
+        return f"<AllocationBinding: {self.requirement.path_string} -> {self.target.path_string}>"

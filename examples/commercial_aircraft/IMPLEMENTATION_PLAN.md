@@ -4,15 +4,15 @@ This document defines **scope**, **package architecture**, **ThunderGraph featur
 
 The goal is an **end-to-end** walkthrough larger than a single notebook cell dump: **authoritative requirements (first) → composition → roll-ups → external “simulation” hydration → citations → verification**, with **clean layering** and **maintainable** Python structure (bounded contexts, explicit import rules — not “SOLID” as a sticker on folder names).
 
-**Non-negotiable for this example:** **requirements come first.** Detailed requirement statements are **authored with ThunderGraph’s APIs** inside nested `RequirementBlock.define()` methods (`model.requirement`, `requirement_input`, `requirement_accept_expr`). The program root then attaches **citations**, **`references`**, and **`allocate`** in `CargoJetProgram.define()` so the wiring is explicit and readable. The **system structure** (Parts, attributes, constraints) is **derived to satisfy** those requirements; **`model.allocate`** targets are chosen **deliberately** for traceability — not sprinkled for convenience.
+**Non-negotiable for this example:** **requirements come first.** Detailed requirement statements are **authored with ThunderGraph’s APIs** inside nested `Requirement.define()` methods (`model.requirement`, `requirement_input`, `requirement_accept_expr`). The program root then attaches **citations**, **`references`**, and **`allocate`** in `CargoJetProgram.define()` so the wiring is explicit and readable. The **system structure** (Parts, attributes, constraints) is **derived to satisfy** those requirements; **`model.allocate`** targets are chosen **deliberately** for traceability — not sprinkled for convenience.
 
 ---
 
 ## Requirements-first engineering (modular specs + INCOSE-aligned quality)
 
-### Why requirement *text* lives in `RequirementBlock` types (not ad hoc strings in the program root)
+### Why requirement *text* lives in `Requirement` types (not ad hoc strings in the program root)
 
-Systems engineers need to see **one obvious place** where each requirement is declared with the **real ThunderGraph calls** (`requirement`, `requirement_input`, `allocate`, …). The program root `CargoJetProgram` should mostly **compose** parts and **wire** citations and allocations — not hide requirement statements in a parallel “spec” module that readers must cross-reference. The reporting layer (`reporting/extract.py`) may duplicate short **table metadata** (labels for the ASCII report) but the **authoritative** wording lives in `l1_requirement_blocks.py`.
+Systems engineers need to see **one obvious place** where each requirement is declared with the **real ThunderGraph calls** (`requirement`, `requirement_input`, `allocate`, …). The program root `CargoJetProgram` should mostly **compose** parts and **wire** citations and allocations — not hide requirement statements in a parallel “spec” module that readers must cross-reference. The reporting layer (`reporting/extract.py`) may duplicate short **table metadata** (labels for the ASCII report) but the **authoritative** wording lives in `l1_requirement_packages.py`.
 
 ### INCOSE-aligned requirement writing (demo bar)
 
@@ -32,7 +32,7 @@ The example must showcase **professional** requirement statements aligned with c
 
 ### Order of work (engineering workflow)
 
-1. **Draft / refine** requirement statements in `program/l1_requirement_blocks.py` (nested blocks) and review text.
+1. **Draft / refine** requirement statements in `program/l1_requirement_packages.py` (nested blocks) and review text.
 2. **Declare citations** and `model.references` from requirements to **C-*** nodes where applicable.
 3. **Design** the Part tree and attributes so that **constraints / roll-ups** can **prove** satisfaction of allocated requirements.
 4. **`model.allocate(requirement_ref, part_or_system_ref)`** — only **after** the tree exists — choosing the **element that owns the verification** (see below).
@@ -70,7 +70,7 @@ Secondary tables (mass tree, external-compute provenance, subsystem stubs) **sup
 
 | Objective | Success criterion |
 |-----------|-------------------|
-| **Requirements-first + INCOSE-aligned demo** | **Authoritative** requirement text in **`program/l1_requirement_blocks.py`**; program root **`define()`** wires citations and **`allocate`**; statements meet the **quality bar** in §“Requirements-first engineering”; **`allocate`** follows **allocation principles** with traceability from requirement → owning Part. |
+| **Requirements-first + INCOSE-aligned demo** | **Authoritative** requirement text in **`program/l1_requirement_packages.py`**; program root **`define()`** wires citations and **`allocate`**; statements meet the **quality bar** in §“Requirements-first engineering”; **`allocate`** follows **allocation principles** with traceability from requirement → owning Part. |
 | **Parametric MBSE + integration slice** | Exercise **System/Part** composition, **parameters** vs **attributes** (expr + external), **constraints**, **citations** + **references**, **parameter_ref**, **ExternalComputeBinding** at **multiple hierarchy levels**, **evaluator** path, and a **readable report** tied to the **showcase thesis**. |
 | **MBSE credibility** | **Requirements drive** structure: top-down **mission / program** context, assemblies and attributes **justify** allocated requirements. |
 | **Provenance** | **Web-backed citations** attached to requirements or parameters where appropriate via `model.citation` + `model.references` — see **Citation policy** below. |
@@ -128,7 +128,7 @@ These are **representative public** anchors the example can cite.
 | Feature | Where it shows up |
 |---------|-------------------|
 | `System` root + `Part` tree | Root program type (see **Decisions & defaults**) → `Aircraft` → wings, fuselage, empennage, landing gear, propulsion, systems… |
-| `model.requirement` + `model.allocate` | Requirement **text** in **`program/l1_requirement_blocks.py`**; **`allocate`** in `cargo_jet_program.py` to Parts that **own verification** (see **Allocation principles**). |
+| `model.requirement` + `model.allocate` | Requirement **text** in **`program/l1_requirement_packages.py`**; **`allocate`** in `cargo_jet_program.py` to Parts that **own verification** (see **Allocation principles**). |
 | `model.parameter` | Scenario + design knobs bound at `evaluate()`. |
 | `model.attribute(expr=...)` | Mass, CG aggregates (where in scope), performance indices built from children. |
 | `model.attribute(computed_by=...)` + `link_external_routes` | Discipline outputs per part owner. |
@@ -150,7 +150,7 @@ examples/commercial_aircraft/     # Python package ``commercial_aircraft`` (put 
   __init__.py                     # CargoJetProgram, reset_commercial_aircraft_types
   program/
     mission_context.py
-    l1_requirement_blocks.py
+    l1_requirement_packages.py
     cargo_jet_program.py
   product/
     aircraft.py
@@ -180,7 +180,7 @@ thundergraph-model/notebooks/
 | From | To | Notes |
 |------|-----|--------|
 | `notebooks/*` | `commercial_aircraft.*`, `tg_model` | Thin orchestration only. |
-| `program/l1_requirement_blocks.py` | `tg_model` | Requirement **text** and inputs live next to **`model.requirement`** calls. |
+| `program/l1_requirement_packages.py` | `tg_model` | Requirement **text** and inputs live next to **`model.requirement`** calls. |
 | `product/*` | `tg_model`, `integrations.bindings`, `integrations.adapters` (only if a `define()` must name an adapter — prefer factories in `bindings` so `define()` calls **one** `make_foo_binding(model, ...)`). |
 | `integrations/adapters.py` | `tg_model`, stdlib | No import of `product`. |
 | `integrations/bindings.py` | `tg_model`, `adapters` | Factories accept **`root_block_type`** and **`ModelDefinitionContext`** / refs from caller — **avoid** `integrations` importing `product` types **if** that creates cycles; pass `CargoJetProgram` (or whatever root) **as an argument** from `define()` in `product` instead. |
@@ -198,7 +198,7 @@ thundergraph-model/notebooks/
 
 ## 6. Part breakdown (high level → drill down)
 
-**Requirements drive decomposition:** the Level-1 set in `program/l1_requirement_blocks.py` is fixed (for v1) **before** the Part tree is finalized; each major block exists because it **supports** verification of one or more allocated requirements (or is an explicit stub for a future requirement).
+**Requirements drive decomposition:** the Level-1 set in `program/l1_requirement_packages.py` is fixed (for v1) **before** the Part tree is finalized; each major block exists because it **supports** verification of one or more allocated requirements (or is an explicit stub for a future requirement).
 
 **Level 0 — Program / mission (`System`):**
 
@@ -243,12 +243,12 @@ Everything else can be **parameterized stubs** with clear docstrings until a lat
 ### Phase 0 — Skeleton
 
 - [x] `README.md` (run instructions, link to plan).
-- [x] Package skeleton under `examples/commercial_aircraft/` with **docstrings** and modules per §5.1 — include **`program/l1_requirement_blocks.py`**.
+- [x] Package skeleton under `examples/commercial_aircraft/` with **docstrings** and modules per §5.1 — include **`program/l1_requirement_packages.py`**.
 - [x] No notebook execution requirement in CI yet unless the monorepo already standardizes it.
 
 ### Phase 1 — Requirements modules + program shell + citations
 
-- [x] **`program/l1_requirement_blocks.py`:** **5** INCOSE-aligned Level-1 requirements (IDs, full statements, rationale) aligned with the **showcase thesis**.
+- [x] **`program/l1_requirement_packages.py`:** **5** INCOSE-aligned Level-1 requirements (IDs, full statements, rationale) aligned with the **showcase thesis**.
 - [x] Root `System` type (**`CargoJetProgram`**): explicit **`references`** / **`allocate`** wiring next to composition (requirement bodies stay in nested blocks).
 - [x] `model.citation` nodes for **C-ACAPS** (Boeing airport planning), **C-FAR25** (eCFR), **C-AC25-7C** (FAA) — metadata with URIs.
 - [x] `model.references` from requirements to citations.
@@ -297,7 +297,7 @@ Do **not** leave “if repo allows tests under examples” — the **default** i
 | Risk | Mitigation |
 |------|------------|
 | Scope creep | Freeze **Phase 1–3** deliverables; mark “future” assemblies as stubs; **thesis** stays the report’s spine. |
-| Weak requirements as afterthought | **Phase 1** starts in **`program/l1_requirement_blocks.py`**; reviews treat those `model.requirement` calls as the **source of truth** for wording. |
+| Weak requirements as afterthought | **Phase 1** starts in **`program/l1_requirement_packages.py`**; reviews treat those `model.requirement` calls as the **source of truth** for wording. |
 | Careless allocation | Follow **Allocation principles**; keep **intended allocatee** in the requirement record; reject `allocate` that does not match **verification ownership**. |
 | Misleading OEM numbers | **Citation policy** + **notional** labels on numbers; ACAPS for **categories**, not data copying. |
 | Global state | Factories + `parameter_ref`; `reset_*` hook for notebook re-runs (mirror LEO pattern). |
@@ -320,7 +320,7 @@ Open items may still be discussed; **if nothing is decided before Phase 1 coding
 
 ## 12. Next step
 
-Implement **Phase 0–1** in small steps: **`program/l1_requirement_blocks.py`** (INCOSE-aligned Level-1 text) **→** root `System` wiring + citations + **`allocate`** **→** scenario parameters, then Phase 2–4 following the **golden thread**, **allocation intent**, and **import boundaries** above.
+Implement **Phase 0–1** in small steps: **`program/l1_requirement_packages.py`** (INCOSE-aligned Level-1 text) **→** root `System` wiring + citations + **`allocate`** **→** scenario parameters, then Phase 2–4 following the **golden thread**, **allocation intent**, and **import boundaries** above.
 
 ---
 

@@ -59,10 +59,7 @@ class TestFullInstantiationWorkflow:
 
     def test_all_value_slots_reachable(self) -> None:
         cm = instantiate(DriveSystem)
-        slot_paths = [
-            path for path, obj in cm.path_registry.items()
-            if isinstance(obj, ValueSlot)
-        ]
+        slot_paths = [path for path, obj in cm.path_registry.items() if isinstance(obj, ValueSlot)]
         assert "DriveSystem.battery.charge" in slot_paths
         assert "DriveSystem.battery.voltage" in slot_paths
         assert "DriveSystem.motor.shaft_speed" in slot_paths
@@ -107,10 +104,17 @@ class TestFullInstantiationWorkflow:
 
     def test_topology_frozen_rejects_mutation(self) -> None:
         import pytest
+
         from tg_model.execution.instances import PartInstance
+
         cm = instantiate(DriveSystem)
         with pytest.raises(RuntimeError, match="frozen"):
-            cm.root.add_child("hack", PartInstance(
-                stable_id="x", definition_type=Part,
-                definition_path=("x",), instance_path=("x",),
-            ))
+            cm.root.add_child(
+                "hack",
+                PartInstance(
+                    stable_id="x",
+                    definition_type=Part,
+                    definition_path=("x",),
+                    instance_path=("x",),
+                ),
+            )

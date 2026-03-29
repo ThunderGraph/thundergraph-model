@@ -69,6 +69,49 @@ print(
 )
 ```
 
+## Composable requirements next to `Part`
+
+Systems are mostly **`Part`** trees with values on the root or parts. **Composable requirement packages** sit beside that structure: you define a subclass of **`Requirement`**, register it with **`model.requirement_package(name, YourRequirementType)`**, and bind leaf requirements to a part with **`model.allocate(...)`**. **`RequirementRef`** dot access (e.g. `reqs.power_budget`) matches how you navigate **`PartRef`**s.
+
+The example below adds a **package-level parameter** (`max_output_w`) that behaves like a root/part parameter but lives under the package namespace on the configured model (`cm.root.electrical.max_output_w`). Evaluation uses the same recommended path: **`instantiate`** → **`evaluate`** with **`ValueSlot`** keys.
+
+```python
+from unitflow import W
+from tg_model import Requirement, System
+from tg_model.execution import instantiate
+
+
+class PowerReqs(Requirement):
+    @classmethod
+    def define(cls, model):
+        threshold = model.parameter("max_output_w", unit=W, required=True)
+        r = model.requirement("power_budget", "Draw shall not exceed outlet budget.")
+        draw = model.requirement_input(r, "draw_w", unit=W)
+        model.requirement_accept_expr(r, expr=(draw <= threshold))
+
+
+class Rack(System):
+    @classmethod
+    def define(cls, model):
+        root = model.part()
+        outlet = model.attribute("outlet_w", unit=W, expr=1500 * W)
+        reqs = model.requirement_package("electrical", PowerReqs)
+        model.allocate(reqs.power_budget, root, inputs={"draw_w": outlet})
+
+
+cm = instantiate(Rack)
+threshold_slot = cm.root.electrical.max_output_w
+result = cm.evaluate(inputs={threshold_slot: 2000 * W})
+print("Passed:", result.passed)
+```
+
+**Sidebar: leaf `model.requirement(...)` vs composable `Requirement`**
+
+- **`model.requirement("id", "text")`** (only valid inside **`Requirement.define()`**) declares a **single** requirement node: you attach **`requirement_input`** / **`requirement_attribute`** and **`requirement_accept_expr`** to that ref. It is **not** a subclassable package by itself.
+- **`class MyPackage(Requirement)`** defines a **composable package** type (namespace for parameters, attributes, constraints, nested **`requirement_package`** entries, and leaf **`requirement`** declarations). You **mount** it on a **`System`** / **`Part`** with **`requirement_package`**.
+
+Details: {doc}`concepts_requirements`, {doc}`faq`.
+
 ## What happened (both paths)
 
 1. `define()` declared symbols (parameter, attribute, constraint).

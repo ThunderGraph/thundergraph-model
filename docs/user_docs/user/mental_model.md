@@ -16,7 +16,9 @@ Take a parameter declared on a `System` subclass:
 
 Between configuration and run, `compile_graph` builds the dependency graph (called explicitly in the advanced path, or **lazily inside** `ConfiguredModel.evaluate` on the default path). `validate_graph(..., configured_model=cm)` is the cheap sanity check before evaluation — invoked automatically by `evaluate` by default, or by you after `compile_graph` in the explicit pipeline.
 
-For **requirements**, remember the two value roles: **`requirement_input`** values are **wired** from the allocated design via `allocate(..., inputs=...)`, while **`requirement_attribute`** values are **derived on the requirement** from expressions (and appear among `cm.requirement_value_slots` after `instantiate`). Both participate in the same graph as constraints.
+For **requirements**, treat each registered **`requirement_package`** as its **own namespace**: besides leaf **`requirement`** declarations, the package may own **package-level** **`parameter`**, **`attribute`**, and **`constraint`** declarations (same authoring methods as on **`System`** / **`Part`**, scoped to the package). After **`instantiate`**, those slots show up under the configured part as dot paths (for example **`cm.root.<package>.<slot>`**), next to **`requirement_input`** / **`requirement_attribute`** wiring and acceptance. **`requirement_input`** values are **wired** from the allocated design via **`allocate(..., inputs=...)`**; **`requirement_attribute`** values are **derived on the leaf requirement** from expressions and appear among **`cm.requirement_value_slots`** where applicable. All of these participate in the same evaluation graph as ordinary constraints.
+
+That layout lines up with a **graph-shaped product model** where values are first-class nodes (for example Neo4j-style “attributes as nodes”) without implying any particular persistence schema in this library.
 
 See {doc}`../drafts/execution_pipeline` for the full pipeline (including the explicit steps). See {doc}`faq` for when to use `evaluate` vs `compile_graph` + `Evaluator`.
 

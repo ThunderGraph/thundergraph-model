@@ -8,16 +8,15 @@ No hand-built graphs. All symbols derived from canonical AttributeRefs.
 from __future__ import annotations
 
 import pytest
-
 from unitflow import Quantity
-from unitflow.catalogs.si import N, W, kg, m, rad, s
-from tg_model.model.declarations.values import rollup
+from unitflow.catalogs.si import N, kg, m, rad, s
 
 from tg_model.execution.configured_model import instantiate
 from tg_model.execution.evaluator import Evaluator
-from tg_model.execution.graph_compiler import compile_graph, GraphCompilationError
+from tg_model.execution.graph_compiler import GraphCompilationError, compile_graph
 from tg_model.execution.run_context import RunContext
 from tg_model.execution.validation import validate_graph
+from tg_model.model.declarations.values import rollup
 from tg_model.model.elements import Part, System
 
 
@@ -64,10 +63,13 @@ class TestUnitflowExpressionEvaluation:
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()
 
-        result = evaluator.evaluate(ctx, inputs={
-            torque_slot.stable_id: Quantity(50, N * m),
-            speed_slot.stable_id: Quantity(100, m / (m * s)),
-        })
+        result = evaluator.evaluate(
+            ctx,
+            inputs={
+                torque_slot.stable_id: Quantity(50, N * m),
+                speed_slot.stable_id: Quantity(100, m / (m * s)),
+            },
+        )
 
         power_value = ctx.get_value(power_slot.stable_id)
         assert isinstance(power_value, Quantity)
@@ -84,10 +86,13 @@ class TestUnitflowExpressionEvaluation:
 
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()
-        result = evaluator.evaluate(ctx, inputs={
-            torque_slot.stable_id: Quantity(0, N * m),
-            speed_slot.stable_id: Quantity(100, m / (m * s)),
-        })
+        result = evaluator.evaluate(
+            ctx,
+            inputs={
+                torque_slot.stable_id: Quantity(0, N * m),
+                speed_slot.stable_id: Quantity(100, m / (m * s)),
+            },
+        )
 
         assert len(result.constraint_results) == 1
         assert result.constraint_results[0].passed is False
@@ -103,22 +108,29 @@ class TestUnitflowExpressionEvaluation:
         evaluator = Evaluator(graph, compute_handlers=handlers)
 
         ctx1 = RunContext()
-        evaluator.evaluate(ctx1, inputs={
-            torque_slot.stable_id: Quantity(50, N * m),
-            speed_slot.stable_id: Quantity(100, m / (m * s)),
-        })
+        evaluator.evaluate(
+            ctx1,
+            inputs={
+                torque_slot.stable_id: Quantity(50, N * m),
+                speed_slot.stable_id: Quantity(100, m / (m * s)),
+            },
+        )
 
         ctx2 = RunContext()
-        evaluator.evaluate(ctx2, inputs={
-            torque_slot.stable_id: Quantity(25, N * m),
-            speed_slot.stable_id: Quantity(200, m / (m * s)),
-        })
+        evaluator.evaluate(
+            ctx2,
+            inputs={
+                torque_slot.stable_id: Quantity(25, N * m),
+                speed_slot.stable_id: Quantity(200, m / (m * s)),
+            },
+        )
 
         p1 = ctx1.get_value(power_slot.stable_id)
         p2 = ctx2.get_value(power_slot.stable_id)
 
         assert p1.is_close(Quantity(5000, N * m / s))
         assert p2.is_close(Quantity(5000, N * m / s))
+
 
 class SolvedMotor(Part):
     @classmethod
@@ -134,6 +146,7 @@ class SolvedMotor(Part):
             givens=[power, speed],
         )
 
+
 class TestSolveGroupEvaluation:
     def test_solve_group_computes_unknown(self) -> None:
         cm = instantiate(SolvedMotor)
@@ -141,14 +154,18 @@ class TestSolveGroupEvaluation:
 
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()
-        evaluator.evaluate(ctx, inputs={
-            cm.shaft_power.stable_id: Quantity(5000, N * m / s),
-            cm.shaft_speed.stable_id: Quantity(100, rad / s),
-        })
+        evaluator.evaluate(
+            ctx,
+            inputs={
+                cm.shaft_power.stable_id: Quantity(5000, N * m / s),
+                cm.shaft_speed.stable_id: Quantity(100, rad / s),
+            },
+        )
 
         torque_value = ctx.get_value(cm.shaft_torque.stable_id)
         assert isinstance(torque_value, Quantity)
         assert torque_value.is_close(Quantity(50, N * m))
+
 
 class AggregatedSystem(System):
     @classmethod
@@ -157,28 +174,28 @@ class AggregatedSystem(System):
             @classmethod
             def define(cls, m2):  # type: ignore[override]
                 m2.parameter("mass", unit=kg)
-        
-        box1 = model.part("box1", Box)
-        box2 = model.part("box2", Box)
-        
-        model.attribute(
-            "total_mass",
-            unit=kg,
-            expr=rollup.sum(model.parts(), value=lambda c: c.mass)
-        )
+
+        model.part("box1", Box)
+        model.part("box2", Box)
+
+        model.attribute("total_mass", unit=kg, expr=rollup.sum(model.parts(), value=lambda c: c.mass))
+
 
 class TestRollupEvaluation:
     def test_rollup_computes_sum(self) -> None:
         cm = instantiate(AggregatedSystem)
         graph, handlers = compile_graph(cm)
-        
+
         evaluator = Evaluator(graph, compute_handlers=handlers)
         ctx = RunContext()
-        evaluator.evaluate(ctx, inputs={
-            cm.box1.mass.stable_id: Quantity(10, kg),
-            cm.box2.mass.stable_id: Quantity(25, kg),
-        })
-        
+        evaluator.evaluate(
+            ctx,
+            inputs={
+                cm.box1.mass.stable_id: Quantity(10, kg),
+                cm.box2.mass.stable_id: Quantity(25, kg),
+            },
+        )
+
         total = ctx.get_value(cm.total_mass.stable_id)
         assert total.is_close(Quantity(35, kg))
 

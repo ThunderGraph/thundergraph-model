@@ -6,7 +6,7 @@ from typing import Any
 
 from commercial_aircraft.integrations.bindings import make_mission_range_margin_binding
 from commercial_aircraft.product.aircraft import Aircraft
-from commercial_aircraft.program.l1_requirement_blocks import L1RequirementsRoot
+from commercial_aircraft.program.l1_requirement_packages import L1RequirementsRoot
 from commercial_aircraft.program.mission_context import CITATION_RETRIEVED_ISO
 from unitflow.catalogs.si import kg, m
 
@@ -58,7 +58,7 @@ class CargoJetProgram(System):
             ),
         }
 
-        l1 = model.requirement_block("l1", L1RequirementsRoot)
+        l1 = model.requirement_package("l1", L1RequirementsRoot)
         aircraft = model.part("aircraft", Aircraft)
         # Anonymous configured root part: allocation target for regulatory / context items that sit
         # at program scope instead of under the named ``aircraft`` subtree.

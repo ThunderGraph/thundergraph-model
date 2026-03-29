@@ -1,7 +1,7 @@
 """Symbolic references produced during ``define(cls, model)``.
 
 Refs are **not** runtime instances. :class:`PartRef` and
-:class:`RequirementBlockRef` support dotted member access resolved against the
+:class:`RequirementRef` support dotted member access resolved against the
 **compiled** child type. :class:`AttributeRef` forwards arithmetic to unitflow
 :class:`~unitflow.expr.expressions.Expr` via :attr:`AttributeRef.sym`.
 
@@ -78,7 +78,10 @@ class Ref:
 
 
 class PortRef(Ref):
-    """Reference to a declared port (use with :meth:`tg_model.model.definition_context.ModelDefinitionContext.connect`)."""
+    """Reference to a declared port.
+
+    Use with :meth:`tg_model.model.definition_context.ModelDefinitionContext.connect`.
+    """
 
 
 _symbol_cache: dict[tuple[type, tuple[str, ...]], Any] = {}
@@ -105,11 +108,10 @@ class AttributeRef(Ref):
         key = (self.owner_type, self.path)
         if key not in _symbol_cache:
             from unitflow import symbol
+
             unit = self.metadata.get("unit")
             if unit is None:
-                raise ValueError(
-                    f"AttributeRef '{self.local_name}' has no unit defined, cannot create Symbol."
-                )
+                raise ValueError(f"AttributeRef '{self.local_name}' has no unit defined, cannot create Symbol.")
             sym = symbol(self.local_name, unit=unit)
             _symbol_cache[key] = sym
             _symbol_id_to_path[id(sym)] = key
@@ -182,9 +184,7 @@ class PartRef(Ref):
         compiled = self.target_type.compile()
         member = compiled["nodes"].get(name)
         if member is None:
-            raise AttributeError(
-                f"{self.target_type.__name__} has no declared member named '{name}'"
-            )
+            raise AttributeError(f"{self.target_type.__name__} has no declared member named '{name}'")
 
         chained_path = (*self.path, name)
         member_kind: str = member["kind"]
@@ -198,8 +198,11 @@ class PartRef(Ref):
             return AttributeRef(self.owner_type, chained_path, kind=member_kind, metadata=member_metadata)
         if member_kind == "part":
             return PartRef(
-                self.owner_type, chained_path, kind="part",
-                target_type=member_target_type, metadata=member_metadata,
+                self.owner_type,
+                chained_path,
+                kind="part",
+                target_type=member_target_type,
+                metadata=member_metadata,
             )
         if member_kind == "state":
             return Ref(self.owner_type, chained_path, kind="state", metadata=member_metadata)
@@ -223,69 +226,13 @@ class PartRef(Ref):
             return Ref(self.owner_type, chained_path, kind="sequence", metadata=member_metadata)
         if member_kind == "requirement":
             return Ref(
-                self.owner_type, chained_path, kind="requirement", metadata=member_metadata,
-            )
-        if member_kind == "requirement_block":
-            return RequirementBlockRef(
-                self.owner_type,
-                chained_path,
-                kind="requirement_block",
-                target_type=member_target_type,
-                metadata=member_metadata,
-            )
-        if member_kind == "citation":
-            return Ref(
-                self.owner_type, chained_path, kind="citation", metadata=member_metadata,
-            )
-        raise AttributeError(
-            f"Member '{name}' on {self.target_type.__name__} has kind '{member_kind}' "
-            "which cannot be projected into a typed reference."
-        )
-
-
-class RequirementBlockRef(Ref):
-    """Reference to a declared requirement block (dot access like :class:`PartRef`).
-
-    Raises
-    ------
-    AttributeError
-        If the block type is not compiled yet, the member is missing, or the kind cannot
-        be projected (only requirement subtree kinds are allowed).
-    """
-
-    def __getattr__(self, name: str) -> Ref:
-        if name.startswith("_"):
-            raise AttributeError(name)
-        if self.target_type is None:
-            raise AttributeError(f"{self!r} has no target_type for member lookup")
-
-        compiled = getattr(self.target_type, "_compiled_definition", None)
-        if compiled is None:
-            raise AttributeError(
-                f"{self.target_type.__name__} is not compiled yet; register it with "
-                f"model.requirement_block(...) before using dot access on the ref"
-            )
-        member = compiled["nodes"].get(name)
-        if member is None:
-            raise AttributeError(
-                f"{self.target_type.__name__} has no declared member named '{name}'"
-            )
-
-        chained_path = (*self.path, name)
-        member_kind: str = member["kind"]
-        member_metadata: dict[str, Any] = member.get("metadata", {})
-        type_registry: dict[str, type] = compiled.get("_type_registry", {})
-        member_target_type: type | None = type_registry.get(name)
-
-        if member_kind == "requirement":
-            return Ref(
                 self.owner_type,
                 chained_path,
                 kind="requirement",
                 metadata=member_metadata,
             )
         if member_kind == "requirement_block":
-            return RequirementBlockRef(
+            return RequirementRef(
                 self.owner_type,
                 chained_path,
                 kind="requirement_block",
@@ -301,6 +248,66 @@ class RequirementBlockRef(Ref):
             )
         raise AttributeError(
             f"Member '{name}' on {self.target_type.__name__} has kind '{member_kind}' "
-            "which cannot be projected from a RequirementBlockRef "
+            "which cannot be projected into a typed reference."
+        )
+
+
+class RequirementRef(Ref):
+    """Reference to a declared composable requirement package (dot access like :class:`PartRef`).
+
+    Raises
+    ------
+    AttributeError
+        If the package type is not compiled yet, the member is missing, or the kind cannot
+        be projected (only requirement subtree kinds are allowed).
+    """
+
+    def __getattr__(self, name: str) -> Ref | RequirementRef:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if self.target_type is None:
+            raise AttributeError(f"{self!r} has no target_type for member lookup")
+
+        compiled = getattr(self.target_type, "_compiled_definition", None)
+        if compiled is None:
+            raise AttributeError(
+                f"{self.target_type.__name__} is not compiled yet; register it with "
+                f"model.requirement_package(...) before using dot access on the ref"
+            )
+        member = compiled["nodes"].get(name)
+        if member is None:
+            raise AttributeError(f"{self.target_type.__name__} has no declared member named '{name}'")
+
+        chained_path = (*self.path, name)
+        member_kind: str = member["kind"]
+        member_metadata: dict[str, Any] = member.get("metadata", {})
+        type_registry: dict[str, type] = compiled.get("_type_registry", {})
+        member_target_type: type | None = type_registry.get(name)
+
+        if member_kind == "requirement":
+            return Ref(
+                self.owner_type,
+                chained_path,
+                kind="requirement",
+                metadata=member_metadata,
+            )
+        if member_kind == "requirement_block":
+            return RequirementRef(
+                self.owner_type,
+                chained_path,
+                kind="requirement_block",
+                target_type=member_target_type,
+                metadata=member_metadata,
+            )
+        if member_kind == "citation":
+            return Ref(
+                self.owner_type,
+                chained_path,
+                kind="citation",
+                metadata=member_metadata,
+            )
+        raise AttributeError(
+            f"Member '{name}' on {self.target_type.__name__} has kind '{member_kind}' "
+            "which cannot be projected from a RequirementRef "
             "(allowed: requirement, requirement_block, citation)."
         )

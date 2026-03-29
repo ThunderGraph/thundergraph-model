@@ -71,8 +71,12 @@ class TestInstantiation:
 
     def test_ports_instantiated(self) -> None:
         cm = instantiate(DriveSystem)
-        power_out = cm.root.battery.power_out
-        power_in = cm.root.motor.power_in
+        battery = cm.root.battery
+        motor = cm.root.motor
+        assert isinstance(battery, PartInstance)
+        assert isinstance(motor, PartInstance)
+        power_out = battery.power_out
+        power_in = motor.power_in
         assert isinstance(power_out, PortInstance)
         assert isinstance(power_in, PortInstance)
         assert power_out.direction == "out"
@@ -80,10 +84,14 @@ class TestInstantiation:
 
     def test_value_slots_instantiated(self) -> None:
         cm = instantiate(DriveSystem)
-        charge = cm.root.battery.charge
-        voltage = cm.root.battery.voltage
-        torque = cm.root.motor.torque
-        speed = cm.root.motor.shaft_speed
+        battery = cm.root.battery
+        motor = cm.root.motor
+        assert isinstance(battery, PartInstance)
+        assert isinstance(motor, PartInstance)
+        charge = battery.charge
+        voltage = battery.voltage
+        torque = motor.torque
+        speed = motor.shaft_speed
         assert isinstance(charge, ValueSlot)
         assert isinstance(voltage, ValueSlot)
         assert isinstance(torque, ValueSlot)
@@ -180,20 +188,34 @@ class TestTopologyFreeze:
     def test_topology_is_frozen_after_instantiation(self) -> None:
         cm = instantiate(DriveSystem)
         import pytest
+
         with pytest.raises(RuntimeError, match="frozen"):
-            cm.root.add_child("illegal", PartInstance(
-                stable_id="x", definition_type=Part,
-                definition_path=("x",), instance_path=("x",),
-            ))
+            cm.root.add_child(
+                "illegal",
+                PartInstance(
+                    stable_id="x",
+                    definition_type=Part,
+                    definition_path=("x",),
+                    instance_path=("x",),
+                ),
+            )
 
     def test_child_parts_are_also_frozen(self) -> None:
         cm = instantiate(DriveSystem)
         import pytest
+
+        battery = cm.root.battery
+        assert isinstance(battery, PartInstance)
         with pytest.raises(RuntimeError, match="frozen"):
-            cm.root.battery.add_port("illegal", PortInstance(
-                stable_id="x", definition_type=Part,
-                definition_path=("x",), instance_path=("x",),
-            ))
+            battery.add_port(
+                "illegal",
+                PortInstance(
+                    stable_id="x",
+                    definition_type=Part,
+                    definition_path=("x",),
+                    instance_path=("x",),
+                ),
+            )
 
 
 class TestIdentityConsistency:

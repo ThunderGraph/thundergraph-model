@@ -23,7 +23,12 @@ from tg_model.execution.connection_bindings import (
     ConnectionBinding,
     ReferenceBinding,
 )
-from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
+from tg_model.execution.instances import (
+    ElementInstance,
+    PartInstance,
+    PortInstance,
+    RequirementPackageInstance,
+)
 from tg_model.execution.value_slots import ValueSlot
 from tg_model.model.compile_types import _requirement_block_compiled_artifact
 from tg_model.model.identity import derive_declaration_id
@@ -206,6 +211,8 @@ def instantiate(root_type: type) -> ConfiguredModel:
     Walks the compiled definition depth-first, creating
     :class:`~tg_model.execution.instances.PartInstance`,
     :class:`~tg_model.execution.instances.PortInstance`,
+    :class:`~tg_model.execution.instances.RequirementPackageInstance` (composable requirement
+    packages with package-level value slots),
     :class:`~tg_model.execution.value_slots.ValueSlot`, connection bindings, and
     allocation bindings. Registers handles then freezes all parts.
 
@@ -257,9 +264,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
 
     connections = _instantiate_connections(compiled, root_instance, path_registry, root_type)
     allocations = _instantiate_allocations(compiled, root_instance, path_registry, root_type)
-    references = (
-        _instantiate_all_references(root_instance, path_registry, root_type) + ref_accumulator
-    )
+    references = _instantiate_all_references(root_instance, path_registry, root_type) + ref_accumulator
 
     root_instance.freeze()
 
@@ -354,27 +359,28 @@ def _instantiate_children(
 
         elif kind == "requirement_block":
             block_type = type_registry.get(name)
-            block_instance = ElementInstance(
+            if block_type is None:
+                raise ValueError(f"requirement_block {name!r} has no target_type (internal compile error)")
+            pkg_inst = RequirementPackageInstance(
                 stable_id=child_id,
                 definition_type=root_type,
                 definition_path=(name,),
                 instance_path=child_path,
-                kind="requirement_block",
+                package_type=block_type,
                 metadata=metadata,
             )
-            _register(block_instance, path_registry, id_registry)
-            if block_type is not None:
-                sub_compiled = _requirement_block_compiled_artifact(block_type)
-                _instantiate_requirement_block_children(
-                    child_path,
-                    sub_compiled,
-                    root_type,
-                    root_type,
-                    path_registry,
-                    id_registry,
-                    ref_accumulator,
-                    requirement_value_slots,
-                )
+            parent.add_requirement_package(name, pkg_inst)
+            _register(pkg_inst, path_registry, id_registry)
+            _instantiate_requirement_block_children(
+                pkg_inst,
+                _requirement_block_compiled_artifact(block_type),
+                root_type,
+                root_type,
+                path_registry,
+                id_registry,
+                ref_accumulator,
+                requirement_value_slots,
+            )
 
         elif kind == "constraint":
             constraint_instance = ElementInstance(
@@ -400,7 +406,7 @@ def _instantiate_children(
 
 
 def _instantiate_requirement_block_children(
-    prefix_path: tuple[str, ...],
+    package: RequirementPackageInstance,
     compiled: dict[str, Any],
     definition_root_type: type,
     root_type: type,
@@ -409,8 +415,9 @@ def _instantiate_requirement_block_children(
     ref_accumulator: list[ReferenceBinding] | None = None,
     requirement_value_slots: list[ValueSlot] | None = None,
 ) -> None:
-    """Materialize requirements/citations/nested blocks under a requirement_block (no PartInstance parent)."""
+    """Materialize members under a composable requirement package (dot-access under the root part)."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
+    prefix_path = package.instance_path
 
     for name, node in compiled["nodes"].items():
         kind = node["kind"]
@@ -427,6 +434,7 @@ def _instantiate_requirement_block_children(
                 kind="requirement",
                 metadata=metadata,
             )
+            package.add_member(name, req_instance)
             _register(req_instance, path_registry, id_registry)
         elif kind == "citation":
             cite_instance = ElementInstance(
@@ -437,35 +445,62 @@ def _instantiate_requirement_block_children(
                 kind="citation",
                 metadata=metadata,
             )
+            package.add_member(name, cite_instance)
             _register(cite_instance, path_registry, id_registry)
         elif kind == "requirement_block":
             block_type = type_registry.get(name)
-            block_instance = ElementInstance(
+            if block_type is None:
+                raise ValueError(f"requirement_block {name!r} has no target_type (internal compile error)")
+            inner_pkg = RequirementPackageInstance(
                 stable_id=child_id,
                 definition_type=definition_root_type,
                 definition_path=tuple(child_path[1:]),
                 instance_path=child_path,
-                kind="requirement_block",
+                package_type=block_type,
                 metadata=metadata,
             )
-            _register(block_instance, path_registry, id_registry)
-            if block_type is not None:
-                _instantiate_requirement_block_children(
-                    child_path,
-                    _requirement_block_compiled_artifact(block_type),
-                    definition_root_type,
-                    root_type,
-                    path_registry,
-                    id_registry,
-                    ref_accumulator,
-                    requirement_value_slots,
-                )
+            package.add_member(name, inner_pkg)
+            _register(inner_pkg, path_registry, id_registry)
+            _instantiate_requirement_block_children(
+                inner_pkg,
+                _requirement_block_compiled_artifact(block_type),
+                definition_root_type,
+                root_type,
+                path_registry,
+                id_registry,
+                ref_accumulator,
+                requirement_value_slots,
+            )
+
+        elif kind in ("parameter", "attribute"):
+            slot = ValueSlot(
+                stable_id=child_id,
+                instance_path=child_path,
+                kind=kind,
+                definition_type=definition_root_type,
+                definition_path=tuple(child_path[1:]),
+                metadata=metadata,
+                has_expr="_expr" in metadata,
+                has_computed_by="_computed_by" in metadata,
+            )
+            package.add_member(name, slot)
+            _register_slot(slot, path_registry, id_registry)
+
+        elif kind == "constraint":
+            constraint_instance = ElementInstance(
+                stable_id=child_id,
+                definition_type=definition_root_type,
+                definition_path=tuple(child_path[1:]),
+                instance_path=child_path,
+                kind="constraint",
+                metadata=metadata,
+            )
+            package.add_member(name, constraint_instance)
+            _register(constraint_instance, path_registry, id_registry)
 
         elif kind == "requirement_attribute":
             if requirement_value_slots is None:
-                raise ValueError(
-                    "requirement_attribute nodes require requirement_value_slots accumulator"
-                )
+                raise ValueError("requirement_attribute nodes require requirement_value_slots accumulator")
             req_key = metadata["_requirement_key"]
             aname = metadata["_attr_name"]
             slot_path = (*prefix_path, req_key, aname)
@@ -485,7 +520,11 @@ def _instantiate_requirement_block_children(
 
     if ref_accumulator is not None:
         _wire_requirement_block_references(
-            prefix_path, compiled, root_type, path_registry, ref_accumulator,
+            prefix_path,
+            compiled,
+            root_type,
+            path_registry,
+            ref_accumulator,
         )
 
 
@@ -496,7 +535,7 @@ def _wire_requirement_block_references(
     path_registry: dict[str, ElementInstance | ValueSlot],
     out: list[ReferenceBinding],
 ) -> None:
-    """Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.RequirementBlock`."""
+    """Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.Requirement` package."""
     for edge in compiled.get("edges", []):
         if edge.get("kind") != "references":
             continue
@@ -554,12 +593,14 @@ def _instantiate_connections(
             raise ValueError(f"Connection target '{tgt_key}' is not a PortInstance")
 
         conn_id = derive_declaration_id(root_type, "connect", *edge["source"]["path"], *edge["target"]["path"])
-        connections.append(ConnectionBinding(
-            stable_id=conn_id,
-            source=src,
-            target=tgt,
-            carrying=edge.get("carrying"),
-        ))
+        connections.append(
+            ConnectionBinding(
+                stable_id=conn_id,
+                source=src,
+                target=tgt,
+                carrying=edge.get("carrying"),
+            )
+        )
 
     return connections
 
@@ -602,18 +643,18 @@ def _instantiate_allocations(
                 slot_key = ".".join((root.path_string, *rel))
                 slot = path_registry.get(slot_key)
                 if not isinstance(slot, ValueSlot):
-                    raise ValueError(
-                        f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry"
-                    )
+                    raise ValueError(f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry")
                 input_bindings[str(iname)] = slot
 
         alloc_id = derive_declaration_id(root_type, "allocate", *edge["source"]["path"], *edge["target"]["path"])
-        allocations.append(AllocationBinding(
-            stable_id=alloc_id,
-            requirement=req,
-            target=tgt,
-            input_bindings=input_bindings,
-        ))
+        allocations.append(
+            AllocationBinding(
+                stable_id=alloc_id,
+                requirement=req,
+                target=tgt,
+                input_bindings=input_bindings,
+            )
+        )
 
     return allocations
 

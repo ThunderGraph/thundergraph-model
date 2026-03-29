@@ -1,4 +1,4 @@
-"""Authoring element types: :class:`Element`, :class:`Part`, :class:`System`, :class:`RequirementBlock`.
+"""Authoring element types: :class:`Element`, :class:`Part`, :class:`System`, :class:`Requirement`.
 
 Subclasses implement :meth:`Element.define` to record declarations on
 :class:`~tg_model.model.definition_context.ModelDefinitionContext` and call
@@ -81,23 +81,32 @@ class Part(Element):
     """Structural part in a hierarchy (may own child parts, ports, values, behavior)."""
 
 
-class RequirementBlock(Element):
-    """Composable requirements subtree (nested requirements and citations).
+class Requirement(Element):
+    """Composable requirements package: nested requirements, inputs, citations, and package values.
 
     Register on a :class:`Part` or :class:`System` via
-    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_block`;
-    navigate with :class:`~tg_model.model.refs.RequirementBlockRef` dot access.
+    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_package`;
+    navigate with :class:`~tg_model.model.refs.RequirementRef` dot access.
 
     Notes
     -----
-    ``define()`` may only declare ``requirement``, ``requirement_input``,
-    ``requirement_attribute``, ``citation``, nested ``requirement_block``, and ``references``
-    (enforced at compile). Prefer
+    ``define()`` may declare package-level ``parameter``, ``attribute``, and ``constraint``,
+    plus ``requirement``, ``requirement_input``, ``requirement_attribute``, ``citation``, nested
+    ``requirement_package``, and ``references`` (enforced at compile).
+    Prefer
     :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_accept_expr`
     plus :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_input` /
     :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`
     and :meth:`~tg_model.model.definition_context.ModelDefinitionContext.allocate` ``inputs=``
-    (for inputs wired from the design) for acceptance that avoids part refs inside the block.
+    (for inputs wired from the design) for acceptance that avoids part refs inside the package.
+
+    Package-level ``parameter``, ``attribute``, and ``constraint`` nodes become
+    :class:`~tg_model.execution.value_slots.ValueSlot` / graph nodes under the configured root
+    (dot access e.g. ``configured_root.pkg.param_name``); expressions are validated during
+    :meth:`compile`. Package-level slots do not yet support ``computed_by=`` or
+    :class:`~tg_model.model.declarations.values.RollupDecl` in graph compilation; every package
+    ``constraint`` must supply ``expr=`` (including constant expressions with no symbols).
+
     """
 
 

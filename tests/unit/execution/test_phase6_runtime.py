@@ -140,7 +140,7 @@ def test_dispatch_decision_default_branch() -> None:
     ctx = RunContext()
     ctx.bind_input(cm.temp.stable_id, -1.0)
     tr = BehaviorTrace()
-    r = dispatch_decision(ctx, cm, "route", trace=tr)
+    r = dispatch_decision(ctx, cm.root, "route", trace=tr)
     assert r.chosen_action == "heat"
     assert r.outcome is DecisionDispatchOutcome.ACTION_RAN
     assert r
@@ -151,7 +151,7 @@ def test_dispatch_decision_guard_branch() -> None:
     cm = instantiate(Decider)
     ctx = RunContext()
     ctx.bind_input(cm.temp.stable_id, 50.0)
-    r = dispatch_decision(ctx, cm, "route")
+    r = dispatch_decision(ctx, cm.root, "route")
     assert r.chosen_action == "cool"
     assert r.outcome is DecisionDispatchOutcome.ACTION_RAN
 
@@ -160,7 +160,7 @@ def test_dispatch_decision_no_action() -> None:
     cm = instantiate(Strict)
     ctx = RunContext()
     ctx.bind_input(cm.temp.stable_id, -1.0)
-    r = dispatch_decision(ctx, cm, "route")
+    r = dispatch_decision(ctx, cm.root, "route")
     assert not r
     assert r.outcome is DecisionDispatchOutcome.NO_ACTION
     assert r.chosen_action is None
@@ -170,7 +170,7 @@ def test_dispatch_fork_join() -> None:
     cm = instantiate(Forky)
     ctx = RunContext()
     tr = BehaviorTrace()
-    dispatch_fork_join(ctx, cm, "fj", trace=tr)
+    dispatch_fork_join(ctx, cm.root, "fj", trace=tr)
     assert len(tr.fork_join_steps) == 1
 
 
@@ -178,7 +178,7 @@ def test_dispatch_decision_then_merge_runs_shared_continuation() -> None:
     cm = instantiate(DecisionMerge)
     ctx = RunContext()
     tr = BehaviorTrace()
-    r = dispatch_decision(ctx, cm, "d", trace=tr)
+    r = dispatch_decision(ctx, cm.root, "d", trace=tr)
     assert r.merge_ran
     assert DecisionMerge._after_hits == ["after"]
     assert len(tr.merge_steps) == 1
@@ -190,7 +190,7 @@ def test_dispatch_sequence() -> None:
     cm = instantiate(Seqgy)
     ctx = RunContext()
     tr = BehaviorTrace()
-    dispatch_sequence(ctx, cm, "main", trace=tr)
+    dispatch_sequence(ctx, cm.root, "main", trace=tr)
     assert len(tr.sequence_steps) == 1
 
 
@@ -239,7 +239,7 @@ def test_validate_scenario_initial_from_state() -> None:
     cm = instantiate(S)
     ctx = RunContext()
     tr = BehaviorTrace()
-    dispatch_event(ctx, cm, "e", trace=tr)
+    dispatch_event(ctx, cm.root, "e", trace=tr)
     ok, err = validate_scenario_trace(
         definition_type=S,
         scenario_name="bad_init",
@@ -268,7 +268,7 @@ def test_validate_scenario_final_state() -> None:
     cm = instantiate(S)
     ctx = RunContext()
     tr = BehaviorTrace()
-    dispatch_event(ctx, cm, "e", trace=tr)
+    dispatch_event(ctx, cm.root, "e", trace=tr)
     ok, err = validate_scenario_trace(
         definition_type=S,
         scenario_name="sc",

@@ -33,10 +33,10 @@ class TestDispatch:
         cm = instantiate(Tiny)
         ctx = RunContext()
         tr = BehaviorTrace()
-        r0 = dispatch_event(ctx, cm, "nope")
+        r0 = dispatch_event(ctx, cm.root, "nope")
         assert r0.outcome is DispatchOutcome.NO_MATCH
         assert not r0
-        r1 = dispatch_event(ctx, cm, "go", trace=tr)
+        r1 = dispatch_event(ctx, cm.root, "go", trace=tr)
         assert r1.outcome is DispatchOutcome.FIRED
         assert r1
         assert ctx.get_active_behavior_state(cm.path_string) == "on"
@@ -55,7 +55,7 @@ class TestDispatch:
         Guarded._reset_compilation()
         cm = instantiate(Guarded)
         ctx = RunContext()
-        rg = dispatch_event(ctx, cm, "e")
+        rg = dispatch_event(ctx, cm.root, "e")
         assert rg.outcome is DispatchOutcome.GUARD_FAILED
         assert ctx.get_active_behavior_state(cm.path_string) == "a"
 
@@ -78,7 +78,7 @@ class TestDispatch:
         Order._reset_compilation()
         cm = instantiate(Order)
         ctx = RunContext()
-        assert dispatch_event(ctx, cm, "ev").outcome is DispatchOutcome.FIRED
+        assert dispatch_event(ctx, cm.root, "ev").outcome is DispatchOutcome.FIRED
         assert seen == ["b"]
 
     def test_effect_exception_reverts_state(self) -> None:
@@ -100,7 +100,7 @@ class TestDispatch:
         ctx = RunContext()
         tr = BehaviorTrace()
         with pytest.raises(RuntimeError, match="effect failed"):
-            dispatch_event(ctx, cm, "ev", trace=tr)
+            dispatch_event(ctx, cm.root, "ev", trace=tr)
         assert ctx.get_active_behavior_state(cm.path_string) == "a"
         assert tr.steps == []
 
@@ -123,8 +123,8 @@ class TestScenario:
         cm = instantiate(S)
         ctx = RunContext()
         trace = BehaviorTrace()
-        assert dispatch_event(ctx, cm, "e1", trace=trace).outcome is DispatchOutcome.FIRED
-        assert dispatch_event(ctx, cm, "e2", trace=trace).outcome is DispatchOutcome.FIRED
+        assert dispatch_event(ctx, cm.root, "e1", trace=trace).outcome is DispatchOutcome.FIRED
+        assert dispatch_event(ctx, cm.root, "e2", trace=trace).outcome is DispatchOutcome.FIRED
         ok, errs = validate_scenario_trace(
             definition_type=S,
             scenario_name="seq",

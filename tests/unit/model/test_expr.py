@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from unitflow.catalogs.si import kg
+
 from tg_model.model.elements import Part
 from tg_model.model.expr import sum_attributes
-from unitflow.catalogs.si import kg
 
 
 class _RollupHost(Part):

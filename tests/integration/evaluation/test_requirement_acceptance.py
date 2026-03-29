@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from unitflow import Quantity
 from unitflow.catalogs.si import N, m, rad, s
 
@@ -77,10 +76,13 @@ def test_requirement_acceptance_passes_with_positive_power() -> None:
 
     evaluator = Evaluator(graph, compute_handlers=handlers)
     ctx = RunContext()
-    result = evaluator.evaluate(ctx, inputs={
-        cm.motor.torque.stable_id: Quantity(50, N * m),
-        cm.motor.shaft_speed.stable_id: Quantity(100, m / (m * s)),
-    })
+    result = evaluator.evaluate(
+        ctx,
+        inputs={
+            cm.motor.torque.stable_id: Quantity(50, N * m),
+            cm.motor.shaft_speed.stable_id: Quantity(100, m / (m * s)),
+        },
+    )
 
     sat = iter_requirement_satisfaction(result)
     assert len(sat) == 1
@@ -98,10 +100,13 @@ def test_no_acceptance_checks_summary_not_vacuously_passed() -> None:
     graph, handlers = compile_graph(cm)
     evaluator = Evaluator(graph, compute_handlers=handlers)
     ctx = RunContext()
-    result = evaluator.evaluate(ctx, inputs={
-        cm.motor.torque.stable_id: Quantity(1, N * m),
-        cm.motor.shaft_speed.stable_id: Quantity(1, m / (m * s)),
-    })
+    result = evaluator.evaluate(
+        ctx,
+        inputs={
+            cm.motor.torque.stable_id: Quantity(1, N * m),
+            cm.motor.shaft_speed.stable_id: Quantity(1, m / (m * s)),
+        },
+    )
     summary = summarize_requirement_satisfaction(result)
     assert summary.check_count == 0
     assert not summary.all_passed
@@ -114,10 +119,13 @@ def test_requirement_acceptance_fails_when_power_not_positive() -> None:
     graph, handlers = compile_graph(cm)
     evaluator = Evaluator(graph, compute_handlers=handlers)
     ctx = RunContext()
-    result = evaluator.evaluate(ctx, inputs={
-        cm.motor.torque.stable_id: Quantity(0, N * m),
-        cm.motor.shaft_speed.stable_id: Quantity(100, m / (m * s)),
-    })
+    result = evaluator.evaluate(
+        ctx,
+        inputs={
+            cm.motor.torque.stable_id: Quantity(0, N * m),
+            cm.motor.shaft_speed.stable_id: Quantity(100, m / (m * s)),
+        },
+    )
 
     sat = iter_requirement_satisfaction(result)
     assert len(sat) == 1

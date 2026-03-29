@@ -51,7 +51,12 @@ from tg_model.execution.connection_bindings import (
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
 from tg_model.execution.evaluator import Evaluator, RunResult
 from tg_model.execution.graph_compiler import GraphCompilationError, compile_graph
-from tg_model.execution.instances import ElementInstance, PartInstance, PortInstance
+from tg_model.execution.instances import (
+    ElementInstance,
+    PartInstance,
+    PortInstance,
+    RequirementPackageInstance,
+)
 from tg_model.execution.requirements import (
     RequirementSatisfactionResult,
     RequirementSatisfactionSummary,
@@ -88,6 +93,7 @@ __all__ = [
     "PartInstance",
     "PortInstance",
     "ReferenceBinding",
+    "RequirementPackageInstance",
     "RequirementSatisfactionResult",
     "RequirementSatisfactionSummary",
     "RunContext",

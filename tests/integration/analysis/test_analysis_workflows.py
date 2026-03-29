@@ -135,9 +135,11 @@ class TestCompareVariantsIntegration:
         )
         assert [r.label for r in rows] == ["low", "high"]
         assert rows[0].outputs[path].present_in_run_outputs
-        assert rows[0].outputs[path].value is not None
-        assert rows[0].outputs[path].value.is_close(Quantity(1, N * m / s_unit))
-        assert rows[1].outputs[path].value.is_close(Quantity(100, N * m / s_unit))
+        v0 = rows[0].outputs[path].value
+        v1 = rows[1].outputs[path].value
+        assert v0 is not None and v1 is not None
+        assert v0.is_close(Quantity(1, N * m / s_unit))
+        assert v1.is_close(Quantity(100, N * m / s_unit))
 
     def test_require_same_root_definition_type_rejects_mixed_roots(self) -> None:
         cm_a = instantiate(SimpleSystem)
@@ -216,8 +218,16 @@ class TestCompareVariantsAsyncIntegration:
         async def run() -> None:
             ar = await compare_variants_async(scenarios=scenarios, output_paths=[path])
             sr = compare_variants(scenarios=scenarios, output_paths=[path])
-            assert [r.outputs[path].value.magnitude for r in ar] == [
-                r.outputs[path].value.magnitude for r in sr
-            ]
+            am_mags: list[float] = []
+            sm_mags: list[float] = []
+            for r in ar:
+                v = r.outputs[path].value
+                assert v is not None
+                am_mags.append(v.magnitude)
+            for r in sr:
+                v = r.outputs[path].value
+                assert v is not None
+                sm_mags.append(v.magnitude)
+            assert am_mags == sm_mags
 
         asyncio.run(run())

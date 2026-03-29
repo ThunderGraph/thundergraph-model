@@ -12,16 +12,20 @@ from tg_model.model.elements import Part
 class TestElementInstance:
     def test_path_string(self) -> None:
         inst = ElementInstance(
-            stable_id="abc", definition_type=Part,
-            definition_path=("x",), instance_path=("root", "x"),
+            stable_id="abc",
+            definition_type=Part,
+            definition_path=("x",),
+            instance_path=("root", "x"),
             kind="part",
         )
         assert inst.path_string == "root.x"
 
     def test_repr(self) -> None:
         inst = ElementInstance(
-            stable_id="abc", definition_type=Part,
-            definition_path=("x",), instance_path=("root", "x"),
+            stable_id="abc",
+            definition_type=Part,
+            definition_path=("x",),
+            instance_path=("root", "x"),
             kind="port",
         )
         assert "root.x" in repr(inst)
@@ -31,12 +35,16 @@ class TestElementInstance:
 class TestPartInstance:
     def test_add_child_and_lookup(self) -> None:
         parent = PartInstance(
-            stable_id="p", definition_type=Part,
-            definition_path=(), instance_path=("root",),
+            stable_id="p",
+            definition_type=Part,
+            definition_path=(),
+            instance_path=("root",),
         )
         child = PartInstance(
-            stable_id="c", definition_type=Part,
-            definition_path=("child",), instance_path=("root", "child"),
+            stable_id="c",
+            definition_type=Part,
+            definition_path=("child",),
+            instance_path=("root", "child"),
         )
         parent.add_child("child", child)
         assert parent.children == [child]
@@ -44,12 +52,16 @@ class TestPartInstance:
 
     def test_add_port_and_lookup(self) -> None:
         parent = PartInstance(
-            stable_id="p", definition_type=Part,
-            definition_path=(), instance_path=("root",),
+            stable_id="p",
+            definition_type=Part,
+            definition_path=(),
+            instance_path=("root",),
         )
         port = PortInstance(
-            stable_id="pt", definition_type=Part,
-            definition_path=("out",), instance_path=("root", "out"),
+            stable_id="pt",
+            definition_type=Part,
+            definition_path=("out",),
+            instance_path=("root", "out"),
             metadata={"direction": "out"},
         )
         parent.add_port("out", port)
@@ -59,12 +71,16 @@ class TestPartInstance:
 
     def test_add_value_slot_and_lookup(self) -> None:
         parent = PartInstance(
-            stable_id="p", definition_type=Part,
-            definition_path=(), instance_path=("root",),
+            stable_id="p",
+            definition_type=Part,
+            definition_path=(),
+            instance_path=("root",),
         )
         slot = ValueSlot(
-            stable_id="s", instance_path=("root", "mass"),
-            kind="attribute", metadata={"unit": "kg"},
+            stable_id="s",
+            instance_path=("root", "mass"),
+            kind="attribute",
+            metadata={"unit": "kg"},
         )
         parent.add_value_slot("mass", slot)
         assert parent.value_slots == [slot]
@@ -72,8 +88,10 @@ class TestPartInstance:
 
     def test_missing_child_raises(self) -> None:
         parent = PartInstance(
-            stable_id="p", definition_type=Part,
-            definition_path=(), instance_path=("root",),
+            stable_id="p",
+            definition_type=Part,
+            definition_path=(),
+            instance_path=("root",),
         )
         with pytest.raises(AttributeError, match="nonexistent"):
             _ = parent.nonexistent
