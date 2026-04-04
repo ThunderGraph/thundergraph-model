@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Concept: External Compute (Concrete Binding)" href="concepts_external_compute.html"><link rel="prev" title="Quickstart (Concrete Example)" href="quickstart.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Concept: Requirements (inputs, derived attributes, acceptance) - ThunderGraph Model Docs</title>
+        <title>Concept: Requirements — parameter / attribute / constraint (DEFAULT) - ThunderGraph Model Docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -271,145 +271,192 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="concept-requirements-inputs-derived-attributes-acceptance">
-<h1>Concept: Requirements (inputs, derived attributes, acceptance)<a class="headerlink" href="#concept-requirements-inputs-derived-attributes-acceptance" title="Link to this heading">¶</a></h1>
-<p>This page covers the usual pattern for <strong>executable</strong> requirement acceptance: symbols stay local to a <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code>, and the graph evaluates acceptance like any other constraint.</p>
-<p>There are two complementary ways to introduce <strong>values</strong> under a requirement:</p>
-<ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code></strong> — slots you <strong>wire from the design</strong> with <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs={...})</span></code> (scenario parameters, part attributes, and so on).</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong> — <strong>requirement-owned derived values</strong> with an <code class="docutils literal notranslate"><span class="pre">expr=</span></code> (sums, margins, normalized quantities, intermediate checks) that may depend on inputs, earlier attributes on the same requirement, and root/part symbols.</p></li>
-</ul>
-<p>Use <strong><code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code></strong> (or inline <code class="docutils literal notranslate"><span class="pre">requirement(...,</span> <span class="pre">expr=)</span></code> where appropriate) for the boolean acceptance check.</p>
-<section id="wired-inputs-requirement-input">
-<h2>Wired inputs (<code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>)<a class="headerlink" href="#wired-inputs-requirement-input" title="Link to this heading">¶</a></h2>
-<p>This is the simplest pattern when acceptance only needs values <strong>mapped from</strong> the allocated subtree.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">km</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span><span class="p">,</span> <span class="n">System</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Evaluator</span><span class="p">,</span>
-    <span class="n">RunContext</span><span class="p">,</span>
-    <span class="n">compile_graph</span><span class="p">,</span>
-    <span class="n">instantiate</span><span class="p">,</span>
-    <span class="n">summarize_requirement_satisfaction</span><span class="p">,</span>
-    <span class="n">validate_graph</span><span class="p">,</span>
-<span class="p">)</span>
+          <section id="concept-requirements-parameter-attribute-constraint-default">
+<h1>Concept: Requirements — parameter / attribute / constraint (DEFAULT)<a class="headerlink" href="#concept-requirements-parameter-attribute-constraint-default" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p><strong>TL;DR — When writing a new <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> package, use <code class="docutils literal notranslate"><span class="pre">model.parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">model.attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">model.constraint</span></code>.  That is the default, recommended, current API.</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>, <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> exist <strong>only</strong> for a rare, advanced leaf-reqcheck pattern (INCOSE-style acceptance rows wired through <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code>).  <strong>Do not reach for them first.</strong>  If you are not sure whether you need them, <strong>you don’t</strong>.</p>
+</div></blockquote>
+<hr class="docutils" />
+<section id="the-default-pattern-package-level-parameter-attribute-constraint">
+<h2>The default pattern: package-level <code class="docutils literal notranslate"><span class="pre">parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint</span></code><a class="headerlink" href="#the-default-pattern-package-level-parameter-attribute-constraint" title="Link to this heading">¶</a></h2>
+<p>A composable <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> package uses the same value/check authoring surface as a <code class="docutils literal notranslate"><span class="pre">Part</span></code>. Unlike a <code class="docutils literal notranslate"><span class="pre">System</span></code>, it may own <code class="docutils literal notranslate"><span class="pre">attribute(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">constraint(...)</span></code> declarations directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">kN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.core.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">Unit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
+
+<span class="n">DIMLESS</span> <span class="o">=</span> <span class="n">Unit</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">()</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">RangeReqs</span><span class="p">(</span><span class="n">RequirementBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PropulsionReqs</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement</span><span class="p">(</span><span class="s2">&quot;mission_range&quot;</span><span class="p">,</span> <span class="s2">&quot;Aircraft shall support mission range.&quot;</span><span class="p">)</span>
-        <span class="n">achieved</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s2">&quot;achieved_range_km&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">km</span><span class="p">)</span>
-        <span class="n">required</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s2">&quot;required_range_km&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">km</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">requirement_accept_expr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="n">achieved</span> <span class="o">&gt;=</span> <span class="n">required</span><span class="p">))</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Aircraft</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">root</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">()</span>
-        <span class="n">mission_km</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;mission_required_km&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">km</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">achieved_km</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="s2">&quot;achieved_km&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">km</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="mi">9000</span> <span class="o">*</span> <span class="n">km</span><span class="p">)</span>
-
-        <span class="n">reqs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_block</span><span class="p">(</span><span class="s2">&quot;reqs&quot;</span><span class="p">,</span> <span class="n">RangeReqs</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span>
-            <span class="n">reqs</span><span class="o">.</span><span class="n">mission_range</span><span class="p">,</span>
-            <span class="n">root</span><span class="p">,</span>
-            <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;achieved_range_km&quot;</span><span class="p">:</span> <span class="n">root</span><span class="o">.</span><span class="n">achieved_km</span><span class="p">,</span>
-                <span class="s2">&quot;required_range_km&quot;</span><span class="p">:</span> <span class="n">root</span><span class="o">.</span><span class="n">mission_required_km</span><span class="p">,</span>
-            <span class="p">},</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;required_vacuum_thrust&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kN</span><span class="p">)</span>
+        <span class="n">declared</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;declared_vacuum_thrust&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kN</span><span class="p">)</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span>
+            <span class="s2">&quot;vacuum_thrust_margin&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kN</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">declared</span> <span class="o">-</span> <span class="n">required</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;thrust_margin_non_negative&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">margin</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">kN</span><span class="p">)</span>
 
-
-<span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">Aircraft</span><span class="p">)</span>
-<span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">compile_graph</span><span class="p">(</span><span class="n">cm</span><span class="p">)</span>
-<span class="n">vr</span> <span class="o">=</span> <span class="n">validate_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">configured_model</span><span class="o">=</span><span class="n">cm</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">vr</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">vr</span><span class="o">.</span><span class="n">failures</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">compute_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>
-    <span class="n">RunContext</span><span class="p">(),</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">mission_required_km</span><span class="o">.</span><span class="n">stable_id</span><span class="p">:</span> <span class="mi">8000</span> <span class="o">*</span> <span class="n">km</span><span class="p">},</span>
-<span class="p">)</span>
-<span class="n">req</span> <span class="o">=</span> <span class="n">summarize_requirement_satisfaction</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Overall run passed:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Requirement checks:&quot;</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">check_count</span><span class="p">,</span> <span class="s2">&quot;all_passed:&quot;</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">all_passed</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">req</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">requirement_path</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span> <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">passed</span> <span class="k">else</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">evidence</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">requirement</span><span class="p">(</span>
+            <span class="s2">&quot;req_vacuum_thrust_capability&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;The propulsion subsystem shall deliver vacuum thrust no less than &quot;</span>
+            <span class="s2">&quot;the mission floor (verification by test / analysis).&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 </pre></div>
 </div>
-<section id="why-this-pattern">
-<h3>Why this pattern<a class="headerlink" href="#why-this-pattern" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Requirement expression is local to the <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code>.</p></li>
-<li><p>Part values are explicitly mapped by <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code>.</p></li>
-<li><p>Acceptance runs in normal graph evaluation (same pass as constraints).</p></li>
-</ul>
-<p>Use <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction(result)</span></code> (or <code class="docutils literal notranslate"><span class="pre">iter_requirement_satisfaction</span></code>) to read <strong>per-requirement</strong> outcomes. <code class="docutils literal notranslate"><span class="pre">result.passed</span></code> aggregates every constraint in the run; requirement rows are the ones tagged with a <code class="docutils literal notranslate"><span class="pre">requirement_path</span></code> in the evaluator output.</p>
+<p><strong>That’s it.</strong>  <code class="docutils literal notranslate"><span class="pre">parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">constraint</span></code> on the package, plus <code class="docutils literal notranslate"><span class="pre">model.requirement</span></code> for the formal “shall” text.  The constraint enforces the executable check; the requirement node carries the traceability text and can be <code class="docutils literal notranslate"><span class="pre">allocate</span></code>d and <code class="docutils literal notranslate"><span class="pre">references</span></code>d for citations.</p>
+<p>After <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>, the slots live at <code class="docutils literal notranslate"><span class="pre">cm.requirements.propulsion.required_vacuum_thrust</span></code> etc., and constraints appear in <code class="docutils literal notranslate"><span class="pre">RunResult.constraint_results</span></code> alongside part constraints.</p>
+<section id="when-to-use-this-pattern">
+<h3>When to use this pattern<a class="headerlink" href="#when-to-use-this-pattern" title="Link to this heading">¶</a></h3>
+<p><strong>Always.</strong>  For every new requirement package, start here.  This is the primary modeling surface for requirements.</p>
 </section>
 </section>
-<section id="derived-values-on-the-requirement-requirement-attribute">
-<h2>Derived values on the requirement (<code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>)<a class="headerlink" href="#derived-values-on-the-requirement-requirement-attribute" title="Link to this heading">¶</a></h2>
-<p>When acceptance (or another derived value) should use <strong>intermediate math</strong> that belongs to the requirement itself—not to a part—declare <strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute(requirement,</span> <span class="pre">name,</span> <span class="pre">*,</span> <span class="pre">expr=...,</span> <span class="pre">unit=...)</span></code></strong>. Expressions may use:</p>
+<hr class="docutils" />
+<section id="leaf-model-requirement-vs-composable-requirement">
+<h2>Leaf <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code> vs composable <code class="docutils literal notranslate"><span class="pre">Requirement</span></code><a class="headerlink" href="#leaf-model-requirement-vs-composable-requirement" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code></strong> symbols on the same requirement,</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong> symbols declared <strong>earlier</strong> in the same <code class="docutils literal notranslate"><span class="pre">define()</span></code> (declaration order matters),</p></li>
-<li><p>parameters and attributes on the configured root and allocated parts (same symbol rules as elsewhere).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> (the class) is a <strong>composable package type</strong>.  You subclass it, implement <code class="docutils literal notranslate"><span class="pre">define(cls,</span> <span class="pre">model)</span></code>, and register it with <code class="docutils literal notranslate"><span class="pre">model.requirement_package(name,</span> <span class="pre">YourType)</span></code>.  Navigate with <code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code> dot access (e.g. <code class="docutils literal notranslate"><span class="pre">reqs.mission.req_delta_v_closure</span></code>).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">model.requirement(id,</span> <span class="pre">text)</span></code></strong> declares <strong>one leaf</strong> requirement statement inside a package.  It returns a <code class="docutils literal notranslate"><span class="pre">Ref</span></code> for <code class="docutils literal notranslate"><span class="pre">allocate</span></code>, <code class="docutils literal notranslate"><span class="pre">references</span></code>, and (in the rare advanced case) <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code>.</p></li>
 </ul>
-<p>Derived attributes are materialized as value slots on the configured root; <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.requirement_value_slots</span></code></strong> lists them for inspection and tooling.</p>
-<p><strong>Example (sum of two wired inputs, then acceptance on the sum):</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">QuantityExpr</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">m</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span><span class="p">,</span> <span class="n">System</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span><span class="p">,</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">compile_graph</span><span class="p">,</span> <span class="n">instantiate</span><span class="p">,</span> <span class="n">validate_graph</span>
+<p>Keeping those two straight avoids confusion with the class name.</p>
+</section>
+<hr class="docutils" />
+<section id="package-level-value-surface">
+<h2>Package-level value surface<a class="headerlink" href="#package-level-value-surface" title="Link to this heading">¶</a></h2>
+<p>Inside <code class="docutils literal notranslate"><span class="pre">Requirement.define()</span></code>:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>What it does</p></th>
+<th class="head"><p>Same as on <code class="docutils literal notranslate"><span class="pre">Part</span></code>?</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.parameter(name,</span> <span class="pre">unit=...)</span></code></p></td>
+<td><p>Externally bound input slot</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.attribute(name,</span> <span class="pre">unit=...,</span> <span class="pre">expr=...)</span></code></p></td>
+<td><p>Derived value from expression</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.constraint(name,</span> <span class="pre">expr=...)</span></code></p></td>
+<td><p>Pass/fail check on the expression</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.requirement(id,</span> <span class="pre">text)</span></code></p></td>
+<td><p>Leaf “shall” statement (traceability)</p></td>
+<td><p>Requirement-only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.requirement_package(name,</span> <span class="pre">Type)</span></code></p></td>
+<td><p>Nested composable sub-package</p></td>
+<td><p>Requirement-only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.citation(name,</span> <span class="pre">...)</span></code></p></td>
+<td><p>External provenance node</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.references(req,</span> <span class="pre">citation)</span></code></p></td>
+<td><p>Traceability edge</p></td>
+<td><p>Requirement-only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Limitations (today):</strong> package-level slots do not support <code class="docutils literal notranslate"><span class="pre">computed_by=</span></code> or rollups in graph compilation; every package <code class="docutils literal notranslate"><span class="pre">constraint</span></code> must supply <code class="docutils literal notranslate"><span class="pre">expr=</span></code>.</p>
+</section>
+<hr class="docutils" />
+<section id="advanced-rare-leaf-level-requirement-input-requirement-attribute-requirement-accept-expr">
+<h2>Advanced (rare): leaf-level <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code><a class="headerlink" href="#advanced-rare-leaf-level-requirement-input-requirement-attribute-requirement-accept-expr" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p><strong>⚠️  Stop.  You almost certainly do not need this section for new code.</strong></p>
+<p>These three helpers exist for <strong>one specific pattern</strong>: encoding an INCOSE-style executable acceptance test on a <strong>single leaf</strong> <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code>, where:</p>
+<ol class="arabic simple">
+<li><p>You declare <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> slots on the leaf requirement.</p></li>
+<li><p>You wire those inputs from the design via <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs={name:</span> <span class="pre">part_ref.slot})</span></code>.</p></li>
+<li><p>You optionally compute a <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> margin.</p></li>
+<li><p>You set a <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> boolean check.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction</span></code> then reports per-requirement pass/fail rows.</p></li>
+</ol>
+<p><strong>If your check can be expressed as a package-level <code class="docutils literal notranslate"><span class="pre">constraint</span></code>, use that instead.</strong>  It is simpler, more readable, and produces the same pass/fail result in <code class="docutils literal notranslate"><span class="pre">RunResult.constraint_results</span></code>.</p>
+</div></blockquote>
+<section id="when-the-leaf-reqcheck-pattern-is-appropriate">
+<h3>When the leaf reqcheck pattern is appropriate<a class="headerlink" href="#when-the-leaf-reqcheck-pattern-is-appropriate" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>You have a <strong>formal Level-1 “shall” statement</strong> with its own acceptance criterion.</p></li>
+<li><p>You want <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction</span></code> to print a <strong>per-requirement row</strong> (tagged with <code class="docutils literal notranslate"><span class="pre">requirement_path</span></code>).</p></li>
+<li><p>The acceptance wiring needs <strong><code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code></strong> to map scenario values and design envelope values into requirement-local input slots.</p></li>
+</ul>
+</section>
+<section id="example-mission-closure-the-rare-case">
+<h3>Example (mission closure — the rare case)<a class="headerlink" href="#example-mission-closure-the-rare-case" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">m</span>
+
+<span class="n">m_per_s</span> <span class="o">=</span> <span class="n">m</span> <span class="o">/</span> <span class="n">s</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">SumReqs</span><span class="p">(</span><span class="n">RequirementBlock</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MissionClosure</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement</span><span class="p">(</span><span class="s2">&quot;positive_span&quot;</span><span class="p">,</span> <span class="s2">&quot;Span sum shall be positive.&quot;</span><span class="p">)</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s2">&quot;a_m&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s2">&quot;b_m&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">total</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_attribute</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s2">&quot;total_m&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">requirement_accept_expr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">total</span> <span class="o">&gt;</span> <span class="n">QuantityExpr</span><span class="p">(</span><span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span><span class="p">)))</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Demo</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">root</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">()</span>
-        <span class="n">la</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;len_a_m&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">lb</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;len_b_m&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">blk</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_block</span><span class="p">(</span><span class="s2">&quot;reqs&quot;</span><span class="p">,</span> <span class="n">SumReqs</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span>
-            <span class="n">blk</span><span class="o">.</span><span class="n">positive_span</span><span class="p">,</span>
-            <span class="n">root</span><span class="p">,</span>
-            <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;a_m&quot;</span><span class="p">:</span> <span class="n">la</span><span class="p">,</span> <span class="s2">&quot;b_m&quot;</span><span class="p">:</span> <span class="n">lb</span><span class="p">},</span>
+        <span class="n">r_dv</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement</span><span class="p">(</span>
+            <span class="s2">&quot;req_delta_v_closure&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Design shall close scenario delta-v within declared envelope.&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-
-
-<span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">Demo</span><span class="p">)</span>
-<span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">compile_graph</span><span class="p">(</span><span class="n">cm</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">validate_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">configured_model</span><span class="o">=</span><span class="n">cm</span><span class="p">)</span><span class="o">.</span><span class="n">passed</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">compute_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>
-    <span class="n">RunContext</span><span class="p">(),</span>
+        <span class="n">scenario_dv</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r_dv</span><span class="p">,</span> <span class="s2">&quot;scenario_delta_v&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m_per_s</span><span class="p">)</span>
+        <span class="n">envelope_dv</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_input</span><span class="p">(</span><span class="n">r_dv</span><span class="p">,</span> <span class="s2">&quot;envelope_delta_v&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m_per_s</span><span class="p">)</span>
+        <span class="n">dv_margin</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_attribute</span><span class="p">(</span>
+            <span class="n">r_dv</span><span class="p">,</span> <span class="s2">&quot;delta_v_margin&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">envelope_dv</span> <span class="o">-</span> <span class="n">scenario_dv</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">m_per_s</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">requirement_accept_expr</span><span class="p">(</span><span class="n">r_dv</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">dv_margin</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">m_per_s</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then on the <code class="docutils literal notranslate"><span class="pre">System</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span>
+    <span class="n">rq</span><span class="o">.</span><span class="n">mission</span><span class="o">.</span><span class="n">req_delta_v_closure</span><span class="p">,</span>
+    <span class="n">design_envelope</span><span class="p">,</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
-        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">len_a_m</span><span class="o">.</span><span class="n">stable_id</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">),</span>
-        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">len_b_m</span><span class="o">.</span><span class="n">stable_id</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">m</span><span class="p">),</span>
+        <span class="s2">&quot;scenario_delta_v&quot;</span><span class="p">:</span> <span class="n">scenario_dv_param</span><span class="p">,</span>
+        <span class="s2">&quot;envelope_delta_v&quot;</span><span class="p">:</span> <span class="n">design_envelope</span><span class="o">.</span><span class="n">design_delta_v_capability</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
-<span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">passed</span>
 </pre></div>
 </div>
-<section id="rules-and-limitations">
-<h3>Rules and limitations<a class="headerlink" href="#rules-and-limitations" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p><strong>Names</strong> — An input name and an attribute name on the <strong>same</strong> requirement cannot collide.</p></li>
-<li><p><strong>Order</strong> — Declare all <strong><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong> calls <strong>before</strong> <strong><code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code></strong> for that requirement.</p></li>
-<li><p><strong>Allocations</strong> — If a requirement declares any <strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong>, it must have <strong>at most one</strong> <code class="docutils literal notranslate"><span class="pre">allocate(...)</span></code> edge in the configured model. Multiple allocations would make a single derived slot ambiguous; split the model or duplicate requirement structure if you truly need multiple targets.</p></li>
-</ul>
-<p>This split matches common MBSE practice: <strong>inputs</strong> are where the design feeds the requirement, and <strong>attributes</strong> are properties or derived quantities <strong>owned by</strong> the requirement for acceptance and reporting.</p>
 </section>
+<section id="rules-and-limitations-leaf-reqcheck">
+<h3>Rules and limitations (leaf reqcheck)<a class="headerlink" href="#rules-and-limitations-leaf-reqcheck" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Names — An input name and an attribute name on the <strong>same</strong> requirement cannot collide.</p></li>
+<li><p>Order — Declare all <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> calls <strong>before</strong> <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code>.</p></li>
+<li><p>Allocations — If a requirement declares <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>, it must have <strong>at most one</strong> <code class="docutils literal notranslate"><span class="pre">allocate(...)</span></code> edge.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="summary-which-pattern-to-use">
+<h2>Summary: which pattern to use<a class="headerlink" href="#summary-which-pattern-to-use" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Situation</p></th>
+<th class="head"><p>Pattern</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>New requirement package</strong> (99% of cases)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">parameter</span></code> + <code class="docutils literal notranslate"><span class="pre">attribute</span></code> + <code class="docutils literal notranslate"><span class="pre">constraint</span></code> on the package</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Formal leaf acceptance test</strong> (rare, INCOSE-style)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> + <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> + <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> on a leaf <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Traceability text</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">model.requirement(id,</span> <span class="pre">text)</span></code> + <code class="docutils literal notranslate"><span class="pre">model.allocate(req,</span> <span class="pre">part)</span></code> + <code class="docutils literal notranslate"><span class="pre">model.references(req,</span> <span class="pre">citation)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Default to the first row.  Always.</strong></p>
 </section>
 </section>
 
@@ -468,15 +515,20 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Concept: Requirements (inputs, derived attributes, acceptance)</a><ul>
-<li><a class="reference internal" href="#wired-inputs-requirement-input">Wired inputs (<code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>)</a><ul>
-<li><a class="reference internal" href="#why-this-pattern">Why this pattern</a></li>
+<li><a class="reference internal" href="#">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a><ul>
+<li><a class="reference internal" href="#the-default-pattern-package-level-parameter-attribute-constraint">The default pattern: package-level <code class="docutils literal notranslate"><span class="pre">parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint</span></code></a><ul>
+<li><a class="reference internal" href="#when-to-use-this-pattern">When to use this pattern</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#derived-values-on-the-requirement-requirement-attribute">Derived values on the requirement (<code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>)</a><ul>
-<li><a class="reference internal" href="#rules-and-limitations">Rules and limitations</a></li>
+<li><a class="reference internal" href="#leaf-model-requirement-vs-composable-requirement">Leaf <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code> vs composable <code class="docutils literal notranslate"><span class="pre">Requirement</span></code></a></li>
+<li><a class="reference internal" href="#package-level-value-surface">Package-level value surface</a></li>
+<li><a class="reference internal" href="#advanced-rare-leaf-level-requirement-input-requirement-attribute-requirement-accept-expr">Advanced (rare): leaf-level <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code></a><ul>
+<li><a class="reference internal" href="#when-the-leaf-reqcheck-pattern-is-appropriate">When the leaf reqcheck pattern is appropriate</a></li>
+<li><a class="reference internal" href="#example-mission-closure-the-rare-case">Example (mission closure — the rare case)</a></li>
+<li><a class="reference internal" href="#rules-and-limitations-leaf-reqcheck">Rules and limitations (leaf reqcheck)</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#summary-which-pattern-to-use">Summary: which pattern to use</a></li>
 </ul>
 </li>
 </ul>

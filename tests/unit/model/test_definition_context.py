@@ -84,11 +84,23 @@ class TestConnections:
         assert ctx.edges[0]["carrying"] == "power"
 
     def test_connect_rejects_non_port(self) -> None:
-        ctx = ModelDefinitionContext(System)
+        ctx = ModelDefinitionContext(Part)
         attr = ctx.attribute("mass", unit="kg")
         port = ctx.port("out", direction="out")
         with pytest.raises(ModelDefinitionError, match="PortRef"):
             ctx.connect(attr, port)  # type: ignore[arg-type]
+
+
+class TestSystemRestrictions:
+    def test_system_attribute_declaration_rejected(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        with pytest.raises(ModelDefinitionError, match="System\\.define\\(\\) may not declare attribute"):
+            ctx.attribute("mass", unit="kg")
+
+    def test_system_constraint_declaration_rejected(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        with pytest.raises(ModelDefinitionError, match="System\\.define\\(\\) may not declare constraint"):
+            ctx.constraint("mass_positive", expr=True)
 
 
 class TestAllocations:
@@ -116,7 +128,18 @@ class TestAllocations:
         ctx = ModelDefinitionContext(System)
         assert ctx.part().path == ctx.root_block().path == ()
 
-    def test_allocate_to_root_target_matches_allocate_root_block(self) -> None:
+    def test_allocate_to_system_target_matches_allocate_root_block(self) -> None:
+        ctx = ModelDefinitionContext(System)
+        req = ctx.requirement("req1", "Shall do X.")
+        ctx.allocate_to_system(req)
+        assert len(ctx.edges) == 1
+        assert ctx.edges[0]["kind"] == "allocate"
+        ctx2 = ModelDefinitionContext(System)
+        req2 = ctx2.requirement("req1", "Shall do X.")
+        ctx2.allocate(req2, ctx2.root_block())
+        assert ctx.edges[0]["target"].path == ctx2.edges[0]["target"].path
+
+    def test_allocate_to_root_alias_matches_allocate_to_system(self) -> None:
         ctx = ModelDefinitionContext(System)
         req = ctx.requirement("req1", "Shall do X.")
         ctx.allocate_to_root(req)
@@ -124,7 +147,7 @@ class TestAllocations:
         assert ctx.edges[0]["kind"] == "allocate"
         ctx2 = ModelDefinitionContext(System)
         req2 = ctx2.requirement("req1", "Shall do X.")
-        ctx2.allocate(req2, ctx2.root_block())
+        ctx2.allocate_to_system(req2)
         assert ctx.edges[0]["target"].path == ctx2.edges[0]["target"].path
 
 

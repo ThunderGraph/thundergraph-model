@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -284,9 +284,11 @@
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
 <p>Static HTML is produced locally (or in CI in Phase 6) with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/user_docs<span class="w"> </span>docs/user_docs/_build/html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>thundergraph-model
+uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>sphinx-build<span class="w"> </span>-W<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/user_docs<span class="w"> </span>docs/user_docs/_build/html
 </pre></div>
 </div>
+<p>Use <strong><code class="docutils literal notranslate"><span class="pre">-W</span></code></strong> (warnings as errors) so broken autodoc cross-references fail the build, matching the project documentation gate.</p>
 <p>Publish the <strong>contents</strong> of <code class="docutils literal notranslate"><span class="pre">docs/user_docs/_build/html</span></code> to your hosting target (Read the Docs, GitHub Pages, or object storage). Align <strong>site version</strong> with <strong>package version</strong> policy when you formalize releases.</p>
 </section>
 <section id="references">

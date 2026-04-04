@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -880,11 +880,7 @@
     <span class="k">if</span> <span class="n">chosen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">merge_name</span> <span class="ow">and</span> <span class="n">run_merge</span><span class="p">:</span>
         <span class="n">dispatch_merge</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">part</span><span class="p">,</span> <span class="n">merge_name</span><span class="p">,</span> <span class="n">trace</span><span class="o">=</span><span class="n">trace</span><span class="p">)</span>
         <span class="n">merge_ran</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">outcome</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DecisionDispatchOutcome</span><span class="o">.</span><span class="n">ACTION_RAN</span>
-        <span class="k">if</span> <span class="n">chosen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">DecisionDispatchOutcome</span><span class="o">.</span><span class="n">NO_ACTION</span>
-    <span class="p">)</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">DecisionDispatchOutcome</span><span class="o">.</span><span class="n">ACTION_RAN</span> <span class="k">if</span> <span class="n">chosen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">DecisionDispatchOutcome</span><span class="o">.</span><span class="n">NO_ACTION</span>
     <span class="k">return</span> <span class="n">DecisionDispatchResult</span><span class="p">(</span>
         <span class="n">outcome</span><span class="o">=</span><span class="n">outcome</span><span class="p">,</span>
         <span class="n">chosen_action</span><span class="o">=</span><span class="n">chosen</span><span class="p">,</span>
@@ -1098,15 +1094,17 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">out</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;transition&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
-            <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
-            <span class="s2">&quot;event_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">event_name</span><span class="p">,</span>
-            <span class="s2">&quot;from_state&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">from_state</span><span class="p">,</span>
-            <span class="s2">&quot;to_state&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">to_state</span><span class="p">,</span>
-            <span class="s2">&quot;effect_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">effect_name</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;transition&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
+                <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
+                <span class="s2">&quot;event_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">event_name</span><span class="p">,</span>
+                <span class="s2">&quot;from_state&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">from_state</span><span class="p">,</span>
+                <span class="s2">&quot;to_state&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">to_state</span><span class="p">,</span>
+                <span class="s2">&quot;effect_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">effect_name</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">item_flows</span><span class="p">:</span>
         <span class="n">rec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;item_flow&quot;</span><span class="p">,</span>
@@ -1119,35 +1117,43 @@
             <span class="n">rec</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">payload</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">decision_steps</span><span class="p">:</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;decision&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
-            <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
-            <span class="s2">&quot;decision_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">decision_name</span><span class="p">,</span>
-            <span class="s2">&quot;chosen_action&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">chosen_action</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;decision&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
+                <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
+                <span class="s2">&quot;decision_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">decision_name</span><span class="p">,</span>
+                <span class="s2">&quot;chosen_action&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">chosen_action</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">fork_join_steps</span><span class="p">:</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;fork_join&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
-            <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
-            <span class="s2">&quot;block_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">block_name</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;fork_join&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
+                <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
+                <span class="s2">&quot;block_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">block_name</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">merge_steps</span><span class="p">:</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;merge&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
-            <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
-            <span class="s2">&quot;merge_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">merge_name</span><span class="p">,</span>
-            <span class="s2">&quot;then_action&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">then_action</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;merge&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
+                <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
+                <span class="s2">&quot;merge_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">merge_name</span><span class="p">,</span>
+                <span class="s2">&quot;then_action&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">then_action</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">sequence_steps</span><span class="p">:</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;sequence&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
-            <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
-            <span class="s2">&quot;sequence_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">sequence_name</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;sequence&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_index&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">step_index</span><span class="p">,</span>
+                <span class="s2">&quot;part_path&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">part_path</span><span class="p">,</span>
+                <span class="s2">&quot;sequence_name&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">sequence_name</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
     <span class="n">out</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;step_index&quot;</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">out</span></div>
 

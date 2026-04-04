@@ -42,8 +42,6 @@ def test_cargo_jet_program_compiles() -> None:
     assert "nodes" in art
     assert "scenario_payload_mass_kg" in art["nodes"]
     assert "mission_desk_baseline_max_range_m" in art["nodes"]
-    assert art["nodes"]["mission_range_margin_m"]["kind"] == "attribute"
-    assert "_computed_by" in art["nodes"]["mission_range_margin_m"]["metadata"]
     assert "c_far25" in art["nodes"]
     assert art["nodes"]["l1"]["kind"] == "requirement_block"
     ac_key = next(k for k in art["child_types"] if k.endswith("Aircraft"))
@@ -51,6 +49,8 @@ def test_cargo_jet_program_compiles() -> None:
     assert ac_nodes["fuselage"]["kind"] == "part"
     assert ac_nodes["operating_empty_mass_kg"]["kind"] == "attribute"
     assert ac_nodes["modeled_max_payload_kg"]["kind"] == "attribute"
+    assert ac_nodes["mission_range_margin_m"]["kind"] == "attribute"
+    assert "_computed_by" in ac_nodes["mission_range_margin_m"]["metadata"]
     ac_child = art["child_types"][ac_key]["child_types"]
     wing_key = next(k for k in ac_child if k.endswith("WingAssembly"))
     wing_nodes = ac_child[wing_key]["nodes"]
@@ -66,6 +66,8 @@ def test_cargo_jet_program_instantiate_and_evaluate_parameters() -> None:
         cm.scenario_design_range_m: Quantity(8_000_000, m),
         cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
         cm.l1.mission.reserved_operational_buffer_kg: Quantity(0, kg),
+        ac.scenario_payload_mass_kg: Quantity(95_000, kg),
+        ac.scenario_design_range_m: Quantity(8_000_000, m),
         ac.modeled_max_design_range_m: Quantity(9_000_000, m),
         ac.notional_mzfw_kg: Quantity(240_000, kg),
         ac.notional_mtow_kg: Quantity(280_000, kg),
@@ -82,7 +84,7 @@ def test_cargo_jet_program_instantiate_and_evaluate_parameters() -> None:
     assert not result.failures, result.failures
     assert cm.root is not None
     out = result.outputs
-    margin = out[cm.mission_range_margin_m.stable_id]
+    margin = out[ac.mission_range_margin_m.stable_id]
     assert margin > Quantity(2_000_000, m)
     assert margin < Quantity(2_100_000, m)
     wing_i = out[ac.wing.wing_structural_intensity_kg_per_m.stable_id]
@@ -98,6 +100,8 @@ def test_cargo_jet_configured_model_evaluate_facade() -> None:
         cm.scenario_design_range_m: Quantity(8_000_000, m),
         cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
         cm.l1.mission.reserved_operational_buffer_kg: Quantity(0, kg),
+        ac.scenario_payload_mass_kg: Quantity(95_000, kg),
+        ac.scenario_design_range_m: Quantity(8_000_000, m),
         ac.modeled_max_design_range_m: Quantity(9_000_000, m),
         ac.notional_mzfw_kg: Quantity(240_000, kg),
         ac.notional_mtow_kg: Quantity(280_000, kg),
@@ -150,6 +154,8 @@ def test_cargo_jet_extract_and_snapshot_report() -> None:
         cm.scenario_design_range_m: Quantity(8_000_000, m),
         cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
         cm.l1.mission.reserved_operational_buffer_kg: Quantity(0, kg),
+        ac.scenario_payload_mass_kg: Quantity(95_000, kg),
+        ac.scenario_design_range_m: Quantity(8_000_000, m),
         ac.modeled_max_design_range_m: Quantity(9_000_000, m),
         ac.notional_mzfw_kg: Quantity(240_000, kg),
         ac.notional_mtow_kg: Quantity(280_000, kg),
@@ -190,6 +196,8 @@ def test_extract_cargo_jet_includes_provenance_when_ctx_passed() -> None:
         cm.scenario_design_range_m: Quantity(8_000_000, m),
         cm.mission_desk_baseline_max_range_m: Quantity(10_000_000, m),
         cm.l1.mission.reserved_operational_buffer_kg: Quantity(0, kg),
+        ac.scenario_payload_mass_kg: Quantity(95_000, kg),
+        ac.scenario_design_range_m: Quantity(8_000_000, m),
         ac.modeled_max_design_range_m: Quantity(9_000_000, m),
         ac.notional_mzfw_kg: Quantity(240_000, kg),
         ac.notional_mtow_kg: Quantity(280_000, kg),
@@ -219,6 +227,8 @@ def test_stress_scenario_negative_mission_margin() -> None:
         cm.scenario_design_range_m: Quantity(8_000_000, m),
         cm.mission_desk_baseline_max_range_m: Quantity(6_000_000, m),
         cm.l1.mission.reserved_operational_buffer_kg: Quantity(0, kg),
+        ac.scenario_payload_mass_kg: Quantity(95_000, kg),
+        ac.scenario_design_range_m: Quantity(8_000_000, m),
         ac.modeled_max_design_range_m: Quantity(9_000_000, m),
         ac.notional_mzfw_kg: Quantity(240_000, kg),
         ac.notional_mtow_kg: Quantity(280_000, kg),
@@ -233,7 +243,7 @@ def test_stress_scenario_negative_mission_margin() -> None:
     }
     result = cm.evaluate(inputs=inputs)
     assert not result.passed
-    margin = result.outputs[cm.mission_range_margin_m.stable_id]
+    margin = result.outputs[ac.mission_range_margin_m.stable_id]
     assert margin < Quantity(0, m)
     data = extract_cargo_jet_evaluation_report(cm, result)
     assert not data["thesis"]["margin_non_negative"]

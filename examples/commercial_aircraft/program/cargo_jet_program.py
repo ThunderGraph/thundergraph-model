@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from commercial_aircraft.integrations.bindings import make_mission_range_margin_binding
 from commercial_aircraft.product.aircraft import Aircraft
 from commercial_aircraft.program.l1_requirement_packages import L1RequirementsRoot
 from commercial_aircraft.program.mission_context import CITATION_RETRIEVED_ISO
@@ -12,7 +11,6 @@ from unitflow.catalogs.si import kg, m
 
 from tg_model.model.definition_context import parameter_ref
 from tg_model.model.elements import System
-from tg_model.model.expr import sum_attributes
 
 
 class CargoJetProgram(System):
@@ -22,17 +20,7 @@ class CargoJetProgram(System):
     def define(cls, model: Any) -> None:
         model.parameter("scenario_payload_mass_kg", unit=kg)
         model.parameter("scenario_design_range_m", unit=m)
-
-        mission_binding = make_mission_range_margin_binding(model, CargoJetProgram)
-        mission_range_margin_m = model.attribute(
-            "mission_range_margin_m",
-            unit=m,
-            computed_by=mission_binding,
-        )
-        model.constraint(
-            "mission_range_margin_non_negative",
-            expr=mission_range_margin_m >= 0 * m,
-        )
+        model.parameter("mission_desk_baseline_max_range_m", unit=m)
 
         citations = {
             "c_acaps": model.citation(
@@ -60,29 +48,6 @@ class CargoJetProgram(System):
 
         l1 = model.requirement_package("l1", L1RequirementsRoot)
         aircraft = model.part("aircraft", Aircraft)
-        # Anonymous configured root part: allocation target for regulatory / context items that sit
-        # at program scope instead of under the named ``aircraft`` subtree.
-        program_scope_part = model.part()
-
-        scenario_payload = parameter_ref(CargoJetProgram, "scenario_payload_mass_kg")
-        scenario_range = parameter_ref(CargoJetProgram, "scenario_design_range_m")
-        model.constraint(
-            "notional_takeoff_mass_closure",
-            expr=aircraft.notional_mtow_kg
-            >= sum_attributes(
-                aircraft.operating_empty_mass_kg,
-                scenario_payload,
-                aircraft.notional_trip_fuel_kg,
-            ),
-        )
-        model.constraint(
-            "design_mission_payload_within_structural_envelope",
-            expr=scenario_payload <= aircraft.modeled_max_payload_kg,
-        )
-        model.constraint(
-            "design_mission_range_within_modeled_envelope",
-            expr=scenario_range <= aircraft.modeled_max_design_range_m,
-        )
 
         # --- Citations and allocation for each Level-1 requirement (explicit, same order as blocks) ---
 
@@ -110,7 +75,7 @@ class CargoJetProgram(System):
 
         r_part25 = l1.airworthiness.req_transport_category_part25
         model.references(r_part25, citations["c_far25"])
-        model.allocate(r_part25, program_scope_part)
+        model.allocate_to_system(r_part25)
 
         r_airport = l1.product.req_airport_planning_representative
         model.references(r_airport, citations["c_acaps"])
@@ -124,4 +89,4 @@ class CargoJetProgram(System):
 
         r_ft = l1.airworthiness.req_flight_test_methodology_alignment
         model.references(r_ft, citations["c_ac25_7c"])
-        model.allocate(r_ft, program_scope_part)
+        model.allocate_to_system(r_ft)

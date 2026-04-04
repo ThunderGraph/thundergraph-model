@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -276,7 +281,16 @@
 <span class="sd">    slot, not the per-run mutable value. Per-run state lives in RunContext.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;stable_id&quot;</span><span class="p">,</span> <span class="s2">&quot;instance_path&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="s2">&quot;definition_type&quot;</span><span class="p">,</span> <span class="s2">&quot;definition_path&quot;</span><span class="p">,</span> <span class="s2">&quot;has_expr&quot;</span><span class="p">,</span> <span class="s2">&quot;has_computed_by&quot;</span><span class="p">)</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;definition_path&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;definition_type&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;has_computed_by&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;has_expr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;instance_path&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kind&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;metadata&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;stable_id&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

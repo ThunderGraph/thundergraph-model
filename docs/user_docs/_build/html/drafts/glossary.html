@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -275,7 +275,7 @@
 <h1>Glossary<a class="headerlink" href="#glossary" title="Link to this heading">¶</a></h1>
 <section id="element">
 <h2>Element<a class="headerlink" href="#element" title="Link to this heading">¶</a></h2>
-<p>Base authoring type. <code class="docutils literal notranslate"><span class="pre">System</span></code>, <code class="docutils literal notranslate"><span class="pre">Part</span></code>, and <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code> derive from this.</p>
+<p>Base authoring type. <code class="docutils literal notranslate"><span class="pre">System</span></code>, <code class="docutils literal notranslate"><span class="pre">Part</span></code>, and <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> derive from this.</p>
 </section>
 <section id="system">
 <h2>System<a class="headerlink" href="#system" title="Link to this heading">¶</a></h2>
@@ -285,16 +285,16 @@
 <h2>Part<a class="headerlink" href="#part" title="Link to this heading">¶</a></h2>
 <p>Composable structural type under a system.</p>
 </section>
-<section id="requirementblock">
-<h2>RequirementBlock<a class="headerlink" href="#requirementblock" title="Link to this heading">¶</a></h2>
-<p>Nested requirements subtree type. Supports requirements, citations, nested blocks, and requirement-local inputs.</p>
+<section id="requirement">
+<h2>Requirement<a class="headerlink" href="#requirement" title="Link to this heading">¶</a></h2>
+<p>Composable <strong>requirements package</strong> type (nested leaf requirements, inputs, attributes, citations). Register on the root with <strong><code class="docutils literal notranslate"><span class="pre">model.requirement_package</span></code></strong>.</p>
 </section>
 <section id="modeldefinitioncontext">
 <h2>ModelDefinitionContext<a class="headerlink" href="#modeldefinitioncontext" title="Link to this heading">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">model</span></code> argument in <code class="docutils literal notranslate"><span class="pre">define(cls,</span> <span class="pre">model)</span></code>. Records declarations and edges during type authoring.</p>
 </section>
-<section id="ref-partref-attributeref-requirementblockref">
-<h2>Ref / PartRef / AttributeRef / RequirementBlockRef<a class="headerlink" href="#ref-partref-attributeref-requirementblockref" title="Link to this heading">¶</a></h2>
+<section id="ref-partref-attributeref-requirementref">
+<h2>Ref / PartRef / AttributeRef / RequirementRef<a class="headerlink" href="#ref-partref-attributeref-requirementref" title="Link to this heading">¶</a></h2>
 <p>Symbolic references created at definition time. Not runtime instances.</p>
 </section>
 <section id="compile-type-compile">
@@ -339,11 +339,11 @@
 </section>
 <section id="requirement-input">
 <h2>requirement_input<a class="headerlink" href="#requirement-input" title="Link to this heading">¶</a></h2>
-<p>RequirementBlock-only declaration of requirement-local symbolic inputs.</p>
+<p>Composable <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> authoring only: declaration of requirement-local symbolic inputs.</p>
 </section>
 <section id="requirement-accept-expr">
 <h2>requirement_accept_expr<a class="headerlink" href="#requirement-accept-expr" title="Link to this heading">¶</a></h2>
-<p>RequirementBlock-only method that attaches executable acceptance expression to a requirement.</p>
+<p>Composable <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> authoring only: attaches executable acceptance expression to a requirement.</p>
 </section>
 <section id="externalcomputebinding">
 <h2>ExternalComputeBinding<a class="headerlink" href="#externalcomputebinding" title="Link to this heading">¶</a></h2>
@@ -422,9 +422,9 @@
 <li><a class="reference internal" href="#element">Element</a></li>
 <li><a class="reference internal" href="#system">System</a></li>
 <li><a class="reference internal" href="#part">Part</a></li>
-<li><a class="reference internal" href="#requirementblock">RequirementBlock</a></li>
+<li><a class="reference internal" href="#requirement">Requirement</a></li>
 <li><a class="reference internal" href="#modeldefinitioncontext">ModelDefinitionContext</a></li>
-<li><a class="reference internal" href="#ref-partref-attributeref-requirementblockref">Ref / PartRef / AttributeRef / RequirementBlockRef</a></li>
+<li><a class="reference internal" href="#ref-partref-attributeref-requirementref">Ref / PartRef / AttributeRef / RequirementRef</a></li>
 <li><a class="reference internal" href="#compile-type-compile">compile (type compile)</a></li>
 <li><a class="reference internal" href="#configuredmodel">ConfiguredModel</a></li>
 <li><a class="reference internal" href="#valueslot">ValueSlot</a></li>

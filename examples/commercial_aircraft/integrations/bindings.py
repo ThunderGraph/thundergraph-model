@@ -16,15 +16,18 @@ from tg_model.model.definition_context import parameter_ref
 from tg_model.model.refs import AttributeRef
 
 
-def make_mission_range_margin_binding(model: Any, root_block_type: type) -> ExternalComputeBinding:
-    """Program-root mission desk: margin in metres (synthetic max range minus requested design range)."""
-    baseline = model.parameter("mission_desk_baseline_max_range_m", unit=m)
+def make_mission_range_margin_binding(
+    *,
+    root_block_type: type,
+    baseline_max_range_m: AttributeRef,
+) -> ExternalComputeBinding:
+    """Mission desk binding using root-scenario inputs and a declared baseline range."""
     return ExternalComputeBinding(
         AtlasMissionDesk(),
         inputs={
             "payload_kg": parameter_ref(root_block_type, "scenario_payload_mass_kg"),
             "design_range_m": parameter_ref(root_block_type, "scenario_design_range_m"),
-            "baseline_max_range_m": baseline,
+            "baseline_max_range_m": baseline_max_range_m,
         },
     )
 

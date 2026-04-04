@@ -108,8 +108,10 @@ def attribute_ref(root_block_type: type, name: str) -> AttributeRef:
     """Return a reference to an **attribute** on the configured (or compiling) root type.
 
     Same resolution order as :func:`parameter_ref`, but the named node must be ``kind='attribute'``.
-    Use when a nested ``Requirement`` (or part) should derive package slots from root-level
-    ``model.attribute`` values (for example outputs of ``computed_by=`` external bindings).
+    Use when a nested ``Requirement`` (or part) should derive package slots from an allowed
+    root-block attribute, such as a configured root :class:`~tg_model.model.elements.Part`.
+    Root :class:`~tg_model.model.elements.System` types may not declare ``attribute(...)``;
+    move those derived values into an owned part or requirement package instead.
     """
     meta: dict[str, Any]
 
@@ -377,6 +379,22 @@ class ModelDefinitionContext:
         self.nodes[name] = decl
         return decl
 
+    def _reject_system_value_declaration(self, kind: str) -> None:
+        """Reject root-level ``System`` value/check authoring that the DSL no longer permits."""
+        from tg_model.model.elements import System
+
+        if not issubclass(self.owner_type, System):
+            return
+        if kind == "attribute":
+            raise ModelDefinitionError(
+                "System.define() may not declare attribute(...); move the value to a Part or Requirement package."
+            )
+        if kind == "constraint":
+            raise ModelDefinitionError(
+                "System.define() may not declare constraint(...); move the check to a Part or Requirement package."
+            )
+        raise ModelDefinitionError(f"Unsupported System declaration restriction for kind {kind!r}")
+
     @overload
     def part(self) -> PartRef: ...
 
@@ -507,6 +525,10 @@ class ModelDefinitionContext:
     ) -> AttributeRef:
         """Declare an attribute (bindable/computed value slot).
 
+        Root ``System`` types may not declare attributes. Keep ``System.define()``
+        focused on composition and top-level parameters; move derived values into
+        an owned :class:`~tg_model.model.elements.Part` or requirement package.
+
         Parameters
         ----------
         name : str
@@ -528,13 +550,14 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            On duplicate name or frozen context.
+            On duplicate name, frozen context, or when called from ``System.define()``.
 
         Notes
         -----
         **Chaining** ``a + b + c`` is left-associative; use ``a + (b + c)``, ``.sym``, or
         :func:`~tg_model.model.expr.sum_attributes` to avoid mixed ``Expr`` / ``AttributeRef`` errors.
         """
+        self._reject_system_value_declaration("attribute")
         meta = {**metadata}
         if expr is not None:
             meta["_expr"] = expr
@@ -561,7 +584,7 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            On duplicate name or frozen context.
+            On duplicate name, frozen context, or when called from ``System.define()``.
         """
         self._register_node(name=name, kind="parameter", metadata=metadata)
         return self._value_ref_for_current_owner(name, "parameter", dict(metadata))
@@ -677,7 +700,14 @@ class ModelDefinitionContext:
         )
 
     def requirement_input(self, requirement: Ref, name: str, **metadata: Any) -> AttributeRef:
-        """Declare an input slot on ``requirement`` (composable :class:`~tg_model.model.elements.Requirement` only).
+        """**Advanced / rare** — leaf reqcheck input slot on ``requirement``.
+
+        .. warning::
+
+           For **new requirement packages**, use **``model.parameter``** at package scope
+           instead.  ``requirement_input`` is a low-level helper for INCOSE-style leaf
+           acceptance rows wired via ``allocate(..., inputs=...)``.  See the
+           ``Requirement`` class docstring.
 
         Registers a value-bearing symbol under the configured root (threaded
         ``symbol_owner`` / ``symbol_path_prefix``). Bind each input with
@@ -752,7 +782,13 @@ class ModelDefinitionContext:
         expr: Any,
         **metadata: Any,
     ) -> AttributeRef:
-        """Declare a derived value on ``requirement`` (composable :class:`~tg_model.model.elements.Requirement` only).
+        """**Advanced / rare** — derived value on a leaf ``requirement``.
+
+        .. warning::
+
+           For **new requirement packages**, use **``model.attribute``** at package scope
+           instead.  ``requirement_attribute`` is a low-level helper for INCOSE-style leaf
+           acceptance rows.  See the ``Requirement`` class docstring.
 
         Registers a requirement-local **attribute** whose value is computed from an
         expression (typically over :meth:`requirement_input` symbols, other
@@ -838,7 +874,13 @@ class ModelDefinitionContext:
         )
 
     def requirement_accept_expr(self, requirement: Ref, *, expr: Any) -> None:
-        """Set executable acceptance for ``requirement`` (after :meth:`requirement_input` calls).
+        """**Advanced / rare** — set executable acceptance for a leaf ``requirement``.
+
+        .. warning::
+
+           For **new requirement packages**, use **``model.constraint``** at package scope
+           instead.  ``requirement_accept_expr`` is a low-level helper for INCOSE-style leaf
+           acceptance rows.  See the ``Requirement`` class docstring.
 
         Parameters
         ----------
@@ -929,6 +971,10 @@ class ModelDefinitionContext:
     def constraint(self, name: str, *, expr: Any, **metadata: Any) -> Ref:
         """Declare a constraint (boolean check over realized slot values).
 
+        Root ``System`` types may not declare constraints. Put executable checks on
+        the owning :class:`~tg_model.model.elements.Part` or requirement package so
+        the top-level system stays structural.
+
         Parameters
         ----------
         name : str
@@ -946,8 +992,9 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            On duplicate name or frozen context.
+            On duplicate name, frozen context, or when called from ``System.define()``.
         """
+        self._reject_system_value_declaration("constraint")
         meta = {"_expr": expr, **metadata}
         self._register_node(name=name, kind="constraint", metadata=meta)
         return Ref(
@@ -1568,8 +1615,23 @@ class ModelDefinitionContext:
             edge["_allocate_inputs"] = dict(inputs)
         self.edges.append(edge)
 
+    def allocate_to_system(self, requirement_ref: Ref) -> None:
+        """Preferred shorthand for ``allocate(requirement_ref, root_block())``.
+
+        Parameters
+        ----------
+        requirement_ref : Ref
+            Requirement to allocate to this type's structural system/root block.
+
+        Raises
+        ------
+        ModelDefinitionError
+            Same as :meth:`allocate`.
+        """
+        self.allocate(requirement_ref, self.root_block())
+
     def allocate_to_root(self, requirement_ref: Ref) -> None:
-        """Shorthand for ``allocate(requirement_ref, root_block())``.
+        """Compatibility alias for :meth:`allocate_to_system`.
 
         Parameters
         ----------
@@ -1581,7 +1643,7 @@ class ModelDefinitionContext:
         ModelDefinitionError
             Same as :meth:`allocate`.
         """
-        self.allocate(requirement_ref, self.root_block())
+        self.allocate_to_system(requirement_ref)
 
     def connect(
         self,

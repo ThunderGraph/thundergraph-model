@@ -148,7 +148,7 @@ def extract_cargo_jet_evaluation_report(
     specs = _L1_REPORT_ROWS
     ac = cm.aircraft
     outputs = dict(run_result.outputs)
-    margin_id = cm.mission_range_margin_m.stable_id
+    margin_id = ac.mission_range_margin_m.stable_id
     margin = outputs.get(margin_id)
 
     constraints = [

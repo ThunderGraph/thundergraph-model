@@ -37,7 +37,11 @@ Old class artifacts may still be cached.
 
 Use **`Requirement`** when requirements need **structure**, **ownership**, and **local** acceptance logic—same idea as using **`Part`** for structure, but for requirement namespaces.
 
-Register packages with **`model.requirement_package(name, type)`**. Bind design values with **`allocate(..., inputs=...)`** for **`requirement_input`** slots; use **`requirement_attribute`** when a **leaf** requirement needs its **own** derived quantities before acceptance; use **package-level** **`parameter`** / **`attribute`** / **`constraint`** when the **whole package** owns shared limits or derived values (see {doc}`concepts_requirements` and {doc}`quickstart`).
+Register packages with **`model.requirement_package(name, type)`**.
+
+> **Default:** Inside `Requirement.define()`, use **`model.parameter`**, **`model.attribute`**, and **`model.constraint`** at package scope — the same surface you use on `Part` / `System`. **This is the standard, recommended pattern for all new requirement packages.** Use `model.requirement(id, text)` for leaf traceability statements, and `model.allocate` / `model.references` for structural edges and citations.
+>
+> **Advanced (rare):** `requirement_input`, `requirement_attribute`, and `requirement_accept_expr` are low-level helpers for **INCOSE-style leaf acceptance rows** only. Use them when you need `summarize_requirement_satisfaction` per-requirement pass/fail rows wired through `allocate(..., inputs=...)`. **Do not use them as the default pattern.** If your check can be a package-level `constraint`, use that instead. See {doc}`concepts_requirements`.
 
 ### Upgrading from thundergraph-model before 0.2.0
 
@@ -45,9 +49,11 @@ Register packages with **`model.requirement_package(name, type)`**. Bind design 
 
 ## What is the difference between `requirement_input` and `requirement_attribute`?
 
-**`requirement_input`** declares **slots that you map** from the design at allocation time (`allocate(..., inputs={name: AttributeRef, ...})`). They are the usual way to feed scenario or part values into a requirement expression without globals.
+> **Note:** These are **advanced, rare helpers** for leaf-level INCOSE acceptance rows.  For new requirement packages, **use package-level `parameter` / `attribute` / `constraint` instead** — see {doc}`concepts_requirements`.
 
-**`requirement_attribute`** declares **values computed on the requirement** from an `expr=` (and `unit=`). Use them when acceptance depends on **intermediate math** that should live on the requirement, not on a part. Names must not overlap with inputs on the same requirement; declare attributes **before** `requirement_accept_expr`. If you use **`requirement_attribute`**, that requirement may only have **one** `allocate(...)` edge in the configured model (see {doc}`concepts_requirements`).
+**`requirement_input`** declares **slots that you map** from the design at allocation time (`allocate(..., inputs={name: AttributeRef, ...})`).
+
+**`requirement_attribute`** declares **values computed on the requirement** from an `expr=` (and `unit=`). Names must not overlap with inputs on the same requirement; declare attributes **before** `requirement_accept_expr`. If you use **`requirement_attribute`**, that requirement may only have **one** `allocate(...)` edge.
 
 ## Where do I start if I am new?
 

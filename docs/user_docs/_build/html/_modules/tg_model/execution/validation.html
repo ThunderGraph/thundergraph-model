@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -398,8 +398,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">deps</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">result</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
                 <span class="s2">&quot;rollup&quot;</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s2">&quot;Roll-up &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39; has no child dependencies — &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;the selector resolved to nothing&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Roll-up &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39; has no child dependencies — the selector resolved to nothing&quot;</span><span class="p">,</span>
                 <span class="n">path</span><span class="o">=</span><span class="n">node_id</span><span class="p">,</span>
             <span class="p">)</span>
 

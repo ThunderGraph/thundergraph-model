@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -284,18 +284,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">overload</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.refs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttributeRef</span><span class="p">,</span> <span class="n">PartRef</span><span class="p">,</span> <span class="n">PortRef</span><span class="p">,</span> <span class="n">Ref</span><span class="p">,</span> <span class="n">RequirementBlockRef</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.refs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttributeRef</span><span class="p">,</span> <span class="n">PartRef</span><span class="p">,</span> <span class="n">PortRef</span><span class="p">,</span> <span class="n">Ref</span><span class="p">,</span> <span class="n">RequirementRef</span>
 
 
-<div class="viewcode-block" id="ModelDefinitionError">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModelDefinitionError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when a model definition is invalid (duplicate names, wrong ref kind, frozen context).&quot;&quot;&quot;</span></div>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when a model definition is invalid (duplicate names, wrong ref kind, frozen context).&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="parameter_ref">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.parameter_ref">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.parameter_ref">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parameter_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a reference to a parameter on the configured (or compiling) root type.</span>
 
@@ -332,6 +329,7 @@
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    ModelDefinitionContext.parameter_ref</span>
+<span class="sd">    attribute_ref</span>
 <span class="sd">    requirement_ref</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
@@ -340,9 +338,7 @@
     <span class="k">if</span> <span class="n">compiled</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">node</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;parameter_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): no such node&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;parameter_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): no such node&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;parameter_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): expected kind &#39;parameter&#39;, &quot;</span>
@@ -365,8 +361,7 @@
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">decl</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;parameter&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;parameter_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): expected kind &#39;parameter&#39;, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">decl</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;parameter_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): expected kind &#39;parameter&#39;, got </span><span class="si">{</span><span class="n">decl</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">decl</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
 
@@ -379,13 +374,66 @@
 
 
 
+<div class="viewcode-block" id="attribute_ref">
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.attribute_ref">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">attribute_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a reference to an **attribute** on the configured (or compiling) root type.</span>
+
+<span class="sd">    Same resolution order as :func:`parameter_ref`, but the named node must be ``kind=&#39;attribute&#39;``.</span>
+<span class="sd">    Use when a nested ``Requirement`` (or part) should derive package slots from an allowed</span>
+<span class="sd">    root-block attribute, such as a configured root :class:`~tg_model.model.elements.Part`.</span>
+<span class="sd">    Root :class:`~tg_model.model.elements.System` types may not declare ``attribute(...)``;</span>
+<span class="sd">    move those derived values into an owned part or requirement package instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+    <span class="n">compiled</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="s2">&quot;_compiled_definition&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">compiled</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;attribute_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): no such node&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;attribute&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;attribute_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): expected kind &#39;attribute&#39;, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kind&#39;</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">active</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="s2">&quot;_tg_definition_context&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;attribute_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): type is not compiling and &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;not compiled; call </span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.compile() first, or declare &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;attributes on the root before nested types that reference them.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">decl</span><span class="p">:</span> <span class="n">NodeDecl</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">decl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;attribute_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): no such attribute &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(declare it on the root before nested types that reference it).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">decl</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;attribute&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;attribute_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">): expected kind &#39;attribute&#39;, got </span><span class="si">{</span><span class="n">decl</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">decl</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">AttributeRef</span><span class="p">(</span>
+        <span class="n">owner_type</span><span class="o">=</span><span class="n">root_block_type</span><span class="p">,</span>
+        <span class="n">path</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,),</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;attribute&quot;</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="requirement_ref">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.requirement_ref">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.requirement_ref">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">requirement_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a :class:`~tg_model.model.refs.Ref` to a requirement under the root type.</span>
 
 <span class="sd">    ``path`` is declaration names from the root (e.g. ``(&quot;mission&quot;, &quot;range&quot;)`` for</span>
-<span class="sd">    requirement ``range`` inside block ``mission``). Use from nested ``Part.define()``</span>
+<span class="sd">    requirement ``range`` inside package ``mission``). Use from nested ``Part.define()``</span>
 <span class="sd">    when dot notation from a :class:`~tg_model.model.refs.PartRef` is not available.</span>
 
 <span class="sd">    Parameters</span>
@@ -393,7 +441,8 @@
 <span class="sd">    root_block_type : type</span>
 <span class="sd">        Configured root type owning the requirement subtree.</span>
 <span class="sd">    path : tuple[str, ...]</span>
-<span class="sd">        Non-empty path of ``requirement_block`` / ``requirement`` segment names.</span>
+<span class="sd">        Non-empty path of segments: intermediate steps are **composable requirement packages**</span>
+<span class="sd">        (internal compiled kind ``requirement_block``); the last segment is a leaf **requirement**.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -410,12 +459,13 @@
 <span class="sd">    -----</span>
 <span class="sd">    Resolution matches :func:`parameter_ref`: prefer the compiled root artifact; while</span>
 <span class="sd">    compiling, the first segment comes from the active context and nested segments</span>
-<span class="sd">    from **compiled** requirement-block artifacts (eager compile when registering</span>
-<span class="sd">    via :meth:`ModelDefinitionContext.requirement_block`).</span>
+<span class="sd">    from **compiled** composable-requirement artifacts (eager compile when registering</span>
+<span class="sd">    via :meth:`ModelDefinitionContext.requirement_package`).</span>
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    parameter_ref</span>
+<span class="sd">    attribute_ref</span>
 <span class="sd">    ModelDefinitionContext.requirement_ref</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
@@ -434,8 +484,7 @@
             <span class="n">node</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): no node </span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;at suffix index </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): no node </span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2"> at suffix index </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="n">kind</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span>
             <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="p">{}))</span>
@@ -455,21 +504,19 @@
             <span class="k">if</span> <span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement_block&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): intermediate segment &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2"> must be requirement_block, got </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2"> must be a composable requirement package (internal kind &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;requirement_block&#39;), got </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="n">bt</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">bt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): missing target_type &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;for block </span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): missing target_type for package </span><span class="si">{</span><span class="n">segment</span><span class="si">!r}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.compile_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">_requirement_block_compiled_artifact</span>
 
             <span class="n">current</span> <span class="o">=</span> <span class="n">_requirement_block_compiled_artifact</span><span class="p">(</span><span class="n">bt</span><span class="p">)</span>
             <span class="n">tr</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_type_registry&quot;</span><span class="p">,</span> <span class="p">{})</span>
-        <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): unreachable&quot;</span>
-        <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">original_path</span><span class="si">!r}</span><span class="s2">): unreachable&quot;</span><span class="p">)</span>
 
     <span class="n">compiled_root</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="s2">&quot;_compiled_definition&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">compiled_root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -478,21 +525,19 @@
     <span class="n">active</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="s2">&quot;_tg_definition_context&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): type is not compiling and &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;not compiled.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): type is not compiling and not compiled.&quot;</span>
         <span class="p">)</span>
     <span class="n">first</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">decl</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">first</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">decl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): no declaration </span><span class="si">{</span><span class="n">first</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;on the root (declare requirement blocks before parts that use requirement_ref).&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;on the root (declare requirement_package entries before parts that use requirement_ref).&quot;</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">decl</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): expected kind &#39;requirement&#39;, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">decl</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): expected kind &#39;requirement&#39;, got </span><span class="si">{</span><span class="n">decl</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">Ref</span><span class="p">(</span>
             <span class="n">owner_type</span><span class="o">=</span><span class="n">root_block_type</span><span class="p">,</span>
@@ -503,7 +548,8 @@
     <span class="k">if</span> <span class="n">decl</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement_block&quot;</span> <span class="ow">or</span> <span class="n">decl</span><span class="o">.</span><span class="n">target_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;requirement_ref(</span><span class="si">{</span><span class="n">root_block_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2">): first segment must be &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;requirement_block with target_type for a multi-segment path&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;a composable requirement package (internal kind &#39;requirement_block&#39;) with &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;target_type for a multi-segment path&quot;</span>
         <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.compile_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">_requirement_block_compiled_artifact</span>
 
@@ -523,7 +569,7 @@
 <span class="sd">    kind : str</span>
 <span class="sd">        Node kind string (``part``, ``parameter``, ``requirement``, ...).</span>
 <span class="sd">    target_type : type or None</span>
-<span class="sd">        Composed type for ``part`` / ``requirement_block`` when applicable.</span>
+<span class="sd">        Composed type for ``part`` or composable requirement package (internal kind ``requirement_block``).</span>
 <span class="sd">    metadata : dict</span>
 <span class="sd">        Kind-specific metadata (expressions, text, behavior hooks, ...).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -535,7 +581,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModelDefinitionContext</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Records declarations during ``define(cls, model)`` (the ``model`` argument).</span>
 
@@ -543,7 +589,7 @@
 <span class="sd">    All declaration names share one namespace per owner type; duplicates raise</span>
 <span class="sd">    :class:`ModelDefinitionError`.</span>
 
-<span class="sd">    For :class:`~tg_model.model.elements.RequirementBlock`, ``symbol_owner`` and</span>
+<span class="sd">    For :class:`~tg_model.model.elements.Requirement`, ``symbol_owner`` and</span>
 <span class="sd">    ``symbol_path_prefix`` thread the configured root type and path prefix so</span>
 <span class="sd">    :meth:`requirement_input` builds :class:`~tg_model.model.refs.AttributeRef`</span>
 <span class="sd">    paths the graph compiler resolves after :meth:`allocate` ``inputs=`` bindings.</span>
@@ -606,12 +652,26 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert a new node declaration or raise on duplicate name (internal).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_frozen</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Duplicate declaration &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate declaration &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">decl</span> <span class="o">=</span> <span class="n">NodeDecl</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="n">target_type</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">decl</span>
         <span class="k">return</span> <span class="n">decl</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reject_system_value_declaration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reject root-level ``System`` value/check authoring that the DSL no longer permits.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">System</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">System</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;attribute&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="s2">&quot;System.define() may not declare attribute(...); move the value to a Part or Requirement package.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constraint&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
+                <span class="s2">&quot;System.define() may not declare constraint(...); move the check to a Part or Requirement package.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported System declaration restriction for kind </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">part</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartRef</span><span class="p">:</span> <span class="o">...</span>
@@ -620,7 +680,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">part_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartRef</span><span class="p">:</span> <span class="o">...</span>
 
 <div class="viewcode-block" id="ModelDefinitionContext.part">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.part">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.part">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">part_type</span><span class="p">:</span> <span class="nb">type</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a child part, or return a ref to **this** block as the configured root.</span>
 
@@ -671,7 +731,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.root_block">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.root_block">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.root_block">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">root_block</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a ref to this type as the configured structural root (empty path).</span>
 
@@ -699,7 +759,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.owner_part">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.owner_part">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.owner_part">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">owner_part</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias of :meth:`root_block` (historical name).</span>
 
@@ -712,7 +772,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.port">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.port">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.port">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PortRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a structural port on this part or system.</span>
 
@@ -746,7 +806,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.attribute">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.attribute">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.attribute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -756,6 +816,10 @@
         <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare an attribute (bindable/computed value slot).</span>
+
+<span class="sd">        Root ``System`` types may not declare attributes. Keep ``System.define()``</span>
+<span class="sd">        focused on composition and top-level parameters; move derived values into</span>
+<span class="sd">        an owned :class:`~tg_model.model.elements.Part` or requirement package.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -778,29 +842,25 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ModelDefinitionError</span>
-<span class="sd">            On duplicate name or frozen context.</span>
+<span class="sd">            On duplicate name, frozen context, or when called from ``System.define()``.</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
 <span class="sd">        **Chaining** ``a + b + c`` is left-associative; use ``a + (b + c)``, ``.sym``, or</span>
 <span class="sd">        :func:`~tg_model.model.expr.sum_attributes` to avoid mixed ``Expr`` / ``AttributeRef`` errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reject_system_value_declaration</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">metadata</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">expr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;_expr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expr</span>
         <span class="k">if</span> <span class="n">computed_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;_computed_by&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">computed_by</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_register_node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">AttributeRef</span><span class="p">(</span>
-            <span class="n">owner_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span>
-            <span class="n">path</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,),</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;attribute&quot;</span><span class="p">,</span>
-            <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ref_for_current_owner</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.parameter">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.parameter">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.parameter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare an externally bindable parameter (input slot at evaluation time).</span>
 
@@ -819,33 +879,59 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ModelDefinitionError</span>
-<span class="sd">            On duplicate name or frozen context.</span>
+<span class="sd">            On duplicate name, frozen context, or when called from ``System.define()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_register_node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;parameter&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ref_for_current_owner</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;parameter&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">metadata</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_value_ref_for_current_owner</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;AttributeRef for ``parameter`` / ``attribute``: threaded under root when in a package.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_path_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">AttributeRef</span><span class="p">(</span>
+                <span class="n">owner_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_owner</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">AttributeRef</span><span class="p">(</span>
             <span class="n">owner_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span>
             <span class="n">path</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,),</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;parameter&quot;</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
-        <span class="p">)</span></div>
-
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="ModelDefinitionContext.parameter_ref">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.parameter_ref">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.parameter_ref">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parameter_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Call :func:`parameter_ref` (same resolution rules and errors).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">parameter_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="ModelDefinitionContext.attribute_ref">
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.attribute_ref">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attribute_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call :func:`attribute_ref` (same resolution rules and errors).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">attribute_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="ModelDefinitionContext.requirement_ref">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement_ref">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_ref">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">requirement_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Call :func:`requirement_ref` (same resolution rules and errors).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">requirement_ref</span><span class="p">(</span><span class="n">root_block_type</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.citation">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.citation">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.citation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">citation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare an external provenance node (standards, reports, URIs, clauses).</span>
 
@@ -880,7 +966,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.requirement">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">requirement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expr</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a requirement (human ``text`` plus optional executable acceptance).</span>
 
@@ -909,7 +995,7 @@
 <span class="sd">        -----</span>
 <span class="sd">        With ``expr=``, symbols must resolve against the :meth:`allocate` target subtree at compile</span>
 <span class="sd">        time, and an ``allocate`` edge must exist. Prefer :meth:`requirement_input` and</span>
-<span class="sd">        :meth:`requirement_accept_expr` inside :class:`~tg_model.model.elements.RequirementBlock`</span>
+<span class="sd">        :meth:`requirement_accept_expr` inside :class:`~tg_model.model.elements.Requirement`</span>
 <span class="sd">        when acceptance should use only requirement-local inputs bound via ``allocate(..., inputs=)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">}</span>
@@ -925,9 +1011,16 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.requirement_input">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement_input">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_input">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">requirement_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requirement</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare an input slot on ``requirement`` (RequirementBlock authoring only).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;**Advanced / rare** — leaf reqcheck input slot on ``requirement``.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">           For **new requirement packages**, use **``model.parameter``** at package scope</span>
+<span class="sd">           instead.  ``requirement_input`` is a low-level helper for INCOSE-style leaf</span>
+<span class="sd">           acceptance rows wired via ``allocate(..., inputs=...)``.  See the</span>
+<span class="sd">           ``Requirement`` class docstring.</span>
 
 <span class="sd">        Registers a value-bearing symbol under the configured root (threaded</span>
 <span class="sd">        ``symbol_owner`` / ``symbol_path_prefix``). Bind each input with</span>
@@ -953,16 +1046,12 @@
 <span class="sd">            If not inside a requirement block, ``requirement`` is wrong, inputs conflict with</span>
 <span class="sd">            ``requirement(..., expr=)``, or names duplicate.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">RequirementBlock</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_input(...) is only valid inside RequirementBlock.define()&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;requirement_input(...) is only valid inside Requirement.define()&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_input: first argument must be a requirement Ref from this block&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;requirement_input: first argument must be a requirement Ref from this package&quot;</span><span class="p">)</span>
         <span class="n">req_key</span> <span class="o">=</span> <span class="n">requirement</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">req_decl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">req_key</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">req_decl</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">req_decl</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span><span class="p">:</span>
@@ -1000,7 +1089,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.requirement_attribute">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement_attribute">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_attribute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">requirement_attribute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">requirement</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span>
@@ -1009,7 +1098,13 @@
         <span class="n">expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttributeRef</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a derived value on ``requirement`` (RequirementBlock authoring only).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;**Advanced / rare** — derived value on a leaf ``requirement``.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">           For **new requirement packages**, use **``model.attribute``** at package scope</span>
+<span class="sd">           instead.  ``requirement_attribute`` is a low-level helper for INCOSE-style leaf</span>
+<span class="sd">           acceptance rows.  See the ``Requirement`` class docstring.</span>
 
 <span class="sd">        Registers a requirement-local **attribute** whose value is computed from an</span>
 <span class="sd">        expression (typically over :meth:`requirement_input` symbols, other</span>
@@ -1045,15 +1140,13 @@
 <span class="sd">            If not in a block, ``requirement`` is wrong, names collide, ``expr`` is</span>
 <span class="sd">            missing, or acceptance was already set via ``requirement_accept_expr``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">RequirementBlock</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_attribute(...) is only valid inside RequirementBlock.define()&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;requirement_attribute(...) is only valid inside Requirement.define()&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_attribute: first argument must be a requirement Ref from this block&quot;</span>
+                <span class="s2">&quot;requirement_attribute: first argument must be a requirement Ref from this package&quot;</span>
             <span class="p">)</span>
         <span class="n">req_key</span> <span class="o">=</span> <span class="n">requirement</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">req_decl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">req_key</span><span class="p">)</span>
@@ -1098,9 +1191,15 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.requirement_accept_expr">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement_accept_expr">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_accept_expr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">requirement_accept_expr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requirement</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set executable acceptance for ``requirement`` (after :meth:`requirement_input` calls).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;**Advanced / rare** — set executable acceptance for a leaf ``requirement``.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">           For **new requirement packages**, use **``model.constraint``** at package scope</span>
+<span class="sd">           instead.  ``requirement_accept_expr`` is a low-level helper for INCOSE-style leaf</span>
+<span class="sd">           acceptance rows.  See the ``Requirement`` class docstring.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1115,15 +1214,13 @@
 <span class="sd">            If not in a block, ref is invalid, path is not a single segment, or acceptance</span>
 <span class="sd">            was already set via ``requirement(..., expr=)`` or a prior call.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">RequirementBlock</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_accept_expr(...) is only valid inside RequirementBlock.define()&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;requirement_accept_expr(...) is only valid inside Requirement.define()&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="s2">&quot;requirement_accept_expr: first argument must be a requirement Ref from this block&quot;</span>
+                <span class="s2">&quot;requirement_accept_expr: first argument must be a requirement Ref from this package&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">requirement</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
@@ -1141,58 +1238,67 @@
         <span class="n">decl</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;_accept_expr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expr</span></div>
 
 
-<div class="viewcode-block" id="ModelDefinitionContext.requirement_block">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.requirement_block">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">requirement_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">block_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RequirementBlockRef</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a nested requirements subtree (:class:`~tg_model.model.elements.RequirementBlock`).</span>
+<div class="viewcode-block" id="ModelDefinitionContext.requirement_package">
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_package">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">requirement_package</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">package_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RequirementRef</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a nested composable requirements package (:class:`~tg_model.model.elements.Requirement`).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        name : str</span>
-<span class="sd">            Block name in this owner&#39;s namespace.</span>
-<span class="sd">        block_type : type</span>
-<span class="sd">            Subclass of :class:`~tg_model.model.elements.RequirementBlock`.</span>
+<span class="sd">            Package name in this owner&#39;s namespace.</span>
+<span class="sd">        package_type : type</span>
+<span class="sd">            Subclass of :class:`~tg_model.model.elements.Requirement`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        RequirementBlockRef</span>
+<span class="sd">        RequirementRef</span>
 <span class="sd">            Dot-access ref to nested requirements.</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ModelDefinitionError</span>
-<span class="sd">            If ``block_type`` is not a requirement block, on duplicate name, or frozen context.</span>
+<span class="sd">            If ``package_type`` is not a composable requirement, on duplicate name, or frozen context.</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        Compiles ``block_type`` eagerly so :func:`requirement_ref` and sibling dot access work</span>
-<span class="sd">        within the same ``define()`` call.</span>
+<span class="sd">        Compiles ``package_type`` eagerly so :func:`requirement_ref` and sibling dot access work</span>
+<span class="sd">        within the same ``define()`` call. The internal node kind remains ``requirement_block`` for</span>
+<span class="sd">        artifact compatibility.</span>
+
+<span class="sd">        Inside ``package_type.define()``, package-level :meth:`parameter`, :meth:`attribute`, and</span>
+<span class="sd">        :meth:`constraint` are allowed when :class:`~tg_model.model.elements.Requirement` compile</span>
+<span class="sd">        policy permits them.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.compile_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_type</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequirementBlock</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.elements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">block_type</span><span class="p">,</span> <span class="n">RequirementBlock</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">package_type</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;requirement_block(</span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, ...): </span><span class="si">{</span><span class="n">block_type</span><span class="si">!r}</span><span class="s2"> must be a subclass of RequirementBlock&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;requirement_package(</span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, ...): </span><span class="si">{</span><span class="n">package_type</span><span class="si">!r}</span><span class="s2"> must be a subclass of Requirement&quot;</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_register_node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="n">block_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_register_node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="n">package_type</span><span class="p">)</span>
         <span class="n">compile_type</span><span class="p">(</span>
-            <span class="n">block_type</span><span class="p">,</span>
+            <span class="n">package_type</span><span class="p">,</span>
             <span class="n">symbol_anchor_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_owner</span><span class="p">,</span>
             <span class="n">symbol_path_prefix</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_path_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">RequirementBlockRef</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">RequirementRef</span><span class="p">(</span>
             <span class="n">owner_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">,</span>
             <span class="n">path</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,),</span>
             <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span>
-            <span class="n">target_type</span><span class="o">=</span><span class="n">block_type</span><span class="p">,</span>
+            <span class="n">target_type</span><span class="o">=</span><span class="n">package_type</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.constraint">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.constraint">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.constraint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a constraint (boolean check over realized slot values).</span>
+
+<span class="sd">        Root ``System`` types may not declare constraints. Put executable checks on</span>
+<span class="sd">        the owning :class:`~tg_model.model.elements.Part` or requirement package so</span>
+<span class="sd">        the top-level system stays structural.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1211,8 +1317,9 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ModelDefinitionError</span>
-<span class="sd">            On duplicate name or frozen context.</span>
+<span class="sd">            On duplicate name, frozen context, or when called from ``System.define()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reject_system_value_declaration</span><span class="p">(</span><span class="s2">&quot;constraint&quot;</span><span class="p">)</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;_expr&quot;</span><span class="p">:</span> <span class="n">expr</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_register_node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;constraint&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Ref</span><span class="p">(</span>
@@ -1224,7 +1331,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.state">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.state">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.state">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">initial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a discrete behavioral state (state machine vertex).</span>
 
@@ -1258,7 +1365,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.event">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.event">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a discrete behavioral event (state machine stimulus).</span>
 
@@ -1289,7 +1396,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.action">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.action">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.action">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">effect</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a named action (callable side effect on a part instance).</span>
 
@@ -1325,7 +1432,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.guard">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.guard">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.guard">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">guard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">predicate</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a reusable guard for decisions and transitions.</span>
 
@@ -1359,7 +1466,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.merge">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.merge">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.merge">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">then_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a merge node (shared continuation after branching).</span>
 
@@ -1401,7 +1508,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.item_kind">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.item_kind">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.item_kind">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">item_kind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare an item kind label for inter-part flows (:func:`~tg_model.execution.behavior.emit_item`).</span>
 
@@ -1432,7 +1539,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.decision">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.decision">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.decision">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">decision</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1479,9 +1586,7 @@
             <span class="n">gref</span><span class="p">,</span> <span class="n">aname</span> <span class="o">=</span> <span class="n">tup</span>
             <span class="k">if</span> <span class="n">gref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">gref</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;guard&quot;</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;decision branch guard must be guard ref, got </span><span class="si">{</span><span class="n">gref</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;decision branch guard must be guard ref, got </span><span class="si">{</span><span class="n">gref</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">gref</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;decision guard must belong to this part type&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -1508,7 +1613,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.fork_join">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.fork_join">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.fork_join">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fork_join</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1562,7 +1667,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.sequence">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.sequence">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.sequence">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ref</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare a linear sequence of action names (in-order execution).</span>
 
@@ -1603,7 +1708,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.transition">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.transition">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.transition">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">transition</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">from_state</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span>
@@ -1659,18 +1764,20 @@
                 <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;transition() reference </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">local_name</span><span class="si">!r}</span><span class="s2"> must belong to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">behavior_transitions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;from_state&quot;</span><span class="p">:</span> <span class="n">from_state</span><span class="p">,</span>
-            <span class="s2">&quot;to_state&quot;</span><span class="p">:</span> <span class="n">to_state</span><span class="p">,</span>
-            <span class="s2">&quot;on&quot;</span><span class="p">:</span> <span class="n">on</span><span class="p">,</span>
-            <span class="s2">&quot;when&quot;</span><span class="p">:</span> <span class="n">when</span><span class="p">,</span>
-            <span class="s2">&quot;guard_ref&quot;</span><span class="p">:</span> <span class="n">guard</span><span class="p">,</span>
-            <span class="s2">&quot;effect&quot;</span><span class="p">:</span> <span class="n">effect</span><span class="p">,</span>
-        <span class="p">})</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">behavior_transitions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;from_state&quot;</span><span class="p">:</span> <span class="n">from_state</span><span class="p">,</span>
+                <span class="s2">&quot;to_state&quot;</span><span class="p">:</span> <span class="n">to_state</span><span class="p">,</span>
+                <span class="s2">&quot;on&quot;</span><span class="p">:</span> <span class="n">on</span><span class="p">,</span>
+                <span class="s2">&quot;when&quot;</span><span class="p">:</span> <span class="n">when</span><span class="p">,</span>
+                <span class="s2">&quot;guard_ref&quot;</span><span class="p">:</span> <span class="n">guard</span><span class="p">,</span>
+                <span class="s2">&quot;effect&quot;</span><span class="p">:</span> <span class="n">effect</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.scenario">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.scenario">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.scenario">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scenario</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1722,9 +1829,7 @@
                     <span class="sa">f</span><span class="s2">&quot;scenario expected_event_order must be event refs, got </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2"> for </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">local_name</span><span class="si">!r}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;scenario event </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">local_name</span><span class="si">!r}</span><span class="s2"> must belong to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;scenario event </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">local_name</span><span class="si">!r}</span><span class="s2"> must belong to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">iord</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">expected_interaction_order</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1749,7 +1854,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.solve_group">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.solve_group">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.solve_group">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">solve_group</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1804,7 +1909,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.references">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.references">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.references">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span> <span class="n">citation</span><span class="p">:</span> <span class="n">Ref</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Record a provenance edge from ``source`` to ``citation``.</span>
 
@@ -1822,20 +1927,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_frozen</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">citation</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;citation&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;references(): citation must be a citation ref, got kind=</span><span class="si">{</span><span class="n">citation</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;references(): citation must be a citation ref, got kind=</span><span class="si">{</span><span class="n">citation</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">or</span> <span class="n">citation</span><span class="o">.</span><span class="n">owner_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner_type</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span><span class="s2">&quot;references(): source and citation must belong to this type&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;references&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">citation</span><span class="p">,</span>
-        <span class="p">})</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;references&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">citation</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.allocate">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.allocate">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.allocate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">allocate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">requirement_ref</span><span class="p">:</span> <span class="n">Ref</span><span class="p">,</span>
@@ -1878,10 +1983,28 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="ModelDefinitionContext.allocate_to_system">
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.allocate_to_system">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allocate_to_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requirement_ref</span><span class="p">:</span> <span class="n">Ref</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preferred shorthand for ``allocate(requirement_ref, root_block())``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        requirement_ref : Ref</span>
+<span class="sd">            Requirement to allocate to this type&#39;s structural system/root block.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ModelDefinitionError</span>
+<span class="sd">            Same as :meth:`allocate`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">requirement_ref</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_block</span><span class="p">())</span></div>
+
+
 <div class="viewcode-block" id="ModelDefinitionContext.allocate_to_root">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.allocate_to_root">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.allocate_to_root">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">allocate_to_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requirement_ref</span><span class="p">:</span> <span class="n">Ref</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shorthand for ``allocate(requirement_ref, root_block())``.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility alias for :meth:`allocate_to_system`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1893,11 +2016,11 @@
 <span class="sd">        ModelDefinitionError</span>
 <span class="sd">            Same as :meth:`allocate`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">requirement_ref</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_block</span><span class="p">())</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allocate_to_system</span><span class="p">(</span><span class="n">requirement_ref</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.connect">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.connect">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.connect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">source</span><span class="p">:</span> <span class="n">PortRef</span><span class="p">,</span>
@@ -1928,16 +2051,18 @@
             <span class="k">raise</span> <span class="n">ModelDefinitionError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;connect() target must be a PortRef, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> with kind &#39;</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;connect&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">target</span><span class="p">,</span>
-            <span class="s2">&quot;carrying&quot;</span><span class="p">:</span> <span class="n">carrying</span><span class="p">,</span>
-        <span class="p">})</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;connect&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">target</span><span class="p">,</span>
+                <span class="s2">&quot;carrying&quot;</span><span class="p">:</span> <span class="n">carrying</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.parts">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.parts">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.parts">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the internal selector token for “all child parts” in roll-up expressions.</span>
 
@@ -1954,7 +2079,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.link_external_routes">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.link_external_routes">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.link_external_routes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">link_external_routes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">binding</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1991,7 +2116,7 @@
 
 
 <div class="viewcode-block" id="ModelDefinitionContext.freeze">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.ModelDefinitionContext.freeze">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.ModelDefinitionContext.freeze">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">freeze</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Freeze the context so no further declarations or edges are allowed.</span>
 

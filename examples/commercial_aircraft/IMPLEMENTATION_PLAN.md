@@ -170,7 +170,7 @@ thundergraph-model/notebooks/
 
 - **Bounded contexts:** `program` (scenario ids/strings, **requirement blocks + program root**), `product` (Parts/Systems), `integrations` (adapters + binding factories), `reporting` (human output).
 - **Extend tools without editing unrelated parts:** new fake tool = new adapter + **one** factory entry in `bindings.py` (or a dedicated small module if `bindings.py` grows).
-- **Consistent `define()` contracts:** each `Part` / `System` uses the same patterns for parameters, attributes, and external compute.
+- **Consistent `define()` contracts:** each `Part` owns its local values / external compute, while the root `System` stays structural (scenario parameters, citations, allocations, and composition).
 - **Small adapters:** avoid one mega-simulator class; several discipline-sized `ExternalCompute` implementations.
 
 ### 5.3 Import boundaries and binding ownership
@@ -260,13 +260,13 @@ Everything else can be **parameterized stubs** with clear docstrings until a lat
 
 - [x] `Aircraft` + major assemblies **structured to match allocations** (each assembly **justifies** at least one constraint or future L2 requirement).
 - [x] **Mass attributes** rolling up from children (`sum_attributes` / explicit expr).
-- [x] Constraints: MTOW / MZFW-style sanity + **thesis** closure (notional caps) — **evidence** for allocated L1 requirements (scenario-linked closure constraints authored on **`CargoJetProgram`** so `parameter_ref` symbols resolve).
+- [x] Constraints: MTOW / MZFW-style sanity + **thesis** closure (notional caps) — **evidence** for allocated L1 requirements (scenario-linked closure constraints authored on **`Aircraft`** while reading root scenario inputs via `parameter_ref`).
 
 ### Phase 3 — External compute (multi-level)
 
 - [x] Adapters in `integrations/adapters.py` (fake but structured).
 - [x] Bindings via `integrations/bindings.py`; **no** `_SCENARIO` globals; **`parameter_ref`** only (plus local wing parameters in the wing binding).
-- [x] At least **two distinct** `ExternalComputeBinding` owners: **`CargoJetProgram`** (`mission_range_margin_m`) and **`WingAssembly`** (`wing_structural_intensity_kg_per_m`).
+- [x] At least **two distinct** `ExternalComputeBinding` owners: **`Aircraft`** (`mission_range_margin_m`) and **`WingAssembly`** (`wing_structural_intensity_kg_per_m`).
 
 ### Phase 4 — Notebook + report
 

@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -295,7 +295,7 @@
 <h2>Docs build<a class="headerlink" href="#docs-build" title="Link to this heading">¶</a></h2>
 <p>After editing narrative or API-adjacent docs:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>thundergraph-model
-uv<span class="w"> </span>run<span class="w"> </span>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/user_docs<span class="w"> </span>docs/user_docs/_build/html
+uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>docs<span class="w"> </span>sphinx-build<span class="w"> </span>-W<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/user_docs<span class="w"> </span>docs/user_docs/_build/html
 </pre></div>
 </div>
 <p>Fix broken <strong>internal</strong> links reported by Sphinx before merging.</p>

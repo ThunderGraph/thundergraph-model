@@ -13,6 +13,7 @@ from unitflow.core.units import Unit
 
 from examples.mars_ntp_tug.integrations.bindings import make_mars_transfer_napkin_binding
 from tg_model.integrations.external_compute import link_external_routes
+from tg_model.model.definition_context import parameter_ref
 from tg_model.model.elements import Part, Requirement, System
 
 DIMLESS = Unit.dimensionless()
@@ -21,23 +22,67 @@ m_per_s = m / s
 m_per_s2 = m / s**2
 
 
+def _root_napkin_binding(root_block_type: type, *output_names: str) -> Any:
+    return make_mars_transfer_napkin_binding(
+        dry_mass_kg=parameter_ref(root_block_type, "napkin_dry_mass_incl_payload_kg"),
+        delta_v_m_s=parameter_ref(root_block_type, "napkin_transfer_delta_v"),
+        isp_s=parameter_ref(root_block_type, "napkin_specific_impulse_vacuum_s"),
+        g0_m_s2=parameter_ref(root_block_type, "napkin_reference_gravity"),
+        min_thrust_to_weight=parameter_ref(root_block_type, "napkin_thrust_to_weight_start"),
+        thermal_to_jet_efficiency=parameter_ref(root_block_type, "napkin_thermal_to_jet_efficiency"),
+        propellant_loadout_margin=parameter_ref(root_block_type, "napkin_propellant_loadout_margin"),
+        jet_kinetic_fraction=parameter_ref(root_block_type, "napkin_jet_kinetic_fraction"),
+        output_names=output_names or None,
+    )
+
+
 class NtpCorePart(Part):
     """TRISO-in-matrix region: thermal power, hydrogen flow, enrichment, temperature ratio."""
 
     @classmethod
     def define(cls, model: Any) -> None:
-        model.parameter("rated_thermal_power", unit=MW)
+        rated_thermal_power = model.parameter("rated_thermal_power", unit=MW)
         mdot = model.parameter("hydrogen_mass_flow", unit=kg_per_s)
         enrich = model.parameter("u235_mass_fraction", unit=DIMLESS)
         triso_ok = model.parameter("triso_intact_fraction", unit=DIMLESS)
         temp_ratio = model.parameter("peak_fuel_matrix_temp_ratio", unit=DIMLESS)
         drum = model.parameter("control_drum_safety_margin", unit=DIMLESS)
         model.parameter("core_dry_mass", unit=kg)
+        napkin_b = _root_napkin_binding(
+            MarsNuclearTug,
+            "hydrogen_mass_flow_kg_s",
+            "thermal_power_mw",
+        )
+        mission_mdot = model.attribute(
+            "mission_required_hydrogen_mass_flow",
+            unit=kg_per_s,
+            computed_by=napkin_b,
+        )
+        mission_pth = model.attribute(
+            "mission_required_thermal_power",
+            unit=MW,
+            computed_by=napkin_b,
+        )
+        link_external_routes(
+            napkin_b,
+            {
+                "hydrogen_mass_flow_kg_s": mission_mdot,
+                "thermal_power_mw": mission_pth,
+            },
+        )
         model.constraint("core_flow_positive", expr=mdot > 0 * kg_per_s)
         model.constraint("core_enrichment_heu_floor", expr=enrich >= Quantity(0.95, DIMLESS))
         model.constraint("core_triso_integrity_floor", expr=triso_ok >= Quantity(0.999, DIMLESS))
         model.constraint("core_matrix_temp_ratio_le_one", expr=temp_ratio <= Quantity(1.0, DIMLESS))
         model.constraint("core_shutdown_margin_positive", expr=drum > 0 * DIMLESS)
+        model.constraint(
+            "core_thermal_covers_mission_desk",
+            expr=rated_thermal_power >= mission_pth * Quantity(0.90, DIMLESS),
+        )
+        model.constraint(
+            "core_flow_covers_mission_desk",
+            expr=mdot >= mission_mdot * Quantity(0.90, DIMLESS),
+        )
 
 
 class PropellantFeedPart(Part):
@@ -60,7 +105,18 @@ class NozzleAssemblyPart(Part):
     def define(cls, model: Any) -> None:
         f = model.parameter("vacuum_thrust", unit=kN)
         model.parameter("nozzle_area_ratio", unit=DIMLESS)
+        napkin_b = _root_napkin_binding(MarsNuclearTug, "vacuum_thrust_kn")
+        mission_thrust = model.attribute(
+            "mission_min_vacuum_thrust",
+            unit=kN,
+            computed_by=napkin_b,
+        )
+        link_external_routes(napkin_b, {"vacuum_thrust_kn": mission_thrust})
         model.constraint("vacuum_thrust_positive", expr=f > 0 * kN)
+        model.constraint(
+            "nozzle_thrust_covers_mission_desk",
+            expr=f >= mission_thrust * Quantity(0.95, DIMLESS),
+        )
 
 
 class ShadowShieldPart(Part):
@@ -99,6 +155,39 @@ class TugDesignEnvelopePart(Part):
         dv = model.parameter("design_delta_v_capability", unit=m_per_s)
         model.parameter("design_propellant_capacity", unit=kg)
         model.constraint("delta_v_cap_positive", expr=dv > 0 * m_per_s)
+
+
+class MissionSizingPart(Part):
+    """Mission desk snapshot and input sanity checks for the notional transfer scenario."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        p_dv = model.parameter("mission_delta_v_required", unit=m_per_s)
+        p_eta = model.parameter("thermal_to_jet_efficiency", unit=DIMLESS)
+        p_loadout = model.parameter("propellant_loadout_margin", unit=DIMLESS)
+        p_jet_frac = model.parameter("jet_kinetic_fraction", unit=DIMLESS)
+        napkin_b = _root_napkin_binding(MarsNuclearTug)
+        sim_prop = model.attribute("sim_propellant_required_kg", unit=kg, computed_by=napkin_b)
+        sim_wet = model.attribute("sim_wet_mass_start_kg", unit=kg, computed_by=napkin_b)
+        sim_thrust = model.attribute("sim_min_vacuum_thrust_kn", unit=kN, computed_by=napkin_b)
+        sim_mdot = model.attribute("sim_hydrogen_mass_flow_kg_s", unit=kg_per_s, computed_by=napkin_b)
+        sim_pth = model.attribute("sim_rated_thermal_power_mw", unit=MW, computed_by=napkin_b)
+        link_external_routes(
+            napkin_b,
+            {
+                "propellant_kg": sim_prop,
+                "wet_start_kg": sim_wet,
+                "vacuum_thrust_kn": sim_thrust,
+                "hydrogen_mass_flow_kg_s": sim_mdot,
+                "thermal_power_mw": sim_pth,
+            },
+        )
+        model.attribute("mission_propellant_required", unit=kg, expr=sim_prop)
+        model.attribute("mission_min_vacuum_thrust", unit=kN, expr=sim_thrust)
+        model.constraint("napkin_propellant_loadout_margin_ge_one", expr=p_loadout >= Quantity(1.0, DIMLESS))
+        model.constraint("napkin_jet_kinetic_fraction_positive", expr=p_jet_frac > 0 * DIMLESS)
+        model.constraint("napkin_thermal_efficiency_gt_floor", expr=p_eta > Quantity(0.05, DIMLESS))
+        model.constraint("napkin_thermal_efficiency_lt_ceiling", expr=p_eta < Quantity(0.99, DIMLESS))
 
 
 class ReqReactorFuelTRISO(Requirement):
@@ -271,44 +360,14 @@ class MarsNuclearTug(System):
 
     @classmethod
     def define(cls, model: Any) -> None:
-        p_dry = model.parameter("napkin_dry_mass_incl_payload_kg", unit=kg)
+        model.parameter("napkin_dry_mass_incl_payload_kg", unit=kg)
         p_dv = model.parameter("napkin_transfer_delta_v", unit=m_per_s)
-        p_isp = model.parameter("napkin_specific_impulse_vacuum_s", unit=s)
-        p_g0 = model.parameter("napkin_reference_gravity", unit=m_per_s2)
-        p_twr = model.parameter("napkin_thrust_to_weight_start", unit=DIMLESS)
-        p_eta = model.parameter("napkin_thermal_to_jet_efficiency", unit=DIMLESS)
-        p_loadout = model.parameter("napkin_propellant_loadout_margin", unit=DIMLESS)
-        p_jet_frac = model.parameter("napkin_jet_kinetic_fraction", unit=DIMLESS)
-
-        napkin_b = make_mars_transfer_napkin_binding(
-            dry_mass_kg=p_dry,
-            delta_v_m_s=p_dv,
-            isp_s=p_isp,
-            g0_m_s2=p_g0,
-            min_thrust_to_weight=p_twr,
-            thermal_to_jet_efficiency=p_eta,
-            propellant_loadout_margin=p_loadout,
-            jet_kinetic_fraction=p_jet_frac,
-        )
-        sim_prop = model.attribute("sim_propellant_required_kg", unit=kg, computed_by=napkin_b)
-        sim_wet = model.attribute("sim_wet_mass_start_kg", unit=kg, computed_by=napkin_b)
-        sim_thrust = model.attribute("sim_min_vacuum_thrust_kn", unit=kN, computed_by=napkin_b)
-        sim_mdot = model.attribute("sim_hydrogen_mass_flow_kg_s", unit=kg_per_s, computed_by=napkin_b)
-        sim_pth = model.attribute("sim_rated_thermal_power_mw", unit=MW, computed_by=napkin_b)
-        link_external_routes(
-            napkin_b,
-            {
-                "propellant_kg": sim_prop,
-                "wet_start_kg": sim_wet,
-                "vacuum_thrust_kn": sim_thrust,
-                "hydrogen_mass_flow_kg_s": sim_mdot,
-                "thermal_power_mw": sim_pth,
-            },
-        )
-
-        model.attribute("mission_delta_v_required", unit=m_per_s, expr=p_dv)
-        mission_prop = model.attribute("mission_propellant_required", unit=kg, expr=sim_prop)
-        model.attribute("mission_min_vacuum_thrust", unit=kN, expr=sim_thrust)
+        model.parameter("napkin_specific_impulse_vacuum_s", unit=s)
+        model.parameter("napkin_reference_gravity", unit=m_per_s2)
+        model.parameter("napkin_thrust_to_weight_start", unit=DIMLESS)
+        model.parameter("napkin_thermal_to_jet_efficiency", unit=DIMLESS)
+        model.parameter("napkin_propellant_loadout_margin", unit=DIMLESS)
+        model.parameter("napkin_jet_kinetic_fraction", unit=DIMLESS)
 
         reactor_core = model.part("reactor_core", NtpCorePart)
         propellant_feed = model.part("propellant_feed", PropellantFeedPart)
@@ -317,25 +376,9 @@ class MarsNuclearTug(System):
         model.part("avionics_gnc", AvionicsGncPart)
         model.part("cargo_berthing", CargoBerthingPart)
         design_envelope = model.part("design_envelope", TugDesignEnvelopePart)
+        mission_sizing = model.part("mission_sizing", MissionSizingPart)
 
         rq = model.requirement_package("requirements", NtpRequirementsRoot)
-
-        model.constraint("napkin_propellant_loadout_margin_ge_one", expr=p_loadout >= Quantity(1.0, DIMLESS))
-        model.constraint("napkin_jet_kinetic_fraction_positive", expr=p_jet_frac > 0 * DIMLESS)
-        model.constraint("napkin_thermal_efficiency_gt_floor", expr=p_eta > Quantity(0.05, DIMLESS))
-        model.constraint("napkin_thermal_efficiency_lt_ceiling", expr=p_eta < Quantity(0.99, DIMLESS))
-        model.constraint(
-            "core_thermal_covers_mission_desk",
-            expr=reactor_core.rated_thermal_power >= sim_pth * Quantity(0.90, DIMLESS),
-        )
-        model.constraint(
-            "core_flow_covers_mission_desk",
-            expr=reactor_core.hydrogen_mass_flow >= sim_mdot * Quantity(0.90, DIMLESS),
-        )
-        model.constraint(
-            "nozzle_thrust_covers_mission_desk",
-            expr=nozzle.vacuum_thrust >= sim_thrust * Quantity(0.95, DIMLESS),
-        )
 
         model.allocate(rq.reactor_fuel.req_heu_fuel_specification, reactor_core)
         model.allocate(rq.reactor_fuel.req_triso_barrier_function, reactor_core)
@@ -358,7 +401,7 @@ class MarsNuclearTug(System):
             rq.mission.req_propellant_mass_closure,
             design_envelope,
             inputs={
-                "scenario_propellant_kg": mission_prop,
+                "scenario_propellant_kg": mission_sizing.mission_propellant_required,
                 "available_propellant_kg": propellant_feed.tank_propellant_mass,
             },
         )
@@ -383,6 +426,7 @@ def reset_ntp_types() -> None:
         AvionicsGncPart,
         CargoBerthingPart,
         TugDesignEnvelopePart,
+        MissionSizingPart,
         ReqReactorFuelTRISO,
         ReqThermalHydraulic,
         ReqPropulsionNtp,

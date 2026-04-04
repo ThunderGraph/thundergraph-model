@@ -1,142 +1,147 @@
-# Concept: Requirements (inputs, derived attributes, acceptance)
+# Concept: Requirements — parameter / attribute / constraint (DEFAULT)
 
-This page covers the usual pattern for **executable** requirement acceptance: symbols stay local to a `RequirementBlock`, and the graph evaluates acceptance like any other constraint.
+> **TL;DR — When writing a new `Requirement` package, use `model.parameter`, `model.attribute`, and `model.constraint`.  That is the default, recommended, current API.**
+>
+> `requirement_input`, `requirement_attribute`, and `requirement_accept_expr` exist **only** for a rare, advanced leaf-reqcheck pattern (INCOSE-style acceptance rows wired through `allocate(..., inputs=...)`).  **Do not reach for them first.**  If you are not sure whether you need them, **you don't**.
 
-There are two complementary ways to introduce **values** under a requirement:
+---
 
-- **`requirement_input`** — slots you **wire from the design** with `allocate(..., inputs={...})` (scenario parameters, part attributes, and so on).
-- **`requirement_attribute`** — **requirement-owned derived values** with an `expr=` (sums, margins, normalized quantities, intermediate checks) that may depend on inputs, earlier attributes on the same requirement, and root/part symbols.
+## The default pattern: package-level `parameter` / `attribute` / `constraint`
 
-Use **`requirement_accept_expr`** (or inline `requirement(..., expr=)` where appropriate) for the boolean acceptance check.
-
-## Wired inputs (`requirement_input`)
-
-This is the simplest pattern when acceptance only needs values **mapped from** the allocated subtree.
+A composable **`Requirement`** package uses the same value/check authoring surface as a `Part`. Unlike a `System`, it may own `attribute(...)` and `constraint(...)` declarations directly:
 
 ```python
-from unitflow import km
-from tg_model import RequirementBlock, System
-from tg_model.execution import (
-    Evaluator,
-    RunContext,
-    compile_graph,
-    instantiate,
-    summarize_requirement_satisfaction,
-    validate_graph,
-)
+from unitflow.catalogs.si import kN
+from unitflow.core.units import Unit
+from tg_model import Requirement
+
+DIMLESS = Unit.dimensionless()
 
 
-class RangeReqs(RequirementBlock):
+class PropulsionReqs(Requirement):
     @classmethod
     def define(cls, model):
-        r = model.requirement("mission_range", "Aircraft shall support mission range.")
-        achieved = model.requirement_input(r, "achieved_range_km", unit=km)
-        required = model.requirement_input(r, "required_range_km", unit=km)
-        model.requirement_accept_expr(r, expr=(achieved >= required))
-
-
-class Aircraft(System):
-    @classmethod
-    def define(cls, model):
-        root = model.part()
-        mission_km = model.parameter("mission_required_km", unit=km, required=True)
-        achieved_km = model.attribute("achieved_km", unit=km, expr=9000 * km)
-
-        reqs = model.requirement_block("reqs", RangeReqs)
-        model.allocate(
-            reqs.mission_range,
-            root,
-            inputs={
-                "achieved_range_km": root.achieved_km,
-                "required_range_km": root.mission_required_km,
-            },
+        required = model.parameter("required_vacuum_thrust", unit=kN)
+        declared = model.parameter("declared_vacuum_thrust", unit=kN)
+        margin = model.attribute(
+            "vacuum_thrust_margin", unit=kN, expr=declared - required,
         )
+        model.constraint("thrust_margin_non_negative", expr=margin >= 0 * kN)
 
-
-cm = instantiate(Aircraft)
-graph, handlers = compile_graph(cm)
-vr = validate_graph(graph, configured_model=cm)
-assert vr.passed, vr.failures
-
-result = Evaluator(graph, compute_handlers=handlers).evaluate(
-    RunContext(),
-    inputs={cm.root.mission_required_km.stable_id: 8000 * km},
-)
-req = summarize_requirement_satisfaction(result)
-print("Overall run passed:", result.passed)
-print("Requirement checks:", req.check_count, "all_passed:", req.all_passed)
-for row in req.results:
-    print(row.requirement_path, "passed" if row.passed else "failed", row.evidence)
+        model.requirement(
+            "req_vacuum_thrust_capability",
+            "The propulsion subsystem shall deliver vacuum thrust no less than "
+            "the mission floor (verification by test / analysis).",
+        )
 ```
 
-### Why this pattern
+**That's it.**  `parameter`, `attribute`, `constraint` on the package, plus `model.requirement` for the formal "shall" text.  The constraint enforces the executable check; the requirement node carries the traceability text and can be `allocate`d and `references`d for citations.
 
-- Requirement expression is local to the `RequirementBlock`.
-- Part values are explicitly mapped by `allocate(..., inputs=...)`.
-- Acceptance runs in normal graph evaluation (same pass as constraints).
+After `instantiate`, the slots live at `cm.requirements.propulsion.required_vacuum_thrust` etc., and constraints appear in `RunResult.constraint_results` alongside part constraints.
 
-Use `summarize_requirement_satisfaction(result)` (or `iter_requirement_satisfaction`) to read **per-requirement** outcomes. `result.passed` aggregates every constraint in the run; requirement rows are the ones tagged with a `requirement_path` in the evaluator output.
+### When to use this pattern
 
-## Derived values on the requirement (`requirement_attribute`)
+**Always.**  For every new requirement package, start here.  This is the primary modeling surface for requirements.
 
-When acceptance (or another derived value) should use **intermediate math** that belongs to the requirement itself—not to a part—declare **`requirement_attribute(requirement, name, *, expr=..., unit=...)`**. Expressions may use:
+---
 
-- **`requirement_input`** symbols on the same requirement,
-- **`requirement_attribute`** symbols declared **earlier** in the same `define()` (declaration order matters),
-- parameters and attributes on the configured root and allocated parts (same symbol rules as elsewhere).
+## Leaf `model.requirement(...)` vs composable `Requirement`
 
-Derived attributes are materialized as value slots on the configured root; **`ConfiguredModel.requirement_value_slots`** lists them for inspection and tooling.
+- **`Requirement`** (the class) is a **composable package type**.  You subclass it, implement `define(cls, model)`, and register it with `model.requirement_package(name, YourType)`.  Navigate with `RequirementRef` dot access (e.g. `reqs.mission.req_delta_v_closure`).
+- **`model.requirement(id, text)`** declares **one leaf** requirement statement inside a package.  It returns a `Ref` for `allocate`, `references`, and (in the rare advanced case) `requirement_input` / `requirement_accept_expr`.
 
-**Example (sum of two wired inputs, then acceptance on the sum):**
+Keeping those two straight avoids confusion with the class name.
+
+---
+
+## Package-level value surface
+
+Inside `Requirement.define()`:
+
+| Method | What it does | Same as on `Part`? |
+|--------|-------------|-------------------|
+| `model.parameter(name, unit=...)` | Externally bound input slot | Yes |
+| `model.attribute(name, unit=..., expr=...)` | Derived value from expression | Yes |
+| `model.constraint(name, expr=...)` | Pass/fail check on the expression | Yes |
+| `model.requirement(id, text)` | Leaf "shall" statement (traceability) | Requirement-only |
+| `model.requirement_package(name, Type)` | Nested composable sub-package | Requirement-only |
+| `model.citation(name, ...)` | External provenance node | Yes |
+| `model.references(req, citation)` | Traceability edge | Requirement-only |
+
+**Limitations (today):** package-level slots do not support `computed_by=` or rollups in graph compilation; every package `constraint` must supply `expr=`.
+
+---
+
+## Advanced (rare): leaf-level `requirement_input` / `requirement_attribute` / `requirement_accept_expr`
+
+> **⚠️  Stop.  You almost certainly do not need this section for new code.**
+>
+> These three helpers exist for **one specific pattern**: encoding an INCOSE-style executable acceptance test on a **single leaf** `model.requirement(...)`, where:
+>
+> 1. You declare `requirement_input` slots on the leaf requirement.
+> 2. You wire those inputs from the design via `allocate(..., inputs={name: part_ref.slot})`.
+> 3. You optionally compute a `requirement_attribute` margin.
+> 4. You set a `requirement_accept_expr` boolean check.
+> 5. `summarize_requirement_satisfaction` then reports per-requirement pass/fail rows.
+>
+> **If your check can be expressed as a package-level `constraint`, use that instead.**  It is simpler, more readable, and produces the same pass/fail result in `RunResult.constraint_results`.
+
+### When the leaf reqcheck pattern is appropriate
+
+- You have a **formal Level-1 "shall" statement** with its own acceptance criterion.
+- You want `summarize_requirement_satisfaction` to print a **per-requirement row** (tagged with `requirement_path`).
+- The acceptance wiring needs **`allocate(..., inputs=...)`** to map scenario values and design envelope values into requirement-local input slots.
+
+### Example (mission closure — the rare case)
 
 ```python
-from unitflow import Quantity, QuantityExpr
 from unitflow.catalogs.si import m
-from tg_model import RequirementBlock, System
-from tg_model.execution import Evaluator, RunContext, compile_graph, instantiate, validate_graph
+
+m_per_s = m / s
 
 
-class SumReqs(RequirementBlock):
+class MissionClosure(Requirement):
     @classmethod
     def define(cls, model):
-        r = model.requirement("positive_span", "Span sum shall be positive.")
-        a = model.requirement_input(r, "a_m", unit=m)
-        b = model.requirement_input(r, "b_m", unit=m)
-        total = model.requirement_attribute(r, "total_m", expr=a + b, unit=m)
-        model.requirement_accept_expr(r, expr=total > QuantityExpr(Quantity(0, m)))
-
-
-class Demo(System):
-    @classmethod
-    def define(cls, model):
-        root = model.part()
-        la = model.parameter("len_a_m", unit=m)
-        lb = model.parameter("len_b_m", unit=m)
-        blk = model.requirement_block("reqs", SumReqs)
-        model.allocate(
-            blk.positive_span,
-            root,
-            inputs={"a_m": la, "b_m": lb},
+        r_dv = model.requirement(
+            "req_delta_v_closure",
+            "Design shall close scenario delta-v within declared envelope.",
         )
+        scenario_dv = model.requirement_input(r_dv, "scenario_delta_v", unit=m_per_s)
+        envelope_dv = model.requirement_input(r_dv, "envelope_delta_v", unit=m_per_s)
+        dv_margin = model.requirement_attribute(
+            r_dv, "delta_v_margin", expr=envelope_dv - scenario_dv, unit=m_per_s,
+        )
+        model.requirement_accept_expr(r_dv, expr=dv_margin >= 0 * m_per_s)
+```
 
+Then on the `System`:
 
-cm = instantiate(Demo)
-graph, handlers = compile_graph(cm)
-assert validate_graph(graph, configured_model=cm).passed
-result = Evaluator(graph, compute_handlers=handlers).evaluate(
-    RunContext(),
+```python
+model.allocate(
+    rq.mission.req_delta_v_closure,
+    design_envelope,
     inputs={
-        cm.root.len_a_m.stable_id: Quantity(1, m),
-        cm.root.len_b_m.stable_id: Quantity(2, m),
+        "scenario_delta_v": scenario_dv_param,
+        "envelope_delta_v": design_envelope.design_delta_v_capability,
     },
 )
-assert result.passed
 ```
 
-### Rules and limitations
+### Rules and limitations (leaf reqcheck)
 
-- **Names** — An input name and an attribute name on the **same** requirement cannot collide.
-- **Order** — Declare all **`requirement_input`** and **`requirement_attribute`** calls **before** **`requirement_accept_expr`** for that requirement.
-- **Allocations** — If a requirement declares any **`requirement_attribute`**, it must have **at most one** `allocate(...)` edge in the configured model. Multiple allocations would make a single derived slot ambiguous; split the model or duplicate requirement structure if you truly need multiple targets.
+- Names — An input name and an attribute name on the **same** requirement cannot collide.
+- Order — Declare all `requirement_input` and `requirement_attribute` calls **before** `requirement_accept_expr`.
+- Allocations — If a requirement declares `requirement_attribute`, it must have **at most one** `allocate(...)` edge.
 
-This split matches common MBSE practice: **inputs** are where the design feeds the requirement, and **attributes** are properties or derived quantities **owned by** the requirement for acceptance and reporting.
+---
+
+## Summary: which pattern to use
+
+| Situation | Pattern |
+|-----------|---------|
+| **New requirement package** (99% of cases) | `parameter` + `attribute` + `constraint` on the package |
+| **Formal leaf acceptance test** (rare, INCOSE-style) | `requirement_input` + `requirement_attribute` + `requirement_accept_expr` on a leaf `model.requirement(...)` |
+| **Traceability text** | `model.requirement(id, text)` + `model.allocate(req, part)` + `model.references(req, citation)` |
+
+**Default to the first row.  Always.**

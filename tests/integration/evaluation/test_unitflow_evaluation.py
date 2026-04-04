@@ -175,10 +175,14 @@ class AggregatedSystem(System):
             def define(cls, m2):  # type: ignore[override]
                 m2.parameter("mass", unit=kg)
 
-        model.part("box1", Box)
-        model.part("box2", Box)
+        class MassAggregation(Part):
+            @classmethod
+            def define(cls, m2):  # type: ignore[override]
+                m2.part("box1", Box)
+                m2.part("box2", Box)
+                m2.attribute("total_mass", unit=kg, expr=rollup.sum(m2.parts(), value=lambda c: c.mass))
 
-        model.attribute("total_mass", unit=kg, expr=rollup.sum(model.parts(), value=lambda c: c.mass))
+        model.part("aggregation", MassAggregation)
 
 
 class TestRollupEvaluation:
@@ -191,12 +195,12 @@ class TestRollupEvaluation:
         evaluator.evaluate(
             ctx,
             inputs={
-                cm.box1.mass.stable_id: Quantity(10, kg),
-                cm.box2.mass.stable_id: Quantity(25, kg),
+                cm.aggregation.box1.mass.stable_id: Quantity(10, kg),
+                cm.aggregation.box2.mass.stable_id: Quantity(25, kg),
             },
         )
 
-        total = ctx.get_value(cm.total_mass.stable_id)
+        total = ctx.get_value(cm.aggregation.total_mass.stable_id)
         assert total.is_close(Quantity(35, kg))
 
 

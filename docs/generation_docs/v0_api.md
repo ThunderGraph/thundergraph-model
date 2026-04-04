@@ -170,6 +170,8 @@ During `define`, the framework provides a `model: ModelDefinitionContext` bound 
 - accepts relationship calls such as `connect(source: PortRef, target: PortRef, carrying=...)`
 - on compile, validates references (e.g. nested `battery.power_out` resolves against the child type’s compiled definition), recursively compiles referenced part types, and emits a canonical structure
 
+**Authoring restriction (implemented):** `System.define()` is intentionally **structural**. Use the root `System` for composition, top-level input parameters, ports, requirements, citations, and allocation wiring. Put derived values (`attribute(...)`), executable checks (`constraint(...)`), roll-ups, and `computed_by=` bindings on owned `Part` instances or requirement packages.
+
 ### Typed references (`Ref`) and nested member access
 
 Cross-part references avoid the “metaclass / descriptor trap” (class body has no live instances, so naive `battery.power_out` attributes do not work). The preferred pattern:
@@ -267,6 +269,8 @@ Proposed verbs / decorators (final names may differ):
 
 - `model.parameter(...)` / `model.attribute(...)` / `model.constraint(...)` / `model.solve_group(...)` / `model.allocate(...)` / `model.requirement(...)` / `model.choice(...)` (as implemented in the package; some names remain directional in docs)
 - **Phase 6 (discrete behavior):** `model.state` / `event` / `action` / `guard` / `transition` / `scenario` / `sequence` / `decision` / `merge` / `fork_join` / `item_kind` — see [Behavioral Modeling](#behavioral-modeling)
+
+For clarity: `model.attribute(...)`, `model.constraint(...)`, and `model.solve_group(...)` are legal on `Part` and `Requirement` package scopes. Root `System` types are restricted to structural composition and top-level parameters.
 
 **Companion / future (not yet `model.*` in the library):**
 
@@ -368,11 +372,63 @@ This direction:
 - keeps connections inspectable as structured objects (owner type, path, kind, metadata)
 - preserves enough information for export, validation, and (later) instance binding
 
+## Authoring guidance for humans and AI
+
+If you are writing examples, generators, or prompts for `tg-model`, follow this rule:
+
+- **Use `System` for composition and top-level inputs only.**
+- **Put derived values, roll-ups, external-compute bindings, and constraints on owned `Part` instances or requirement packages.**
+- **Do not dump cross-cutting logic onto the root just because it is convenient.**
+
+### Before vs after
+
+Bad root-heavy pattern:
+
+```python
+class Aircraft(System):
+    @classmethod
+    def define(cls, model):
+        payload = model.parameter("payload_kg", unit=kg)
+        model.part("left_wing", Wing)
+        model.part("right_wing", Wing)
+        total_mass = model.attribute(
+            "total_mass",
+            unit=kg,
+            expr=rollup.sum(model.parts(), value=lambda c: c.mass),
+        )
+        model.constraint("payload_fits_mass_model", expr=total_mass >= payload)
+```
+
+Preferred owned-part pattern:
+
+```python
+class MassProperties(Part):
+    @classmethod
+    def define(cls, model):
+        model.part("left_wing", Wing)
+        model.part("right_wing", Wing)
+        total_mass = model.attribute(
+            "total_mass",
+            unit=kg,
+            expr=rollup.sum(model.parts(), value=lambda c: c.mass),
+        )
+        model.constraint("mass_positive", expr=total_mass > 0 * kg)
+
+
+class Aircraft(System):
+    @classmethod
+    def define(cls, model):
+        model.parameter("payload_kg", unit=kg)
+        model.part("mass_properties", MassProperties)
+```
+
+This keeps semantic ownership local, makes refactoring easier, and gives AI authors one obvious place to put executable logic.
+
 ## Requirements And Allocation
 
 Requirements are first-class nodes. **`model.allocate(requirement, target)`** records traceability from a requirement to a model element (typically a part).
 
-When the requirement’s **`expr=`** only references attributes on the **configured root** type, use **`rocket = model.part()`** (no arguments — does not declare a child) then **`model.allocate(requirement, rocket)`**, same pattern as **`model.part("name", Type)`** for children. That ref has an **empty path**; **`instantiate`** resolves it to the **root** **`PartInstance`**. Shortcut: **`model.allocate_to_root(requirement)`**. **`root_block()`** / **`owner_part()`** are aliases of the same ref as **`model.part()`**.
+When the requirement’s **`expr=`** only references attributes on the **configured root** type, use **`model.allocate_to_system(requirement)`** as the clear shorthand for allocating to the structural root. Under the hood this is the same empty-path root ref you would get from **`rocket = model.part()`** (no arguments — does not declare a child) followed by **`model.allocate(requirement, rocket)`**. **`instantiate`** resolves that empty path to the **root** **`PartInstance`**. **`allocate_to_root()`** remains as a compatibility alias, and **`root_block()`** / **`owner_part()`** are aliases of the same ref as **`model.part()`**.
 
 ### Acceptance expression (Phase 7)
 
@@ -1493,7 +1549,13 @@ Key rules:
 
 **Root parameters in nested `define()`:** nested part types do not automatically see the parent `model` object from the configured root. To wire `ExternalComputeBinding.inputs` (or expressions) to **scenario / mission parameters** declared on the **configured root** block type, use **`parameter_ref(root_block_type, "param_name")`** or **`model.parameter_ref(root_block_type, "param_name")`**. Resolution uses the root type’s compiled artifact if it is already compiled, or the active definition context while that root’s `compile()` is still running—so **declare root parameters before** `model.part(...)` for children that reference them. At evaluation time, refs whose `owner_type` is the configured root resolve against `ConfiguredModel.root` (same rule as other cross-scope refs).
 
-**Nested requirements (`Requirement`):** subclass **`Requirement`** (alias **`RequirementBlock`**) and implement **`define(cls, model)`** with **`model.requirement`**, **`model.requirement_input`**, **`model.requirement_accept_expr`**, **`model.citation`**, nested **`model.requirement_package`** (deprecated alias **`model.requirement_block`**), and **`model.references`** (compile-time validation rejects other node kinds and non-`references` edges). Prefer **`requirement_input(requirement_ref, "name", unit=…)`** then **`requirement_accept_expr(requirement_ref, expr=…)`** so acceptance symbols are **requirement-local**; on the configured root, **`model.allocate(req_ref, part_ref, inputs={"name": part_ref.slot, …})`** wires each input to a realized parameter or attribute. You can still pass **`expr=`** directly on **`model.requirement`** for the older pattern (symbols on the root or allocate target). From a **`Part`** or **`System`** `define()`, register a subtree with **`model.requirement_package("name", MyRequirementType)`**, which returns a **`RequirementRef`** (alias **`RequirementBlockRef`**); use **dot notation** to reach child requirements (same chaining pattern as **`PartRef`**). **`requirement_ref(root_block_type, ("pkg", "nested_req"))`** (or **`model.requirement_ref`**) resolves a requirement **`Ref`** by full path from the configured root—use from nested **`Part.define()`** when you cannot chain from a **`RequirementRef`**. Declare **`requirement_package`** entries **before** sibling parts that call **`requirement_ref`**, because packages are **compiled eagerly** when registered (with the correct symbol anchor for nested packages). The internal compiled node kind for a package remains **`requirement_block`** for artifact compatibility. **`model.allocate`** from a nested requirement uses a **`Ref`** whose **`path`** is the **full** tuple (e.g. **`("mission", "range")`**); requirement acceptance validation matches **full paths**, not leaf names only.
+**Nested requirements (`Requirement`):** subclass **`Requirement`** and implement **`define(cls, model)`**.
+
+> **DEFAULT PATTERN (use this):** Inside `Requirement.define()`, declare **`model.parameter`**, **`model.attribute`**, **`model.constraint`** at **package scope** — the same value/check surface as **`Part`**. Unlike **`System`**, requirement packages may own attributes and constraints directly. Use **`model.requirement(id, text)`** for leaf traceability statements, **`model.citation`** for provenance, **`model.references`** for edges, and **`model.allocate`** for structural allocation. **This is the standard, recommended, primary API for all new requirement packages.**
+
+> **ADVANCED (rare — leaf reqcheck only):** `requirement_input`, `requirement_attribute`, and `requirement_accept_expr` exist for a **single narrow use case**: encoding an INCOSE-style executable acceptance test on **one leaf** `model.requirement(...)`, wired via `allocate(..., inputs={...})`. Use them **only** when you need `summarize_requirement_satisfaction` to emit per-requirement pass/fail rows. **Do not use them as the default pattern.** If your check can be a package-level `constraint`, **use that instead**.
+
+From a **`Part`** or **`System`** `define()`, register a subtree with **`model.requirement_package("name", MyRequirementType)`**, which returns a **`RequirementRef`**; use **dot notation** to reach child requirements (same chaining pattern as **`PartRef`**). **`requirement_ref(root_block_type, ("pkg", "nested_req"))`** (or **`model.requirement_ref`**) resolves a requirement **`Ref`** by full path from the configured root. Declare **`requirement_package`** entries **before** sibling parts that call **`requirement_ref`**, because packages are **compiled eagerly**. The internal compiled node kind for a package remains **`requirement_block`** for artifact compatibility. **`model.allocate`** from a nested requirement uses a **`Ref`** whose **`path`** is the **full** tuple; requirement acceptance validation matches **full paths**, not leaf names only.
 
 ### Frozen decision 2: Single authoring surface
 
@@ -1520,18 +1582,24 @@ class Motor(Part):
         model.constraint("power_positive", expr=power > Quantity(0, W))
 
 
-class Aircraft(System):
+class AircraftMassProperties(Part):
     @classmethod
     def define(cls, model):
-        fuselage = model.part("fuselage", Fuselage)
-        left_wing = model.part("left_wing", Wing)
-        right_wing = model.part("right_wing", Wing)
-
-        total_mass = model.attribute(
+        model.part("fuselage", Fuselage)
+        model.part("left_wing", Wing)
+        model.part("right_wing", Wing)
+        model.attribute(
             "total_mass",
             unit=kg,
             expr=rollup.sum(model.parts(), value=lambda c: c.mass),
         )
+
+
+class Aircraft(System):
+    @classmethod
+    def define(cls, model):
+        model.parameter("payload_kg", unit=kg)
+        model.part("mass_properties", AircraftMassProperties)
 ```
 
 ### Frozen decision 3: Ref-to-handle mapping

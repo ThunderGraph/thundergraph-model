@@ -1,8 +1,8 @@
 # HPC datacenter example (colocation facility)
 
-Small **ThunderGraph Model** program: a :class:`~tg_model.model.elements.System` root with scenario parameters, a facility :class:`~tg_model.model.elements.Part`, and **Level-1** obligations authored as composable :class:`~tg_model.model.elements.Requirement` types registered with **`model.requirement_package`** (see [`program.py`](./program.py)).
+Small **ThunderGraph Model** program: a structural :class:`~tg_model.model.elements.System` root with scenario parameters, a facility :class:`~tg_model.model.elements.Part`, and **Level-1** obligations authored as composable :class:`~tg_model.model.elements.Requirement` types registered with **`model.requirement_package`** (see [`program.py`](./program.py)).
 
-- **`L1HpcRequirements`** — two atomic requirements with **`requirement_input`**, **`requirement_attribute`**, and **`requirement_accept_expr`** (grid import and auxiliary cooling envelopes).
+- **`L1HpcRequirements`** — two atomic requirements using the **advanced leaf reqcheck** helpers **`requirement_input`**, **`requirement_attribute`**, and **`requirement_accept_expr`** for grid import and auxiliary cooling envelope checks.
 - **`L1HpcRoot`** — nests **`L1HpcRequirements`** under **`hpc`**; the program root registers **`model.requirement_package("l1", L1HpcRoot)`** and **`allocate`**s each requirement to the facility part with **`inputs=...`**.
 
 ## How to run (import path)

@@ -6,9 +6,14 @@ Where ThunderGraph Model is designed to be extended safely—and where you shoul
 
 ### Authoring types (`tg_model.model`)
 
-- **`System`**, **`Part`**, **`RequirementBlock`** — override `define(cls, model)` (and `compile()` only where the framework’s contract requires it). This is the primary **domain** extension point: new parts, parameters, constraints, requirement blocks, **`requirement_input`** / **`requirement_attribute`** / **`requirement_accept_expr`**, and allocation wiring.
+- **`System`**, **`Part`**, **`Requirement`** — override **`define(cls, model)`** (and **`compile()`** only where the framework’s contract requires it). This is the primary **domain** extension point: structure, values, and **composable requirement packages**.
+  - **Root `System` restriction:** treat `System.define()` as **structural only**. Declare top-level input `parameter(...)` values there, compose owned parts, and wire requirements/citations/allocations there. Put `attribute(...)`, `constraint(...)`, roll-ups, `solve_group(...)`, and `computed_by=` on owned `Part` instances or requirement packages.
+  - Register a package from a **`System`** / **`Part`** with **`model.requirement_package(name, YourRequirementSubclass)`**; navigate with **`RequirementRef`** dot access (e.g. **`reqs.some_leaf`**).
+  - Inside **`Requirement.define()`**, you may declare **leaf** **`model.requirement(...)`**, nested **`requirement_package`**, **`requirement_input`** / **`requirement_attribute`** / **`requirement_accept_expr`**, **package-level** **`parameter`** / **`attribute`** / **`constraint`**, plus **`citation`** / **`references`** where allowed. Package-level slots compile to **`ValueSlot`**s under the configured part (e.g. **`cm.root.<pkg>.<slot>`**); limits (no **`computed_by=`** / rollups on those slots yet, package **`constraint`** must have **`expr=`**) match the **`Requirement`** class docstring.
+  - **Implementation note:** compiled artifacts still use internal node **`kind`** **`"requirement_block"`** for backward compatibility — when reading JSON or debugging **`compile_type`**, do not assume the string matches the public type name.
 - **`ModelDefinitionContext`** — you do not subclass this; you call its methods **from** `define` on your element types. Public methods are the vocabulary for declarations.
 - **Refs** (`AttributeRef`, `PartRef`, …) — returned by `model` APIs; you **use** them in expressions and `allocate`, not subclass them.
+  - **`AttributeRef` passthrough:** for **`attribute(..., expr=…)`**, another slot's ref alone copies that slot at evaluation time; use **`.sym`** when mixing that slot into unitflow **Expr** arithmetic.
 
 ### Execution (`tg_model.execution`)
 
@@ -36,15 +41,17 @@ Where ThunderGraph Model is designed to be extended safely—and where you shoul
 
 ## Practical workflow
 
-1. Model your domain with **`System` / `Part` / `RequirementBlock`** and `define`.
-2. Run scenarios with **`ConfiguredModel.evaluate`** in product code and notebooks unless you need the explicit pipeline (see **Execution** above).
-3. For tool-backed values, **`ExternalComputeBinding`** + **`validate_graph`** when possible (the façade runs validation before evaluation by default; explicit callers run **`validate_graph`** after **`compile_graph`**).
-4. Add **tests** under `tests/unit/` or `tests/integration/` that mirror your usage (see {doc}`testing`).
-5. If you need behavior that cannot be expressed with declarations and external compute, **document the gap** and consider a focused PR to `tg_model` rather than monkey-patching.
+1. Model your domain with **`System` / `Part` / `Requirement`** and `define`.
+2. Keep the root `System` structural; move executable logic into owned parts or requirement packages.
+3. Run scenarios with **`ConfiguredModel.evaluate`** in product code and notebooks unless you need the explicit pipeline (see **Execution** above).
+4. For tool-backed values, **`ExternalComputeBinding`** + **`validate_graph`** when possible (the façade runs validation before evaluation by default; explicit callers run **`validate_graph`** after **`compile_graph`**).
+5. Add **tests** under `tests/unit/` or `tests/integration/` that mirror your usage (see {doc}`testing`).
+6. If you need behavior that cannot be expressed with declarations and external compute, **document the gap** and consider a focused PR to `tg_model` rather than monkey-patching.
 
 ## References
 
 - End-user narrative: {doc}`../user/quickstart` (recommended **`evaluate`** path vs explicit pipeline).
+- Requirement authoring (leaf vs package, migration): {doc}`../user/concepts_requirements`, {doc}`../user/faq`.
 - {doc}`architecture`
 - {doc}`../drafts/execution_pipeline`
 - API: {doc}`../api/index`

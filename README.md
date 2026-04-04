@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-256%20passed-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-279%20passed-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](#development)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![mypy](https://img.shields.io/badge/types-mypy--strict-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)
@@ -48,15 +48,12 @@ If you want a library that feels **honest** (fail-fast validation, explicit grap
 
 ## Quick start
 
-This directory is its **own [uv](https://docs.astral.sh/uv/) project** (separate from the monorepo root venv).
+Install the library into a normal project:
 
 ```bash
-cd thundergraph-model
-uv sync --all-groups       # dev group: pytest, ruff, mypy, nbconvert/ipykernel, …
-uv run pytest              # includes coverage on tg_model (see pyproject.toml)
-uv run pytest --no-cov     # faster when you do not need a coverage report
-uv run ruff check tg_model tests
-uv run mypy tg_model
+uv add thundergraph-model
+# or
+pip install thundergraph-model
 ```
 
 ---
@@ -113,9 +110,19 @@ uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html -W   # war
 
 ## Development
 
+Clone the library repo and install the development environment:
+
+```bash
+git clone <repo-url>
+cd thundergraph-model
+uv sync --all-groups
+```
+
+That installs the package in editable mode plus the test, lint, type-check, docs, and notebook tooling used in this repository.
+
 | Tool | Role |
 |------|------|
-| **pytest** + **pytest-cov** | **258** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, **hpc_datacenter smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
+| **pytest** + **pytest-cov** | **279** tests under [`tests/`](tests/): **`tests/unit/`** (model, execution, analysis, …) and **`tests/integration/`** (e2e evaluation, external compute, requirement acceptance, behavior, **commercial aircraft smoke**, **hpc_datacenter smoke**, **mars NTP tug smoke**, structural demos). Default `addopts` run **`--cov=tg_model`**. |
 | **Ruff** | Lint + import sort (`E`, `F`, `I`, `UP`, `RUF`). |
 | **mypy** | **Strict** typing on `tg_model`. |
 | **pyright** | Optional **Pylance-style** check; dev dependency. The evaluation façade (`ConfiguredModel.evaluate`, `System.instantiate`) is kept **pyright-clean**; full-package `pyright tg_model` may still report pre-existing issues elsewhere until cleaned up. |

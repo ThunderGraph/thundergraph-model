@@ -6,7 +6,7 @@ Use external compute when a value comes from another tool or model.
 
 ```python
 from unitflow import Quantity, kg
-from tg_model import System
+from tg_model import Part, System
 from tg_model.execution import Evaluator, RunContext, compile_graph, instantiate
 from tg_model.integrations import ExternalComputeBinding, ExternalComputeResult
 
@@ -23,22 +23,29 @@ class MassTool:
         return ExternalComputeResult(value=dry + payload, provenance={"tool": self.name})
 
 
-class Vehicle(System):
+class VehicleMassAnalysis(Part):
     @classmethod
     def define(cls, model):
-        root = model.part()
-        dry = model.parameter("dry_kg", unit=kg, required=True)
-        payload = model.parameter("payload_kg", unit=kg, required=True)
+        dry = model.parameter_ref(Vehicle, "dry_kg")
+        payload = model.parameter_ref(Vehicle, "payload_kg")
 
         total = model.attribute(
             "total_kg",
             unit=kg,
             computed_by=ExternalComputeBinding(
                 external=MassTool(),
-                inputs={"dry": root.dry_kg, "payload": root.payload_kg},
+                inputs={"dry": dry, "payload": payload},
             ),
         )
         model.constraint("non_negative", expr=(total >= Quantity(0, kg)))
+
+
+class Vehicle(System):
+    @classmethod
+    def define(cls, model):
+        model.parameter("dry_kg", unit=kg, required=True)
+        model.parameter("payload_kg", unit=kg, required=True)
+        model.part("mass_analysis", VehicleMassAnalysis)
 
 
 cm = instantiate(Vehicle)
@@ -52,7 +59,7 @@ result = Evaluator(graph, compute_handlers=handlers).evaluate(
     },
 )
 print(result.passed)
-print(ctx.get_value(cm.root.total_kg.stable_id))
+print(ctx.get_value(cm.root.mass_analysis.total_kg.stable_id))
 ```
 
 ### Same run with `evaluate` (recommended)
@@ -77,6 +84,7 @@ See {doc}`quickstart` and {doc}`faq`.
 - **Single output:** Return `ExternalComputeResult(value=...)` with one quantity; the compiler wires it to the attribute that uses `computed_by=`.
 - **Multiple outputs:** Return `ExternalComputeResult(value={"route_a": q1, "route_b": q2})` and supply matching `output_routes` on the binding so each name maps to an attribute ref (see API docs for `link_external_routes`).
 - **Static checks:** If the external object implements `validate_binding`, pass `configured_model=` into `validate_graph` so units and routes can be checked before `evaluate`.
+- **Ownership rule:** keep root `System` types structural and put `computed_by=` attributes and related constraints on the owning `Part` or requirement package.
 
 ## Rule of thumb
 

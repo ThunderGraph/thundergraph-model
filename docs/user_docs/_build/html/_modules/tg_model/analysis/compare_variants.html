@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -371,9 +371,7 @@
     <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
         <span class="n">handle</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;output_paths entry </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> must resolve to a ValueSlot, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;output_paths entry </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> must resolve to a ValueSlot, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">sid</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="n">stable_id</span>
         <span class="n">present</span> <span class="o">=</span> <span class="n">sid</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">outputs</span>
         <span class="n">out</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">CapturedSlotOutput</span><span class="p">(</span>
@@ -430,7 +428,9 @@
     <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">VariantComparisonRow</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
         <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">_compile_and_maybe_validate</span><span class="p">(</span>
-            <span class="n">label</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">validate_before_run</span><span class="o">=</span><span class="n">validate_before_run</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
+            <span class="n">cm</span><span class="p">,</span>
+            <span class="n">validate_before_run</span><span class="o">=</span><span class="n">validate_before_run</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">compute_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">()</span>
@@ -462,7 +462,9 @@
     <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">VariantComparisonRow</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
         <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">_compile_and_maybe_validate</span><span class="p">(</span>
-            <span class="n">label</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">validate_before_run</span><span class="o">=</span><span class="n">validate_before_run</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
+            <span class="n">cm</span><span class="p">,</span>
+            <span class="n">validate_before_run</span><span class="o">=</span><span class="n">validate_before_run</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">compute_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">()</span>

@@ -200,7 +200,7 @@
 <li class="toctree-l1"><a class="reference internal" href="user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/faq.html">FAQ</a></li>
 </ul>
@@ -284,9 +284,13 @@
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.add_edge">add_edge() (tg_model.execution.DependencyGraph method)</a>
 </li>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementPackageInstance.add_member">add_member() (tg_model.execution.RequirementPackageInstance method)</a>
+</li>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.add_node">add_node() (tg_model.execution.DependencyGraph method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_port">add_port() (tg_model.execution.PartInstance method)</a>
+</li>
+        <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_requirement_package">add_requirement_package() (tg_model.execution.PartInstance method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.PartInstance.add_value_slot">add_value_slot() (tg_model.execution.PartInstance method)</a>
 </li>
@@ -296,13 +300,15 @@
           <li><a href="api/api_execution.html#tg_model.execution.RunContext.all_passed">(tg_model.execution.RunContext property)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_execution.html#tg_model.execution.all_requirements_satisfied">all_requirements_satisfied() (in module tg_model.execution)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.allocate">allocate() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.allocate_to_root">allocate_to_root() (tg_model.model.ModelDefinitionContext method)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.allocate_to_system">allocate_to_system() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.allocation_target_path">allocation_target_path (tg_model.execution.ConstraintResult attribute)</a>
 
@@ -320,6 +326,12 @@
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.attribute">attribute() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
+        <li><a href="api/api_model.html#tg_model.model.attribute_ref">attribute_ref() (in module tg_model.model)</a>
+
+        <ul>
+          <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.attribute_ref">(tg_model.model.ModelDefinitionContext method)</a>
+</li>
+        </ul></li>
         <li><a href="api/api_execution.html#tg_model.execution.NodeKind.ATTRIBUTE_VALUE">ATTRIBUTE_VALUE (tg_model.execution.NodeKind attribute)</a>
 </li>
         <li><a href="api/api_model.html#tg_model.model.AttributeRef">AttributeRef (class in tg_model.model)</a>
@@ -575,6 +587,8 @@
         <li><a href="api/api_execution.html#tg_model.execution.PartInstance.freeze">freeze() (tg_model.execution.PartInstance method)</a>
 
         <ul>
+          <li><a href="api/api_execution.html#tg_model.execution.RequirementPackageInstance.freeze">(tg_model.execution.RequirementPackageInstance method)</a>
+</li>
           <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.freeze">(tg_model.model.ModelDefinitionContext method)</a>
 </li>
         </ul></li>
@@ -707,7 +721,7 @@
 </li>
           <li><a href="api/api_model.html#tg_model.model.Ref.kind">(tg_model.model.Ref attribute)</a>
 </li>
-          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.kind">(tg_model.model.RequirementBlockRef attribute)</a>
+          <li><a href="api/api_model.html#tg_model.model.RequirementRef.kind">(tg_model.model.RequirementRef attribute)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -767,7 +781,7 @@
 </li>
           <li><a href="api/api_model.html#tg_model.model.Ref.metadata">(tg_model.model.Ref attribute)</a>
 </li>
-          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.metadata">(tg_model.model.RequirementBlockRef attribute)</a>
+          <li><a href="api/api_model.html#tg_model.model.RequirementRef.metadata">(tg_model.model.RequirementRef attribute)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -858,7 +872,7 @@
 </li>
           <li><a href="api/api_model.html#tg_model.model.Ref.owner_type">(tg_model.model.Ref attribute)</a>
 </li>
-          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.owner_type">(tg_model.model.RequirementBlockRef attribute)</a>
+          <li><a href="api/api_model.html#tg_model.model.RequirementRef.owner_type">(tg_model.model.RequirementRef attribute)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -869,6 +883,8 @@
   <h2>P</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementPackageInstance.package_type">package_type (tg_model.execution.RequirementPackageInstance attribute)</a>
+</li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.parameter">parameter() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_model.html#tg_model.model.parameter_ref">parameter_ref() (in module tg_model.model)</a>
@@ -909,6 +925,8 @@
           <li><a href="api/api_execution.html#tg_model.execution.ValidationResult.passed">(tg_model.execution.ValidationResult property)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_model.html#tg_model.model.AttributeRef.path">path (tg_model.model.AttributeRef attribute)</a>
 
         <ul>
@@ -918,11 +936,9 @@
 </li>
           <li><a href="api/api_model.html#tg_model.model.Ref.path">(tg_model.model.Ref attribute)</a>
 </li>
-          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.path">(tg_model.model.RequirementBlockRef attribute)</a>
+          <li><a href="api/api_model.html#tg_model.model.RequirementRef.path">(tg_model.model.RequirementRef attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_execution.html#tg_model.execution.ElementInstance.path_string">path_string (tg_model.execution.ElementInstance property)</a>
 
         <ul>
@@ -973,6 +989,8 @@
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.references">references() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
+        <li><a href="api/api_model.html#tg_model.model.Requirement">Requirement (class in tg_model.model)</a>
+</li>
         <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.requirement">requirement (tg_model.execution.AllocationBinding attribute)</a>
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement">requirement() (tg_model.model.ModelDefinitionContext method)</a>
@@ -981,9 +999,9 @@
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_attribute">requirement_attribute() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_block">requirement_block() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_input">requirement_input() (tg_model.model.ModelDefinitionContext method)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_package">requirement_package() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.requirement_path">requirement_path (tg_model.execution.ConstraintResult attribute)</a>
 
@@ -999,9 +1017,9 @@
           <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_ref">(tg_model.model.ModelDefinitionContext method)</a>
 </li>
         </ul></li>
-        <li><a href="api/api_model.html#tg_model.model.RequirementBlock">RequirementBlock (class in tg_model.model)</a>
+        <li><a href="api/api_execution.html#tg_model.execution.RequirementPackageInstance">RequirementPackageInstance (class in tg_model.execution)</a>
 </li>
-        <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef">RequirementBlockRef (class in tg_model.model)</a>
+        <li><a href="api/api_model.html#tg_model.model.RequirementRef">RequirementRef (class in tg_model.model)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult">RequirementSatisfactionResult (class in tg_model.execution)</a>
 </li>
@@ -1138,7 +1156,7 @@
 </li>
           <li><a href="api/api_model.html#tg_model.model.Ref.target_type">(tg_model.model.Ref attribute)</a>
 </li>
-          <li><a href="api/api_model.html#tg_model.model.RequirementBlockRef.target_type">(tg_model.model.RequirementBlockRef attribute)</a>
+          <li><a href="api/api_model.html#tg_model.model.RequirementRef.target_type">(tg_model.model.RequirementRef attribute)</a>
 </li>
         </ul></li>
         <li>

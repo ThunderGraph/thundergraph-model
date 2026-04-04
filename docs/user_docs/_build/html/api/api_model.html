@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -289,6 +289,10 @@ and helpers such as <code class="xref py py-func docutils literal notranslate"><
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">AttributeRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/refs.html#AttributeRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.AttributeRef" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.refs.Ref"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ref</span></code></a></p>
 <p>Reference to a declared attribute or parameter (value slot at configure time).</p>
+<p>For <code class="xref py py-meth docutils literal notranslate"><span class="pre">attribute()</span></code> <code class="docutils literal notranslate"><span class="pre">expr=</span></code>,
+passing another slot’s ref compiles as an identity passthrough. Use <a class="reference internal" href="#tg_model.model.AttributeRef.sym" title="tg_model.model.AttributeRef.sym"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sym</span></code></a> when you need
+that slot inside unitflow <code class="xref py py-class docutils literal notranslate"><span class="pre">Expr</span></code> arithmetic (for example
+<code class="docutils literal notranslate"><span class="pre">other.sym</span> <span class="pre">+</span> <span class="pre">…</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -405,7 +409,7 @@ cached dict artifact consumed by instantiation and graph compilation.</p>
 <p>Framework-controlled: only <strong>recording</strong> is allowed until <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.freeze" title="tg_model.model.ModelDefinitionContext.freeze"><code class="xref py py-meth docutils literal notranslate"><span class="pre">freeze()</span></code></a>.
 All declaration names share one namespace per owner type; duplicates raise
 <code class="xref py py-class docutils literal notranslate"><span class="pre">ModelDefinitionError</span></code>.</p>
-<p>For <a class="reference internal" href="#tg_model.model.RequirementBlock" title="tg_model.model.elements.RequirementBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementBlock</span></code></a>, <code class="docutils literal notranslate"><span class="pre">symbol_owner</span></code> and
+<p>For <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>, <code class="docutils literal notranslate"><span class="pre">symbol_owner</span></code> and
 <code class="docutils literal notranslate"><span class="pre">symbol_path_prefix</span></code> thread the configured root type and path prefix so
 <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_input" title="tg_model.model.ModelDefinitionContext.requirement_input"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_input()</span></code></a> builds <a class="reference internal" href="#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AttributeRef</span></code></a>
 paths the graph compiler resolves after <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate" title="tg_model.model.ModelDefinitionContext.allocate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate()</span></code></a> <code class="docutils literal notranslate"><span class="pre">inputs=</span></code> bindings.</p>
@@ -584,6 +588,9 @@ child declarations in one call style.</p>
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.attribute">
 <span class="sig-name descname"><span class="pre">attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">expr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">computed_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.attribute" title="Link to this definition">¶</a></dt>
 <dd><p>Declare an attribute (bindable/computed value slot).</p>
+<p>Root <code class="docutils literal notranslate"><span class="pre">System</span></code> types may not declare attributes. Keep <code class="docutils literal notranslate"><span class="pre">System.define()</span></code>
+focused on composition and top-level parameters; move derived values into
+an owned <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> or requirement package.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -602,7 +609,7 @@ for external computation.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.AttributeRef" title="tg_model.model.AttributeRef">AttributeRef</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name or frozen context.</p>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name, frozen context, or when called from <code class="docutils literal notranslate"><span class="pre">System.define()</span></code>.</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
@@ -628,7 +635,7 @@ for external computation.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.AttributeRef" title="tg_model.model.AttributeRef">AttributeRef</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name or frozen context.</p>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name, frozen context, or when called from <code class="docutils literal notranslate"><span class="pre">System.define()</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -637,6 +644,23 @@ for external computation.</p></li>
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.parameter_ref">
 <span class="sig-name descname"><span class="pre">parameter_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_block_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.parameter_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.parameter_ref" title="Link to this definition">¶</a></dt>
 <dd><p>Call <a class="reference internal" href="#tg_model.model.parameter_ref" title="tg_model.model.parameter_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">parameter_ref()</span></code></a> (same resolution rules and errors).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root_block_type</strong> (<em>type</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.attribute_ref">
+<span class="sig-name descname"><span class="pre">attribute_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_block_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.attribute_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.attribute_ref" title="Link to this definition">¶</a></dt>
+<dd><p>Call <a class="reference internal" href="#tg_model.model.attribute_ref" title="tg_model.model.attribute_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">attribute_ref()</span></code></a> (same resolution rules and errors).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -718,14 +742,21 @@ for external computation.</p></li>
 <p class="rubric">Notes</p>
 <p>With <code class="docutils literal notranslate"><span class="pre">expr=</span></code>, symbols must resolve against the <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate" title="tg_model.model.ModelDefinitionContext.allocate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate()</span></code></a> target subtree at compile
 time, and an <code class="docutils literal notranslate"><span class="pre">allocate</span></code> edge must exist. Prefer <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_input" title="tg_model.model.ModelDefinitionContext.requirement_input"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_input()</span></code></a> and
-<a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_accept_expr" title="tg_model.model.ModelDefinitionContext.requirement_accept_expr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_accept_expr()</span></code></a> inside <a class="reference internal" href="#tg_model.model.RequirementBlock" title="tg_model.model.elements.RequirementBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementBlock</span></code></a>
+<a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_accept_expr" title="tg_model.model.ModelDefinitionContext.requirement_accept_expr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_accept_expr()</span></code></a> inside <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>
 when acceptance should use only requirement-local inputs bound via <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=)</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.requirement_input">
 <span class="sig-name descname"><span class="pre">requirement_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.requirement_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.requirement_input" title="Link to this definition">¶</a></dt>
-<dd><p>Declare an input slot on <code class="docutils literal notranslate"><span class="pre">requirement</span></code> (RequirementBlock authoring only).</p>
+<dd><p><strong>Advanced / rare</strong> — leaf reqcheck input slot on <code class="docutils literal notranslate"><span class="pre">requirement</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For <strong>new requirement packages</strong>, use <strong>``model.parameter``</strong> at package scope
+instead.  <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> is a low-level helper for INCOSE-style leaf
+acceptance rows wired via <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code>.  See the
+<code class="docutils literal notranslate"><span class="pre">Requirement</span></code> class docstring.</p>
+</div>
 <p>Registers a value-bearing symbol under the configured root (threaded
 <code class="docutils literal notranslate"><span class="pre">symbol_owner</span></code> / <code class="docutils literal notranslate"><span class="pre">symbol_path_prefix</span></code>). Bind each input with
 <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate" title="tg_model.model.ModelDefinitionContext.allocate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate()</span></code></a> <code class="docutils literal notranslate"><span class="pre">inputs={name:</span> <span class="pre">part_ref.…}</span></code>.</p>
@@ -753,7 +784,13 @@ when acceptance should use only requirement-local inputs bound via <code class="
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.requirement_attribute">
 <span class="sig-name descname"><span class="pre">requirement_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.requirement_attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.requirement_attribute" title="Link to this definition">¶</a></dt>
-<dd><p>Declare a derived value on <code class="docutils literal notranslate"><span class="pre">requirement</span></code> (RequirementBlock authoring only).</p>
+<dd><p><strong>Advanced / rare</strong> — derived value on a leaf <code class="docutils literal notranslate"><span class="pre">requirement</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For <strong>new requirement packages</strong>, use <strong>``model.attribute``</strong> at package scope
+instead.  <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> is a low-level helper for INCOSE-style leaf
+acceptance rows.  See the <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> class docstring.</p>
+</div>
 <p>Registers a requirement-local <strong>attribute</strong> whose value is computed from an
 expression (typically over <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_input" title="tg_model.model.ModelDefinitionContext.requirement_input"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_input()</span></code></a> symbols, other
 <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> symbols declared earlier in the same <code class="docutils literal notranslate"><span class="pre">define()</span></code>,
@@ -789,7 +826,13 @@ in later <code class="docutils literal notranslate"><span class="pre">requiremen
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.requirement_accept_expr">
 <span class="sig-name descname"><span class="pre">requirement_accept_expr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">expr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.requirement_accept_expr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.requirement_accept_expr" title="Link to this definition">¶</a></dt>
-<dd><p>Set executable acceptance for <code class="docutils literal notranslate"><span class="pre">requirement</span></code> (after <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_input" title="tg_model.model.ModelDefinitionContext.requirement_input"><code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_input()</span></code></a> calls).</p>
+<dd><p><strong>Advanced / rare</strong> — set executable acceptance for a leaf <code class="docutils literal notranslate"><span class="pre">requirement</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For <strong>new requirement packages</strong>, use <strong>``model.constraint``</strong> at package scope
+instead.  <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> is a low-level helper for INCOSE-style leaf
+acceptance rows.  See the <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> class docstring.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -808,35 +851,42 @@ in later <code class="docutils literal notranslate"><span class="pre">requiremen
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.requirement_block">
-<span class="sig-name descname"><span class="pre">requirement_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.requirement_block"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.requirement_block" title="Link to this definition">¶</a></dt>
-<dd><p>Declare a nested requirements subtree (<a class="reference internal" href="#tg_model.model.RequirementBlock" title="tg_model.model.elements.RequirementBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementBlock</span></code></a>).</p>
+<dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.requirement_package">
+<span class="sig-name descname"><span class="pre">requirement_package</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.requirement_package"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.requirement_package" title="Link to this definition">¶</a></dt>
+<dd><p>Declare a nested composable requirements package (<a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Block name in this owner’s namespace.</p></li>
-<li><p><strong>block_type</strong> (<em>type</em>) – Subclass of <a class="reference internal" href="#tg_model.model.RequirementBlock" title="tg_model.model.elements.RequirementBlock"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementBlock</span></code></a>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Package name in this owner’s namespace.</p></li>
+<li><p><strong>package_type</strong> (<em>type</em>) – Subclass of <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Dot-access ref to nested requirements.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.RequirementBlockRef" title="tg_model.model.RequirementBlockRef">RequirementBlockRef</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.RequirementRef" title="tg_model.model.RequirementRef">RequirementRef</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – If <code class="docutils literal notranslate"><span class="pre">block_type</span></code> is not a requirement block, on duplicate name, or frozen context.</p>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – If <code class="docutils literal notranslate"><span class="pre">package_type</span></code> is not a composable requirement, on duplicate name, or frozen context.</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>Compiles <code class="docutils literal notranslate"><span class="pre">block_type</span></code> eagerly so <a class="reference internal" href="#tg_model.model.requirement_ref" title="tg_model.model.requirement_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">requirement_ref()</span></code></a> and sibling dot access work
-within the same <code class="docutils literal notranslate"><span class="pre">define()</span></code> call.</p>
+<p>Compiles <code class="docutils literal notranslate"><span class="pre">package_type</span></code> eagerly so <a class="reference internal" href="#tg_model.model.requirement_ref" title="tg_model.model.requirement_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">requirement_ref()</span></code></a> and sibling dot access work
+within the same <code class="docutils literal notranslate"><span class="pre">define()</span></code> call. The internal node kind remains <code class="docutils literal notranslate"><span class="pre">requirement_block</span></code> for
+artifact compatibility.</p>
+<p>Inside <code class="docutils literal notranslate"><span class="pre">package_type.define()</span></code>, package-level <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parameter" title="tg_model.model.ModelDefinitionContext.parameter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parameter()</span></code></a>, <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.attribute" title="tg_model.model.ModelDefinitionContext.attribute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attribute()</span></code></a>, and
+<a class="reference internal" href="#tg_model.model.ModelDefinitionContext.constraint" title="tg_model.model.ModelDefinitionContext.constraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">constraint()</span></code></a> are allowed when <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a> compile
+policy permits them.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.constraint">
 <span class="sig-name descname"><span class="pre">constraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.constraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.constraint" title="Link to this definition">¶</a></dt>
 <dd><p>Declare a constraint (boolean check over realized slot values).</p>
+<p>Root <code class="docutils literal notranslate"><span class="pre">System</span></code> types may not declare constraints. Put executable checks on
+the owning <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> or requirement package so
+the top-level system stays structural.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -852,7 +902,7 @@ within the same <code class="docutils literal notranslate"><span class="pre">def
 <dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref">Ref</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name or frozen context.</p>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name, frozen context, or when called from <code class="docutils literal notranslate"><span class="pre">System.define()</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1216,9 +1266,26 @@ Required when acceptance uses only requirement-local symbols.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.allocate_to_system">
+<span class="sig-name descname"><span class="pre">allocate_to_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement_ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.allocate_to_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.allocate_to_system" title="Link to this definition">¶</a></dt>
+<dd><p>Preferred shorthand for <code class="docutils literal notranslate"><span class="pre">allocate(requirement_ref,</span> <span class="pre">root_block())</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>requirement_ref</strong> (<a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref"><em>Ref</em></a>) – Requirement to allocate to this type’s structural system/root block.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – Same as <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate" title="tg_model.model.ModelDefinitionContext.allocate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate()</span></code></a>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.allocate_to_root">
 <span class="sig-name descname"><span class="pre">allocate_to_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requirement_ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.allocate_to_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.allocate_to_root" title="Link to this definition">¶</a></dt>
-<dd><p>Shorthand for <code class="docutils literal notranslate"><span class="pre">allocate(requirement_ref,</span> <span class="pre">root_block())</span></code>.</p>
+<dd><p>Compatibility alias for <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate_to_system" title="tg_model.model.ModelDefinitionContext.allocate_to_system"><code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate_to_system()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>requirement_ref</strong> (<a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref"><em>Ref</em></a>) – Requirement to allocate to this type’s structural root.</p>
@@ -1365,7 +1432,8 @@ Required when acceptance uses only requirement-local symbols.</p>
 <dt class="sig sig-object py" id="tg_model.model.PortRef">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">PortRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/refs.html#PortRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.PortRef" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.refs.Ref"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ref</span></code></a></p>
-<p>Reference to a declared port (use with <code class="xref py py-meth docutils literal notranslate"><span class="pre">tg_model.model.definition_context.ModelDefinitionContext.connect()</span></code>).</p>
+<p>Reference to a declared port.</p>
+<p>Use with <code class="xref py py-meth docutils literal notranslate"><span class="pre">tg_model.model.definition_context.ModelDefinitionContext.connect()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1468,32 +1536,43 @@ Required when acceptance uses only requirement-local symbols.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlock">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">RequirementBlock</span></span><a class="reference internal" href="../_modules/tg_model/model/elements.html#RequirementBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.RequirementBlock" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.Requirement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">Requirement</span></span><a class="reference internal" href="../_modules/tg_model/model/elements.html#Requirement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.Requirement" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.model.Element" title="tg_model.model.elements.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></a></p>
-<p>Composable requirements subtree (nested requirements and citations).</p>
+<p>Composable requirements package — <strong>use ``parameter`` / ``attribute`` / ``constraint``</strong>.</p>
+<p><strong>DEFAULT PATTERN (always start here):</strong> Inside <code class="docutils literal notranslate"><span class="pre">define(cls,</span> <span class="pre">model)</span></code>, declare
+<code class="docutils literal notranslate"><span class="pre">model.parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">model.attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">model.constraint</span></code> at <strong>package scope</strong> —
+the same value/check authoring surface as <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> (unlike <a class="reference internal" href="#tg_model.model.System" title="tg_model.model.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a>,
+which is restricted to structural composition and top-level parameters). Use
+<code class="docutils literal notranslate"><span class="pre">model.requirement(id,</span> <span class="pre">text)</span></code> for leaf traceability statements, <code class="docutils literal notranslate"><span class="pre">model.citation</span></code> for
+provenance, <code class="docutils literal notranslate"><span class="pre">model.references</span></code> for edges, and <code class="docutils literal notranslate"><span class="pre">model.allocate</span></code> for structural allocation.
+<strong>This is the standard, recommended API for all new requirement packages.</strong></p>
 <p>Register on a <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> or <a class="reference internal" href="#tg_model.model.System" title="tg_model.model.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a> via
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_block()</span></code>;
-navigate with <a class="reference internal" href="#tg_model.model.RequirementBlockRef" title="tg_model.model.refs.RequirementBlockRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementBlockRef</span></code></a> dot access.</p>
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_package()</span></code>;
+navigate with <a class="reference internal" href="#tg_model.model.RequirementRef" title="tg_model.model.refs.RequirementRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementRef</span></code></a> dot access.</p>
+<p><strong>Advanced (rare — leaf reqcheck only):</strong> <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>, <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> are low-level helpers for INCOSE-style executable acceptance
+on a <strong>single leaf</strong> <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code>, wired through <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code>.
+Use them <strong>only</strong> when you need <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction</span></code> per-requirement rows.
+<strong>Do not use them as the default pattern.</strong> If your check can be a package-level
+<code class="docutils literal notranslate"><span class="pre">constraint</span></code>, use that instead.</p>
 <p class="rubric">Notes</p>
-<p><code class="docutils literal notranslate"><span class="pre">define()</span></code> may only declare <code class="docutils literal notranslate"><span class="pre">requirement</span></code>, <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>,
-<code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">citation</span></code>, nested <code class="docutils literal notranslate"><span class="pre">requirement_block</span></code>, and <code class="docutils literal notranslate"><span class="pre">references</span></code>
-(enforced at compile). Prefer
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_accept_expr()</span></code>
-plus <code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_input()</span></code> /
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">requirement_attribute()</span></code>
-and <code class="xref py py-meth docutils literal notranslate"><span class="pre">allocate()</span></code> <code class="docutils literal notranslate"><span class="pre">inputs=</span></code>
-(for inputs wired from the design) for acceptance that avoids part refs inside the block.</p>
+<p>Package-level <code class="docutils literal notranslate"><span class="pre">parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint</span></code> nodes become
+<a class="reference internal" href="api_execution.html#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueSlot</span></code></a> / graph nodes under the configured root
+(dot access e.g. <code class="docutils literal notranslate"><span class="pre">configured_root.pkg.param_name</span></code>); expressions are validated during
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">compile()</span></code>. Package-level slots do not yet support <code class="docutils literal notranslate"><span class="pre">computed_by=</span></code> or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">RollupDecl</span></code> in graph compilation; every package
+<code class="docutils literal notranslate"><span class="pre">constraint</span></code> must supply <code class="docutils literal notranslate"><span class="pre">expr=</span></code> (including constant expressions with no symbols).</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">RequirementBlockRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/refs.html#RequirementBlockRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.RequirementBlockRef" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">RequirementRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/refs.html#RequirementRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.RequirementRef" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.refs.Ref"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ref</span></code></a></p>
-<p>Reference to a declared requirement block (dot access like <a class="reference internal" href="#tg_model.model.PartRef" title="tg_model.model.PartRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">PartRef</span></code></a>).</p>
+<p>Reference to a declared composable requirement package (dot access like <a class="reference internal" href="#tg_model.model.PartRef" title="tg_model.model.PartRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">PartRef</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>AttributeError</strong> – If the block type is not compiled yet, the member is missing, or the kind cannot
+<dd class="field-odd"><p><strong>AttributeError</strong> – If the package type is not compiled yet, the member is missing, or the kind cannot
     be projected (only requirement subtree kinds are allowed).</p>
 </dd>
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
@@ -1507,28 +1586,28 @@ and <code class="xref py py-meth docutils literal notranslate"><span class="pre"
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef.kind">
-<span class="sig-name descname"><span class="pre">kind</span></span><a class="headerlink" href="#tg_model.model.RequirementBlockRef.kind" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef.kind">
+<span class="sig-name descname"><span class="pre">kind</span></span><a class="headerlink" href="#tg_model.model.RequirementRef.kind" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef.metadata">
-<span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#tg_model.model.RequirementBlockRef.metadata" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#tg_model.model.RequirementRef.metadata" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef.owner_type">
-<span class="sig-name descname"><span class="pre">owner_type</span></span><a class="headerlink" href="#tg_model.model.RequirementBlockRef.owner_type" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef.owner_type">
+<span class="sig-name descname"><span class="pre">owner_type</span></span><a class="headerlink" href="#tg_model.model.RequirementRef.owner_type" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef.path">
-<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#tg_model.model.RequirementBlockRef.path" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef.path">
+<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#tg_model.model.RequirementRef.path" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="tg_model.model.RequirementBlockRef.target_type">
-<span class="sig-name descname"><span class="pre">target_type</span></span><a class="headerlink" href="#tg_model.model.RequirementBlockRef.target_type" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tg_model.model.RequirementRef.target_type">
+<span class="sig-name descname"><span class="pre">target_type</span></span><a class="headerlink" href="#tg_model.model.RequirementRef.target_type" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1537,7 +1616,12 @@ and <code class="xref py py-meth docutils literal notranslate"><span class="pre"
 <dt class="sig sig-object py" id="tg_model.model.System">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">System</span></span><a class="reference internal" href="../_modules/tg_model/model/elements.html#System"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.System" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tg_model.model.Element" title="tg_model.model.elements.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></a></p>
-<p>Top-level system element that composes parts (typical configured root type).</p>
+<p>Top-level system element for composition and top-level input parameters.</p>
+<p><code class="docutils literal notranslate"><span class="pre">System.define()</span></code> is intentionally structural: compose child parts, declare
+ports/requirements/citations as needed, and keep mission or scenario inputs as
+top-level <code class="docutils literal notranslate"><span class="pre">parameter(...)</span></code> declarations. Derived values and executable checks
+belong on owned <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> instances or requirement packages, not on the
+root <code class="docutils literal notranslate"><span class="pre">System</span></code> itself.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.System.instantiate">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">instantiate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/elements.html#System.instantiate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.System.instantiate" title="Link to this definition">¶</a></dt>
@@ -1590,6 +1674,28 @@ fails the same way as <code class="docutils literal notranslate"><span class="pr
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tg_model.model.attribute_ref">
+<span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">attribute_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_block_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#attribute_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.attribute_ref" title="Link to this definition">¶</a></dt>
+<dd><p>Return a reference to an <strong>attribute</strong> on the configured (or compiling) root type.</p>
+<p>Same resolution order as <a class="reference internal" href="#tg_model.model.parameter_ref" title="tg_model.model.parameter_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">parameter_ref()</span></code></a>, but the named node must be <code class="docutils literal notranslate"><span class="pre">kind='attribute'</span></code>.
+Use when a nested <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> (or part) should derive package slots from an allowed
+root-block attribute, such as a configured root <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a>.
+Root <a class="reference internal" href="#tg_model.model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a> types may not declare <code class="docutils literal notranslate"><span class="pre">attribute(...)</span></code>;
+move those derived values into an owned part or requirement package instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root_block_type</strong> (<em>type</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#tg_model.model.AttributeRef" title="tg_model.model.refs.AttributeRef"><em>AttributeRef</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tg_model.model.parameter_ref">
 <span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">parameter_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_block_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#parameter_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.parameter_ref" title="Link to this definition">¶</a></dt>
 <dd><p>Return a reference to a parameter on the configured (or compiling) root type.</p>
@@ -1623,7 +1729,7 @@ on the root <strong>before</strong> child <code class="docutils literal notransl
 </ol>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parameter_ref" title="tg_model.model.ModelDefinitionContext.parameter_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelDefinitionContext.parameter_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.requirement_ref" title="tg_model.model.requirement_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">requirement_ref</span></code></a></p>
+<p><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parameter_ref" title="tg_model.model.ModelDefinitionContext.parameter_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelDefinitionContext.parameter_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.attribute_ref" title="tg_model.model.attribute_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attribute_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.requirement_ref" title="tg_model.model.requirement_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">requirement_ref</span></code></a></p>
 </div>
 </dd></dl>
 
@@ -1632,13 +1738,14 @@ on the root <strong>before</strong> child <code class="docutils literal notransl
 <span class="sig-prename descclassname"><span class="pre">tg_model.model.</span></span><span class="sig-name descname"><span class="pre">requirement_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_block_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#requirement_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.requirement_ref" title="Link to this definition">¶</a></dt>
 <dd><p>Return a <a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.refs.Ref"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ref</span></code></a> to a requirement under the root type.</p>
 <p><code class="docutils literal notranslate"><span class="pre">path</span></code> is declaration names from the root (e.g. <code class="docutils literal notranslate"><span class="pre">(&quot;mission&quot;,</span> <span class="pre">&quot;range&quot;)</span></code> for
-requirement <code class="docutils literal notranslate"><span class="pre">range</span></code> inside block <code class="docutils literal notranslate"><span class="pre">mission</span></code>). Use from nested <code class="docutils literal notranslate"><span class="pre">Part.define()</span></code>
+requirement <code class="docutils literal notranslate"><span class="pre">range</span></code> inside package <code class="docutils literal notranslate"><span class="pre">mission</span></code>). Use from nested <code class="docutils literal notranslate"><span class="pre">Part.define()</span></code>
 when dot notation from a <a class="reference internal" href="#tg_model.model.PartRef" title="tg_model.model.refs.PartRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">PartRef</span></code></a> is not available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>root_block_type</strong> (<em>type</em>) – Configured root type owning the requirement subtree.</p></li>
-<li><p><strong>path</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>) – Non-empty path of <code class="docutils literal notranslate"><span class="pre">requirement_block</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement</span></code> segment names.</p></li>
+<li><p><strong>path</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>) – Non-empty path of segments: intermediate steps are <strong>composable requirement packages</strong>
+(internal compiled kind <code class="docutils literal notranslate"><span class="pre">requirement_block</span></code>); the last segment is a leaf <strong>requirement</strong>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1655,11 +1762,11 @@ when dot notation from a <a class="reference internal" href="#tg_model.model.Par
 <p class="rubric">Notes</p>
 <p>Resolution matches <a class="reference internal" href="#tg_model.model.parameter_ref" title="tg_model.model.parameter_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">parameter_ref()</span></code></a>: prefer the compiled root artifact; while
 compiling, the first segment comes from the active context and nested segments
-from <strong>compiled</strong> requirement-block artifacts (eager compile when registering
-via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_block" title="tg_model.model.ModelDefinitionContext.requirement_block"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_block()</span></code></a>).</p>
+from <strong>compiled</strong> composable-requirement artifacts (eager compile when registering
+via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_package" title="tg_model.model.ModelDefinitionContext.requirement_package"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_package()</span></code></a>).</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#tg_model.model.parameter_ref" title="tg_model.model.parameter_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameter_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_ref" title="tg_model.model.ModelDefinitionContext.requirement_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_ref</span></code></a></p>
+<p><a class="reference internal" href="#tg_model.model.parameter_ref" title="tg_model.model.parameter_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameter_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.attribute_ref" title="tg_model.model.attribute_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attribute_ref</span></code></a>, <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_ref" title="tg_model.model.ModelDefinitionContext.requirement_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_ref</span></code></a></p>
 </div>
 </dd></dl>
 
@@ -1774,13 +1881,14 @@ via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.r
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.attribute"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.attribute()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parameter"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.parameter()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parameter_ref"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.parameter_ref()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.attribute_ref"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.attribute_ref()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_ref"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_ref()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.citation"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.citation()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_input"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_input()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_attribute"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_attribute()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_accept_expr"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_accept_expr()</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_block"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_block()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.requirement_package"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_package()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.constraint"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.constraint()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.state"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.state()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.event"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.event()</span></code></a></li>
@@ -1796,6 +1904,7 @@ via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.r
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.solve_group"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.solve_group()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.references"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.references()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.allocate()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate_to_system"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.allocate_to_system()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.allocate_to_root"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.allocate_to_root()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.connect"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.connect()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.ModelDefinitionContext.parts"><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.parts()</span></code></a></li>
@@ -1830,13 +1939,13 @@ via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.r
 <li><a class="reference internal" href="#tg_model.model.Ref.to_dict"><code class="docutils literal notranslate"><span class="pre">Ref.to_dict()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlock"><code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef</span></code></a><ul>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef.kind"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef.kind</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef.metadata"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef.metadata</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef.owner_type"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef.owner_type</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef.path"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef.path</span></code></a></li>
-<li><a class="reference internal" href="#tg_model.model.RequirementBlockRef.target_type"><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef.target_type</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.Requirement"><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef"><code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code></a><ul>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef.kind"><code class="docutils literal notranslate"><span class="pre">RequirementRef.kind</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef.metadata"><code class="docutils literal notranslate"><span class="pre">RequirementRef.metadata</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef.owner_type"><code class="docutils literal notranslate"><span class="pre">RequirementRef.owner_type</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef.path"><code class="docutils literal notranslate"><span class="pre">RequirementRef.path</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.RequirementRef.target_type"><code class="docutils literal notranslate"><span class="pre">RequirementRef.target_type</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.model.System"><code class="docutils literal notranslate"><span class="pre">System</span></code></a><ul>
@@ -1844,6 +1953,7 @@ via <a class="reference internal" href="#tg_model.model.ModelDefinitionContext.r
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.model.as_expr_leaf"><code class="docutils literal notranslate"><span class="pre">as_expr_leaf()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.model.attribute_ref"><code class="docutils literal notranslate"><span class="pre">attribute_ref()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.parameter_ref"><code class="docutils literal notranslate"><span class="pre">parameter_ref()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.requirement_ref"><code class="docutils literal notranslate"><span class="pre">requirement_ref()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.model.sum_attributes"><code class="docutils literal notranslate"><span class="pre">sum_attributes()</span></code></a></li>

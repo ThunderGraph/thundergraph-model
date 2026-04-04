@@ -6,7 +6,7 @@ Most architecture tools stop at diagrams. This library is for when you want the 
 
 - define structure (`System`, `Part`, ports)
 - define value semantics (parameters, attributes, constraints)
-- define requirement semantics (`RequirementBlock`, requirement acceptance)
+- define requirement semantics (`Requirement` composable packages, requirement acceptance)
 - define behavior (states, events, decisions, sequences, item flow)
 - evaluate the whole thing with real quantities and get pass/fail evidence
 

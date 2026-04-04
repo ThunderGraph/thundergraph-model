@@ -16,6 +16,8 @@ Canonical narrative flow (with more detail): {doc}`../drafts/execution_pipeline`
 1. **Compile types** — `Element.compile()` / `define` fills a `ModelDefinitionContext`; output is a **class-level** compiled artifact (not a runnable graph).
 2. **Instantiate** — `instantiate(SomeSystem)` or `SomeSystem.instantiate()` → `ConfiguredModel`: **frozen** topology, stable ids, registries.
 
+**Authoring rule:** the configured root `System` is structural composition plus top-level inputs. Derived values, constraints, roll-ups, solve groups, and external-compute bindings belong on owned `Part` instances or requirement packages.
+
 **Default path (application authors):**
 
 3. **`ConfiguredModel.evaluate`** — On first call, **compiles** the graph (lazy, cached on the instance — same cache as explicit `compile_graph`), optionally runs **`validate_graph`**, then **`Evaluator.evaluate`** with a **fresh** `RunContext`. Inputs are keyed by **`ValueSlot`** handles (or slot **`stable_id`** strings).
@@ -38,7 +40,7 @@ Behavior APIs (`dispatch_event`, …) read/write **run** state and traces; they 
 
 ## Composable requirement packages
 
-**Authoring:** A subclass of **`Requirement`** is a **namespace** mounted with **`requirement_package`** (see {doc}`extension_playbook`). **Leaf** statements use **`model.requirement`** inside that **`define()`**; package-level **`parameter`** / **`attribute`** / **`constraint`** live alongside them and participate in the same compile → instantiate → graph pipeline as root/part values.
+**Authoring:** A subclass of **`Requirement`** is a **namespace** mounted with **`requirement_package`** (see {doc}`extension_playbook`). **Leaf** statements use **`model.requirement`** inside that **`define()`**; package-level **`parameter`** / **`attribute`** / **`constraint`** live alongside them and participate in the same compile → instantiate → graph pipeline as part values.
 
 **Runtime:** After **`instantiate`**, **`RequirementPackageInstance`** hangs under the owning **`PartInstance`** (usually the configured root). **`ConfiguredModel.evaluate`** and **`compile_graph`** share one graph cache; **package** value slots are valid **`ValueSlot`** keys for the façade the same way as root parameters.
 

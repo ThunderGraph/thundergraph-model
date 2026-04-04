@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="FAQ" href="faq.html"><link rel="prev" title="Concept: Requirements (inputs, derived attributes, acceptance)" href="concepts_requirements.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="FAQ" href="faq.html"><link rel="prev" title="Concept: Requirements — parameter / attribute / constraint (DEFAULT)" href="concepts_requirements.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>Concept: External Compute (Concrete Binding) - ThunderGraph Model Docs</title>
@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -277,7 +277,7 @@
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">kg</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">System</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Part</span><span class="p">,</span> <span class="n">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span><span class="p">,</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">compile_graph</span><span class="p">,</span> <span class="n">instantiate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.integrations</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExternalComputeBinding</span><span class="p">,</span> <span class="n">ExternalComputeResult</span>
 
@@ -294,22 +294,29 @@
         <span class="k">return</span> <span class="n">ExternalComputeResult</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">dry</span> <span class="o">+</span> <span class="n">payload</span><span class="p">,</span> <span class="n">provenance</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Vehicle</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VehicleMassAnalysis</span><span class="p">(</span><span class="n">Part</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">root</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">()</span>
-        <span class="n">dry</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;dry_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dry</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">,</span> <span class="s2">&quot;dry_kg&quot;</span><span class="p">)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">,</span> <span class="s2">&quot;payload_kg&quot;</span><span class="p">)</span>
 
         <span class="n">total</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span>
             <span class="s2">&quot;total_kg&quot;</span><span class="p">,</span>
             <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span>
             <span class="n">computed_by</span><span class="o">=</span><span class="n">ExternalComputeBinding</span><span class="p">(</span>
                 <span class="n">external</span><span class="o">=</span><span class="n">MassTool</span><span class="p">(),</span>
-                <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dry&quot;</span><span class="p">:</span> <span class="n">root</span><span class="o">.</span><span class="n">dry_kg</span><span class="p">,</span> <span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">root</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">},</span>
+                <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dry&quot;</span><span class="p">:</span> <span class="n">dry</span><span class="p">,</span> <span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="p">},</span>
             <span class="p">),</span>
         <span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;non_negative&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="n">total</span> <span class="o">&gt;=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kg</span><span class="p">)))</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Vehicle</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;dry_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">(</span><span class="s2">&quot;mass_analysis&quot;</span><span class="p">,</span> <span class="n">VehicleMassAnalysis</span><span class="p">)</span>
 
 
 <span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">)</span>
@@ -323,7 +330,7 @@
     <span class="p">},</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">total_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">mass_analysis</span><span class="o">.</span><span class="n">total_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">))</span>
 </pre></div>
 </div>
 <section id="same-run-with-evaluate-recommended">
@@ -348,6 +355,7 @@
 <li><p><strong>Single output:</strong> Return <code class="docutils literal notranslate"><span class="pre">ExternalComputeResult(value=...)</span></code> with one quantity; the compiler wires it to the attribute that uses <code class="docutils literal notranslate"><span class="pre">computed_by=</span></code>.</p></li>
 <li><p><strong>Multiple outputs:</strong> Return <code class="docutils literal notranslate"><span class="pre">ExternalComputeResult(value={&quot;route_a&quot;:</span> <span class="pre">q1,</span> <span class="pre">&quot;route_b&quot;:</span> <span class="pre">q2})</span></code> and supply matching <code class="docutils literal notranslate"><span class="pre">output_routes</span></code> on the binding so each name maps to an attribute ref (see API docs for <code class="docutils literal notranslate"><span class="pre">link_external_routes</span></code>).</p></li>
 <li><p><strong>Static checks:</strong> If the external object implements <code class="docutils literal notranslate"><span class="pre">validate_binding</span></code>, pass <code class="docutils literal notranslate"><span class="pre">configured_model=</span></code> into <code class="docutils literal notranslate"><span class="pre">validate_graph</span></code> so units and routes can be checked before <code class="docutils literal notranslate"><span class="pre">evaluate</span></code>.</p></li>
+<li><p><strong>Ownership rule:</strong> keep root <code class="docutils literal notranslate"><span class="pre">System</span></code> types structural and put <code class="docutils literal notranslate"><span class="pre">computed_by=</span></code> attributes and related constraints on the owning <code class="docutils literal notranslate"><span class="pre">Part</span></code> or requirement package.</p></li>
 </ul>
 </section>
 <section id="rule-of-thumb">
@@ -380,7 +388,7 @@
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Concept: Requirements (inputs, derived attributes, acceptance)</div>
+                <div class="title">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</div>
                 
               </div>
             </a>

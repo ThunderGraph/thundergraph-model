@@ -39,12 +39,14 @@ def test_hpc_datacenter_instantiate_and_evaluate() -> None:
     inputs = {
         cm.equipment_electrical_load_kw: Quantity(30.0, kW),
         cm.auxiliary_cooling_load_kw: Quantity(8.0, kW),
+        fac.equipment_electrical_load_kw: Quantity(30.0, kW),
+        fac.auxiliary_cooling_load_kw: Quantity(8.0, kW),
         fac.grid_import_capacity_kw: Quantity(50.0, kW),
         fac.max_cooling_kw: Quantity(12.0, kW),
     }
     result = cm.evaluate(inputs=inputs)
     assert result.passed
-    assert result.outputs[cm.total_facility_kw.stable_id] == Quantity(38.0, kW)
+    assert result.outputs[fac.total_facility_kw.stable_id] == Quantity(38.0, kW)
 
 
 def test_hpc_datacenter_sweep_uses_validate_false_after_first_pass() -> None:
@@ -55,6 +57,8 @@ def test_hpc_datacenter_sweep_uses_validate_false_after_first_pass() -> None:
         inputs={
             cm.equipment_electrical_load_kw: Quantity(10.0, kW),
             cm.auxiliary_cooling_load_kw: Quantity(4.0, kW),
+            fac.equipment_electrical_load_kw: Quantity(10.0, kW),
+            fac.auxiliary_cooling_load_kw: Quantity(4.0, kW),
             fac.grid_import_capacity_kw: Quantity(100.0, kW),
             fac.max_cooling_kw: Quantity(20.0, kW),
         },
@@ -64,6 +68,8 @@ def test_hpc_datacenter_sweep_uses_validate_false_after_first_pass() -> None:
         inputs={
             cm.equipment_electrical_load_kw: Quantity(90.0, kW),
             cm.auxiliary_cooling_load_kw: Quantity(25.0, kW),
+            fac.equipment_electrical_load_kw: Quantity(90.0, kW),
+            fac.auxiliary_cooling_load_kw: Quantity(25.0, kW),
             fac.grid_import_capacity_kw: Quantity(100.0, kW),
             fac.max_cooling_kw: Quantity(20.0, kW),
         },

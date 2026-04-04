@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/faq.html">FAQ</a></li>
 </ul>
@@ -295,15 +295,20 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#install">Install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#recommended-instantiate-evaluate">Recommended: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#advanced-explicit-compile-graph-evaluator">Advanced: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#composable-requirements-next-to-part">Composable requirements next to <code class="docutils literal notranslate"><span class="pre">Part</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#what-happened-both-paths">What happened (both paths)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/quickstart.html#next-examples">Next examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#wired-inputs-requirement-input">Wired inputs (<code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#derived-values-on-the-requirement-requirement-attribute">Derived values on the requirement (<code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#the-default-pattern-package-level-parameter-attribute-constraint">The default pattern: package-level <code class="docutils literal notranslate"><span class="pre">parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#leaf-model-requirement-vs-composable-requirement">Leaf <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code> vs composable <code class="docutils literal notranslate"><span class="pre">Requirement</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#package-level-value-surface">Package-level value surface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#advanced-rare-leaf-level-requirement-input-requirement-attribute-requirement-accept-expr">Advanced (rare): leaf-level <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/concepts_requirements.html#summary-which-pattern-to-use">Summary: which pattern to use</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a><ul>
@@ -317,7 +322,7 @@
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-do-i-need-runcontext">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">Why are inputs bound by stable id in the explicit pipeline?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#i-changed-code-in-a-notebook-and-behavior-is-weird">I changed code in a notebook and behavior is weird.</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user/faq.html#when-should-i-use-requirementblock">When should I use <code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/faq.html#when-should-i-use-requirement-composable-requirement-package">When should I use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> (composable requirement package)?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#what-is-the-difference-between-requirement-input-and-requirement-attribute">What is the difference between <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#where-do-i-start-if-i-am-new">Where do I start if I am new?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user/faq.html#the-graph-compiled-but-evaluate-failed-or-results-look-wrong">The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong</a></li>
@@ -332,6 +337,7 @@
 <li class="toctree-l2"><a class="reference internal" href="developer/architecture.html#subsystems">Subsystems</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/architecture.html#pipeline-sequences">Pipeline sequences</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/architecture.html#invariants-mental-checklist-for-contributors">Invariants (mental checklist for contributors)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/architecture.html#composable-requirement-packages">Composable requirement packages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/architecture.html#extension-points">Extension points</a></li>
 </ul>
 </li>
@@ -350,6 +356,7 @@
 <li class="toctree-l1"><a class="reference internal" href="developer/testing.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="developer/testing.html#layout">Layout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/testing.html#adding-a-regression">Adding a regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#notebooks">Notebooks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/testing.html#coverage">Coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/testing.html#references">References</a></li>
 </ul>
@@ -419,9 +426,9 @@
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#element">Element</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#system">System</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#part">Part</a></li>
-<li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#requirementblock">RequirementBlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#requirement">Requirement</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#modeldefinitioncontext">ModelDefinitionContext</a></li>
-<li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#ref-partref-attributeref-requirementblockref">Ref / PartRef / AttributeRef / RequirementBlockRef</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#ref-partref-attributeref-requirementref">Ref / PartRef / AttributeRef / RequirementRef</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#compile-type-compile">compile (type compile)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#configuredmodel">ConfiguredModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="drafts/glossary.html#valueslot">ValueSlot</a></li>

@@ -127,6 +127,7 @@ def extract_mars_ntp_evaluation_report(
     nz = cm.nozzle
     sh = cm.shadow_shield
     env = cm.design_envelope
+    ms = cm.mission_sizing
 
     def _g(slot: Any) -> Any:
         return outputs.get(slot.stable_id)
@@ -153,12 +154,12 @@ def extract_mars_ntp_evaluation_report(
         "thesis": {
             "narrative": (
                 "Program-root **napkin parameters** feed :class:`~examples.mars_ntp_tug.integrations.adapters."
-                "MarsTransferNapkinDesk` via ``computed_by=`` (same integration pattern as the cargo jet mission "
-                "desk). The desk produces **sim_*** attributes (propellant, wet mass, thrust floor, mass flow, "
-                "thermal power). **Mission** closure still uses ``requirement_accept_expr`` on ``requirements."
-                "mission``; **package** parameters for thermal-hydraulic and propulsion are mirrored from the "
-                "desk in ``merge_mars_ntp_eval_inputs`` so notebooks do not hand-copy five derived numbers. "
-                "**Coherence** constraints check reactor/nozzle operating points against the desk snapshot."
+                "MarsTransferNapkinDesk` via ``computed_by=`` on owned parts (same integration pattern as the "
+                "cargo jet mission desk). The desk produces **sim_*** attributes under ``mission_sizing`` plus "
+                "local mission sizing checks on the reactor core and nozzle. **Mission** closure still uses "
+                "``requirement_accept_expr`` on ``requirements.mission``; **package** parameters for thermal-"
+                "hydraulic and propulsion are mirrored from the desk in ``merge_mars_ntp_eval_inputs`` so "
+                "notebooks do not hand-copy five derived numbers."
             ),
         },
         "napkin_assumptions": {
@@ -172,16 +173,16 @@ def extract_mars_ntp_evaluation_report(
             "napkin_jet_kinetic_fraction": _qty_str(_g(cm.napkin_jet_kinetic_fraction)),
         },
         "mission_desk_outputs": {
-            "sim_propellant_required_kg": _qty_str(_g(cm.sim_propellant_required_kg)),
-            "sim_wet_mass_start_kg": _qty_str(_g(cm.sim_wet_mass_start_kg)),
-            "sim_min_vacuum_thrust_kn": _qty_str(_g(cm.sim_min_vacuum_thrust_kn)),
-            "sim_hydrogen_mass_flow_kg_s": _qty_str(_g(cm.sim_hydrogen_mass_flow_kg_s)),
-            "sim_rated_thermal_power_mw": _qty_str(_g(cm.sim_rated_thermal_power_mw)),
+            "sim_propellant_required_kg": _qty_str(_g(ms.sim_propellant_required_kg)),
+            "sim_wet_mass_start_kg": _qty_str(_g(ms.sim_wet_mass_start_kg)),
+            "sim_min_vacuum_thrust_kn": _qty_str(_g(ms.sim_min_vacuum_thrust_kn)),
+            "sim_hydrogen_mass_flow_kg_s": _qty_str(_g(ms.sim_hydrogen_mass_flow_kg_s)),
+            "sim_rated_thermal_power_mw": _qty_str(_g(ms.sim_rated_thermal_power_mw)),
         },
         "scenario_mission": {
-            "mission_delta_v_required": _qty_str(_g(cm.mission_delta_v_required)),
-            "mission_propellant_required": _qty_str(_g(cm.mission_propellant_required)),
-            "mission_min_vacuum_thrust": _qty_str(_g(cm.mission_min_vacuum_thrust)),
+            "mission_delta_v_required": _qty_str(_g(ms.mission_delta_v_required)),
+            "mission_propellant_required": _qty_str(_g(ms.mission_propellant_required)),
+            "mission_min_vacuum_thrust": _qty_str(_g(ms.mission_min_vacuum_thrust)),
         },
         "reactor_operating_point": {
             "rated_thermal_power": _qty_str(_g(rc.rated_thermal_power)),

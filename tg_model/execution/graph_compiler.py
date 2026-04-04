@@ -507,6 +507,10 @@ def _resolve_symbol_to_slot(
     """Resolve a unitflow Symbol to its corresponding ValueSlot.
 
     Uses the canonical symbol-id registry from AttributeRef.sym.
+    When the symbol belongs to a different type than ``owner`` (e.g. a root
+    system parameter referenced via :func:`~tg_model.model.definition_context.parameter_ref`),
+    resolution falls back to ``model.root``.
+
     Fails loudly if the symbol cannot be resolved — silent misbinding
     is not acceptable in a safety-critical context.
     """
@@ -523,6 +527,15 @@ def _resolve_symbol_to_slot(
                 return current
         except AttributeError:
             pass
+        if _owner_type is not owner.definition_type and _owner_type is model.root.definition_type:
+            current = model.root
+            try:
+                for segment in tg_path:
+                    current = getattr(current, segment)
+                if isinstance(current, ValueSlot):
+                    return current
+            except AttributeError:
+                pass
         raise GraphCompilationError(
             f"Symbol '{getattr(sym, 'name', '?')}' has registered path {tg_path} "
             f"but could not be resolved under '{owner.path_string}'"

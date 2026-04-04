@@ -201,14 +201,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements with Allocation Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer Architecture</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Developer architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/repository_map.html">Repository map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/extension_playbook.html">Extension playbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/releasing.html">Releasing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docstring_style.html">NumPy-style docstrings for <code class="docutils literal notranslate"><span class="pre">tg_model</span></code> (Phase 0 contract)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -304,6 +309,71 @@
 
 
 
+<div class="viewcode-block" id="RequirementPackageInstance">
+<a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.RequirementPackageInstance">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RequirementPackageInstance</span><span class="p">(</span><span class="n">ElementInstance</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Materialized composable requirement package under the configured root.</span>
+
+<span class="sd">    Exposes nested requirements, citations, nested packages, and package-level value slots via</span>
+<span class="sd">    attribute access (e.g. ``root.mission.x_m`` for a package parameter).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_frozen&quot;</span><span class="p">,</span> <span class="s2">&quot;_members&quot;</span><span class="p">,</span> <span class="s2">&quot;package_type&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">stable_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">definition_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+        <span class="n">definition_path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">instance_path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">package_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">stable_id</span><span class="o">=</span><span class="n">stable_id</span><span class="p">,</span>
+            <span class="n">definition_type</span><span class="o">=</span><span class="n">definition_type</span><span class="p">,</span>
+            <span class="n">definition_path</span><span class="o">=</span><span class="n">definition_path</span><span class="p">,</span>
+            <span class="n">instance_path</span><span class="o">=</span><span class="n">instance_path</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">package_type</span> <span class="o">=</span> <span class="n">package_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ElementInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span> <span class="o">|</span> <span class="n">RequirementPackageInstance</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_frozen</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_frozen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_frozen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot modify frozen RequirementPackageInstance &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RequirementPackageInstance.add_member">
+<a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.RequirementPackageInstance.add_member">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_member</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">ElementInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span> <span class="o">|</span> <span class="n">RequirementPackageInstance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a child (instantiation only).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_frozen</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="RequirementPackageInstance.freeze">
+<a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.RequirementPackageInstance.freeze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">freeze</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Freeze this package and nested packages recursively.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_frozen</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ElementInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span> <span class="o">|</span> <span class="n">RequirementPackageInstance</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">members</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_members&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">members</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2"> has no member named &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="PortInstance">
 <a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.PortInstance">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PortInstance</span><span class="p">(</span><span class="n">ElementInstance</span><span class="p">):</span>
@@ -369,7 +439,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PartInstance</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ports</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PortInstance</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_value_slots</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValueSlot</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_child_lookup</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="n">PortInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_child_lookup</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="n">PortInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span> <span class="o">|</span> <span class="n">RequirementPackageInstance</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frozen</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_frozen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -382,7 +452,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively freeze this part subtree (called on the full model after instantiate).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frozen</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">:</span>
-            <span class="n">child</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span></div>
+            <span class="n">child</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_child_lookup</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="PartInstance.add_child">
@@ -418,6 +491,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_child_lookup</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">slot</span></div>
 
 
+<div class="viewcode-block" id="PartInstance.add_requirement_package">
+<a class="viewcode-back" href="../../../api/api_execution.html#tg_model.execution.PartInstance.add_requirement_package">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_requirement_package</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pkg</span><span class="p">:</span> <span class="n">RequirementPackageInstance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a composable requirement package under ``name`` (instantiation only).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_frozen</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_child_lookup</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">pkg</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PartInstance</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shallow copy of child parts.&quot;&quot;&quot;</span>
@@ -433,7 +514,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shallow copy of owned parameter/attribute slots.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value_slots</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="n">PortInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="n">PortInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span> <span class="o">|</span> <span class="n">RequirementPackageInstance</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve ``name`` against registered children, ports, and value slots.</span>
 
 <span class="sd">        Raises</span>
@@ -446,14 +527,25 @@
         <span class="n">lookup</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_child_lookup&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">lookup</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">lookup</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2"> has no child named &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-        <span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2"> has no child named &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_collect_slot_ids_from_requirement_package</span><span class="p">(</span><span class="n">pkg</span><span class="p">:</span> <span class="n">RequirementPackageInstance</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gather slot ids under a composable requirement package (including nested packages).&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">pkg</span><span class="o">.</span><span class="n">_members</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">stable_id</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
+            <span class="n">_collect_slot_ids_from_requirement_package</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">slot_ids_for_part_subtree</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return every :class:`~tg_model.execution.value_slots.ValueSlot` ``stable_id`` under ``part``.</span>
+
+<span class="sd">    Includes slots on the part and its descendant parts, and value slots declared on composable</span>
+<span class="sd">    requirement packages attached to those parts (nested packages included). Ports and non-slot</span>
+<span class="sd">    elements under packages are not included.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -471,6 +563,13 @@
         <span class="n">p</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">vs</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">value_slots</span><span class="p">:</span>
             <span class="n">ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">stable_id</span><span class="p">)</span>
+        <span class="c1"># ``ConfiguredModel`` forwards ``value_slots`` / ``children`` via ``__getattr__`` but has</span>
+        <span class="c1"># no ``_child_lookup``; skip package walk in that mistaken-API case (behavior tests).</span>
+        <span class="n">child_lookup</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;_child_lookup&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">child_lookup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">child_lookup</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
+                    <span class="n">_collect_slot_ids_from_requirement_package</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
         <span class="n">stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
 </pre></div>

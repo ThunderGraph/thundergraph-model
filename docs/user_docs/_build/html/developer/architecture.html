@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -290,6 +290,7 @@
 <li><p><strong>Compile types</strong> — <code class="docutils literal notranslate"><span class="pre">Element.compile()</span></code> / <code class="docutils literal notranslate"><span class="pre">define</span></code> fills a <code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext</span></code>; output is a <strong>class-level</strong> compiled artifact (not a runnable graph).</p></li>
 <li><p><strong>Instantiate</strong> — <code class="docutils literal notranslate"><span class="pre">instantiate(SomeSystem)</span></code> or <code class="docutils literal notranslate"><span class="pre">SomeSystem.instantiate()</span></code> → <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>: <strong>frozen</strong> topology, stable ids, registries.</p></li>
 </ol>
+<p><strong>Authoring rule:</strong> the configured root <code class="docutils literal notranslate"><span class="pre">System</span></code> is structural composition plus top-level inputs. Derived values, constraints, roll-ups, solve groups, and external-compute bindings belong on owned <code class="docutils literal notranslate"><span class="pre">Part</span></code> instances or requirement packages.</p>
 <p><strong>Default path (application authors):</strong></p>
 <ol class="arabic simple" start="3">
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> — On first call, <strong>compiles</strong> the graph (lazy, cached on the instance — same cache as explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code>), optionally runs <strong><code class="docutils literal notranslate"><span class="pre">validate_graph</span></code></strong>, then <strong><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate</span></code></strong> with a <strong>fresh</strong> <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>. Inputs are keyed by <strong><code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code></strong> handles (or slot <strong><code class="docutils literal notranslate"><span class="pre">stable_id</span></code></strong> strings).</p></li>
@@ -311,6 +312,13 @@
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">RunContext</span></code> is per run</strong> — the façade creates a new context each <strong><code class="docutils literal notranslate"><span class="pre">evaluate</span></code></strong> unless <strong><code class="docutils literal notranslate"><span class="pre">run_context=</span></code></strong> is passed; do not reuse contexts across parallel evaluations without a clear concurrency story (see <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code></strong> docstring on threading).</p></li>
 <li><p><strong>Requirement acceptance</strong> is part of the same constraint/evaluation pass when requirements are allocated and wired with inputs.</p></li>
 </ul>
+</section>
+<section id="composable-requirement-packages">
+<h2>Composable requirement packages<a class="headerlink" href="#composable-requirement-packages" title="Link to this heading">¶</a></h2>
+<p><strong>Authoring:</strong> A subclass of <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> is a <strong>namespace</strong> mounted with <strong><code class="docutils literal notranslate"><span class="pre">requirement_package</span></code></strong> (see <a class="reference internal" href="extension_playbook.html"><span class="doc">Extension playbook</span></a>). <strong>Leaf</strong> statements use <strong><code class="docutils literal notranslate"><span class="pre">model.requirement</span></code></strong> inside that <strong><code class="docutils literal notranslate"><span class="pre">define()</span></code></strong>; package-level <strong><code class="docutils literal notranslate"><span class="pre">parameter</span></code></strong> / <strong><code class="docutils literal notranslate"><span class="pre">attribute</span></code></strong> / <strong><code class="docutils literal notranslate"><span class="pre">constraint</span></code></strong> live alongside them and participate in the same compile → instantiate → graph pipeline as part values.</p>
+<p><strong>Runtime:</strong> After <strong><code class="docutils literal notranslate"><span class="pre">instantiate</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">RequirementPackageInstance</span></code></strong> hangs under the owning <strong><code class="docutils literal notranslate"><span class="pre">PartInstance</span></code></strong> (usually the configured root). <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">compile_graph</span></code></strong> share one graph cache; <strong>package</strong> value slots are valid <strong><code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code></strong> keys for the façade the same way as root parameters.</p>
+<p><strong>Artifacts:</strong> The compiler still labels composable requirement nodes with internal <strong><code class="docutils literal notranslate"><span class="pre">kind</span></code></strong> <strong><code class="docutils literal notranslate"><span class="pre">&quot;requirement_block&quot;</span></code></strong>; tests and tooling should not couple user-facing names to that string without reason.</p>
+<p>End-user concepts: <a class="reference internal" href="../user/concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a>.</p>
 </section>
 <section id="extension-points">
 <h2>Extension points<a class="headerlink" href="#extension-points" title="Link to this heading">¶</a></h2>
@@ -377,6 +385,7 @@
 <li><a class="reference internal" href="#subsystems">Subsystems</a></li>
 <li><a class="reference internal" href="#pipeline-sequences">Pipeline sequences</a></li>
 <li><a class="reference internal" href="#invariants-mental-checklist-for-contributors">Invariants (mental checklist for contributors)</a></li>
+<li><a class="reference internal" href="#composable-requirement-packages">Composable requirement packages</a></li>
 <li><a class="reference internal" href="#extension-points">Extension points</a></li>
 </ul>
 </li>

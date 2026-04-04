@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -1359,6 +1359,23 @@ validation from other failures.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tg_model.execution.PartInstance.add_requirement_package">
+<span class="sig-name descname"><span class="pre">add_requirement_package</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pkg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/instances.html#PartInstance.add_requirement_package"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.PartInstance.add_requirement_package" title="Link to this definition">¶</a></dt>
+<dd><p>Register a composable requirement package under <code class="docutils literal notranslate"><span class="pre">name</span></code> (instantiation only).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>pkg</strong> (<a class="reference internal" href="#tg_model.execution.RequirementPackageInstance" title="tg_model.execution.instances.RequirementPackageInstance"><em>RequirementPackageInstance</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="tg_model.execution.PartInstance.children">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">children</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tg_model.execution.PartInstance" title="tg_model.execution.instances.PartInstance"><span class="pre">PartInstance</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#tg_model.execution.PartInstance.children" title="Link to this definition">¶</a></dt>
@@ -1430,6 +1447,60 @@ validation from other failures.</p>
 <dt class="sig sig-object py" id="tg_model.execution.ReferenceBinding.citation">
 <span class="sig-name descname"><span class="pre">citation</span></span><a class="headerlink" href="#tg_model.execution.ReferenceBinding.citation" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tg_model.execution.RequirementPackageInstance">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tg_model.execution.</span></span><span class="sig-name descname"><span class="pre">RequirementPackageInstance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">stable_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">definition_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/instances.html#RequirementPackageInstance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.RequirementPackageInstance" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tg_model.execution.ElementInstance" title="tg_model.execution.instances.ElementInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementInstance</span></code></a></p>
+<p>Materialized composable requirement package under the configured root.</p>
+<p>Exposes nested requirements, citations, nested packages, and package-level value slots via
+attribute access (e.g. <code class="docutils literal notranslate"><span class="pre">root.mission.x_m</span></code> for a package parameter).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stable_id</strong> (<em>str</em>)</p></li>
+<li><p><strong>definition_type</strong> (<em>type</em>)</p></li>
+<li><p><strong>definition_path</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>instance_path</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>package_type</strong> (<em>type</em>)</p></li>
+<li><p><strong>metadata</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tg_model.execution.RequirementPackageInstance.package_type">
+<span class="sig-name descname"><span class="pre">package_type</span></span><a class="headerlink" href="#tg_model.execution.RequirementPackageInstance.package_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tg_model.execution.RequirementPackageInstance.add_member">
+<span class="sig-name descname"><span class="pre">add_member</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/instances.html#RequirementPackageInstance.add_member"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.RequirementPackageInstance.add_member" title="Link to this definition">¶</a></dt>
+<dd><p>Register a child (instantiation only).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>obj</strong> (<a class="reference internal" href="#tg_model.execution.ElementInstance" title="tg_model.execution.instances.ElementInstance"><em>ElementInstance</em></a><em> | </em><a class="reference internal" href="#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><em>ValueSlot</em></a><em> | </em><a class="reference internal" href="#tg_model.execution.RequirementPackageInstance" title="tg_model.execution.instances.RequirementPackageInstance"><em>RequirementPackageInstance</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tg_model.execution.RequirementPackageInstance.freeze">
+<span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/execution/instances.html#RequirementPackageInstance.freeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.execution.RequirementPackageInstance.freeze" title="Link to this definition">¶</a></dt>
+<dd><p>Freeze this package and nested packages recursively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -2262,6 +2333,8 @@ only records the trace step when <code class="docutils literal notranslate"><spa
 <p>Walks the compiled definition depth-first, creating
 <a class="reference internal" href="#tg_model.execution.PartInstance" title="tg_model.execution.instances.PartInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">PartInstance</span></code></a>,
 <a class="reference internal" href="#tg_model.execution.PortInstance" title="tg_model.execution.instances.PortInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">PortInstance</span></code></a>,
+<a class="reference internal" href="#tg_model.execution.RequirementPackageInstance" title="tg_model.execution.instances.RequirementPackageInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequirementPackageInstance</span></code></a> (composable requirement
+packages with package-level value slots),
 <a class="reference internal" href="#tg_model.execution.ValueSlot" title="tg_model.execution.value_slots.ValueSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueSlot</span></code></a>, connection bindings, and
 allocation bindings. Registers handles then freezes all parts.</p>
 <dl class="field-list simple">
@@ -2631,6 +2704,7 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.add_child"><code class="docutils literal notranslate"><span class="pre">PartInstance.add_child()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.add_port"><code class="docutils literal notranslate"><span class="pre">PartInstance.add_port()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.add_value_slot"><code class="docutils literal notranslate"><span class="pre">PartInstance.add_value_slot()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.PartInstance.add_requirement_package"><code class="docutils literal notranslate"><span class="pre">PartInstance.add_requirement_package()</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.children"><code class="docutils literal notranslate"><span class="pre">PartInstance.children</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.ports"><code class="docutils literal notranslate"><span class="pre">PartInstance.ports</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.PartInstance.value_slots"><code class="docutils literal notranslate"><span class="pre">PartInstance.value_slots</span></code></a></li>
@@ -2644,6 +2718,12 @@ ordering can be compared. For <code class="docutils literal notranslate"><span c
 <li><a class="reference internal" href="#tg_model.execution.ReferenceBinding.stable_id"><code class="docutils literal notranslate"><span class="pre">ReferenceBinding.stable_id</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ReferenceBinding.source"><code class="docutils literal notranslate"><span class="pre">ReferenceBinding.source</span></code></a></li>
 <li><a class="reference internal" href="#tg_model.execution.ReferenceBinding.citation"><code class="docutils literal notranslate"><span class="pre">ReferenceBinding.citation</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tg_model.execution.RequirementPackageInstance"><code class="docutils literal notranslate"><span class="pre">RequirementPackageInstance</span></code></a><ul>
+<li><a class="reference internal" href="#tg_model.execution.RequirementPackageInstance.package_type"><code class="docutils literal notranslate"><span class="pre">RequirementPackageInstance.package_type</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.RequirementPackageInstance.add_member"><code class="docutils literal notranslate"><span class="pre">RequirementPackageInstance.add_member()</span></code></a></li>
+<li><a class="reference internal" href="#tg_model.execution.RequirementPackageInstance.freeze"><code class="docutils literal notranslate"><span class="pre">RequirementPackageInstance.freeze()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tg_model.execution.RequirementSatisfactionResult"><code class="docutils literal notranslate"><span class="pre">RequirementSatisfactionResult</span></code></a><ul>

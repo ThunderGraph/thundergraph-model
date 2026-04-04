@@ -26,7 +26,8 @@ class L1MissionRequirements(Requirement):
 
     **Package-level** ``parameter`` / ``attribute`` / ``constraint`` below are illustrative policy
     slots for the mission-closure *package* (not wired through ``allocate``): they show the same
-    authoring surface as ``Part`` / ``System`` for values owned by the composable requirement namespace.
+    value/check authoring surface as a ``Part``. Unlike a root ``System``, a composable
+    requirement package may own attributes and constraints directly.
     """
 
     @classmethod

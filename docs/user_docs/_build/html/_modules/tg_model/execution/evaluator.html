@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -391,9 +391,7 @@
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">EXTERNAL_COMPUTATION</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">sid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_slot_ids&quot;</span><span class="p">,</span> <span class="p">()):</span>
-                        <span class="n">ctx</span><span class="o">.</span><span class="n">get_or_create_record</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span><span class="o">.</span><span class="n">block</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Blocked: upstream dependency not ready for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                        <span class="p">)</span>
+                        <span class="n">ctx</span><span class="o">.</span><span class="n">get_or_create_record</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blocked: upstream dependency not ready for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">LOCAL_EXPRESSION</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">ROLLUP_COMPUTATION</span><span class="p">:</span>
@@ -467,9 +465,7 @@
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">EXTERNAL_COMPUTATION</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">sid</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_slot_ids&quot;</span><span class="p">,</span> <span class="p">()):</span>
-                        <span class="n">ctx</span><span class="o">.</span><span class="n">get_or_create_record</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span><span class="o">.</span><span class="n">block</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Blocked: upstream dependency not ready for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                        <span class="p">)</span>
+                        <span class="n">ctx</span><span class="o">.</span><span class="n">get_or_create_record</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blocked: upstream dependency not ready for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">LOCAL_EXPRESSION</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">ROLLUP_COMPUTATION</span><span class="p">:</span>
@@ -497,9 +493,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_finalize_run</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunResult</span><span class="p">:</span>
         <span class="n">result</span><span class="o">.</span><span class="n">constraint_results</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">constraint_results</span>
         <span class="n">result</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">slot_id</span><span class="p">:</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">slot_id</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">_slot_records</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">is_ready</span>
+            <span class="n">slot_id</span><span class="p">:</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">slot_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">_slot_records</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">is_ready</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">result</span>
 
@@ -513,7 +507,11 @@
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_expression</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -538,7 +536,11 @@
             <span class="n">result</span><span class="o">.</span><span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluation failed for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_external</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -615,9 +617,7 @@
                 <span class="n">res</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">inputs_dict</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">ExternalComputeResult</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;External compute must return ExternalComputeResult, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;External compute must return ExternalComputeResult, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">materialize_external_result</span><span class="p">(</span><span class="n">binding</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">slots</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -626,7 +626,11 @@
             <span class="n">result</span><span class="o">.</span><span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;External compute &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39; failed: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_solve_group</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -652,7 +656,11 @@
                 <span class="n">ctx</span><span class="o">.</span><span class="n">get_or_create_record</span><span class="p">(</span><span class="n">slot_id</span><span class="p">)</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_constraint</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">node_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContext</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">RunResult</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -668,20 +676,24 @@
 
             <span class="n">passed</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">dep_values</span><span class="p">)</span>
             <span class="n">constraint_name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">node_id</span><span class="p">)</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">add_constraint_result</span><span class="p">(</span><span class="n">ConstraintResult</span><span class="p">(</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">constraint_name</span><span class="p">,</span>
-                <span class="n">passed</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">passed</span><span class="p">),</span>
-                <span class="n">requirement_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requirement_path&quot;</span><span class="p">),</span>
-                <span class="n">allocation_target_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocation_target_path&quot;</span><span class="p">),</span>
-            <span class="p">))</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">add_constraint_result</span><span class="p">(</span>
+                <span class="n">ConstraintResult</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">constraint_name</span><span class="p">,</span>
+                    <span class="n">passed</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">passed</span><span class="p">),</span>
+                    <span class="n">requirement_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requirement_path&quot;</span><span class="p">),</span>
+                    <span class="n">allocation_target_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocation_target_path&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">add_constraint_result</span><span class="p">(</span><span class="n">ConstraintResult</span><span class="p">(</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">node_id</span><span class="p">,</span>
-                <span class="n">passed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-                <span class="n">requirement_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requirement_path&quot;</span><span class="p">),</span>
-                <span class="n">allocation_target_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocation_target_path&quot;</span><span class="p">),</span>
-            <span class="p">))</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">add_constraint_result</span><span class="p">(</span>
+                <span class="n">ConstraintResult</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">node_id</span><span class="p">,</span>
+                    <span class="n">passed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">evidence</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+                    <span class="n">requirement_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requirement_path&quot;</span><span class="p">),</span>
+                    <span class="n">allocation_target_path</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocation_target_path&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Constraint failed for &#39;</span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 </pre></div>

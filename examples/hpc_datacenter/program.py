@@ -6,7 +6,6 @@ from typing import Any
 
 from unitflow.catalogs.si import kW
 
-from tg_model.model.definition_context import parameter_ref
 from tg_model.model.elements import Part, Requirement, System
 from tg_model.model.expr import sum_attributes
 
@@ -73,8 +72,16 @@ class HpcColoFacility(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        equipment_kw = model.parameter("equipment_electrical_load_kw", unit=kW)
+        cooling_kw = model.parameter("auxiliary_cooling_load_kw", unit=kW)
         model.parameter("grid_import_capacity_kw", unit=kW)
         model.parameter("max_cooling_kw", unit=kW)
+        model.attribute(
+            "total_facility_kw",
+            unit=kW,
+            expr=sum_attributes(equipment_kw, cooling_kw),
+        )
+        model.constraint("positive_equipment_load_kw", expr=equipment_kw > 0 * kW)
 
 
 class HpcDatacenterProgram(System):
@@ -85,15 +92,6 @@ class HpcDatacenterProgram(System):
         model.parameter("equipment_electrical_load_kw", unit=kW)
         model.parameter("auxiliary_cooling_load_kw", unit=kW)
 
-        equipment_kw = parameter_ref(HpcDatacenterProgram, "equipment_electrical_load_kw")
-        cooling_kw = parameter_ref(HpcDatacenterProgram, "auxiliary_cooling_load_kw")
-        total_facility_kw = model.attribute(
-            "total_facility_kw",
-            unit=kW,
-            expr=sum_attributes(equipment_kw, cooling_kw),
-        )
-        model.constraint("positive_equipment_load_kw", expr=equipment_kw > 0 * kW)
-
         l1 = model.requirement_package("l1", L1HpcRoot)
         facility = model.part("facility", HpcColoFacility)
 
@@ -103,7 +101,7 @@ class HpcDatacenterProgram(System):
             r_grid,
             facility,
             inputs={
-                "scenario_peak_kw": total_facility_kw,
+                "scenario_peak_kw": facility.total_facility_kw,
                 "envelope_capacity_kw": facility.grid_import_capacity_kw,
             },
         )
@@ -111,7 +109,7 @@ class HpcDatacenterProgram(System):
             r_cool,
             facility,
             inputs={
-                "scenario_cooling_kw": parameter_ref(HpcDatacenterProgram, "auxiliary_cooling_load_kw"),
+                "scenario_cooling_kw": facility.auxiliary_cooling_load_kw,
                 "envelope_cooling_kw": facility.max_cooling_kw,
             },
         )

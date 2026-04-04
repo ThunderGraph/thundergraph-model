@@ -202,7 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -291,7 +291,7 @@
 <td><p>Pytest suites (see <a class="reference internal" href="testing.html"><span class="doc">Testing</span></a>).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">examples/</span></code></p></td>
-<td><p>Domain examples (e.g. commercial aircraft); not on <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> unless you add them.</p></td>
+<td><p>Domain examples (e.g. commercial aircraft, HPC datacenter); composable requirements use <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> + <strong><code class="docutils literal notranslate"><span class="pre">requirement_package</span></code></strong>; not on <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> unless you add them.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">notebooks/</span></code></p></td>
 <td><p>Jupyter walkthroughs; dev dependency in <code class="docutils literal notranslate"><span class="pre">uv</span></code> optional groups.</p></td>
@@ -311,10 +311,11 @@
 <h2>Suggested reading order (new contributor)<a class="headerlink" href="#suggested-reading-order-new-contributor" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p><a class="reference internal" href="../user/quickstart.html"><span class="doc">Quickstart (Concrete Example)</span></a> — default <strong><code class="docutils literal notranslate"><span class="pre">evaluate</span></code></strong> path vs explicit pipeline (read this before diving into compiler details).</p></li>
+<li><p><a class="reference internal" href="../user/concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a> — composable <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> packages vs leaf <strong><code class="docutils literal notranslate"><span class="pre">model.requirement</span></code></strong>, package-level slots, <strong><code class="docutils literal notranslate"><span class="pre">allocate</span></code></strong> wiring.</p></li>
 <li><p><a class="reference internal" href="../drafts/what_is_thundergraph_model.html"><span class="doc">What ThunderGraph Model Is</span></a></p></li>
 <li><p><a class="reference internal" href="../drafts/execution_pipeline.html"><span class="doc">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</span></a></p></li>
 <li><p><a class="reference internal" href="architecture.html"><span class="doc">Developer architecture</span></a> and <a class="reference internal" href="extension_playbook.html"><span class="doc">Extension playbook</span></a></p></li>
-<li><p>Source: <code class="docutils literal notranslate"><span class="pre">tg_model/model/definition_context.py</span></code> → <code class="docutils literal notranslate"><span class="pre">tg_model/execution/configured_model.py</span></code> → <code class="docutils literal notranslate"><span class="pre">graph_compiler.py</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluator.py</span></code></p></li>
+<li><p>Source: <code class="docutils literal notranslate"><span class="pre">tg_model/model/definition_context.py</span></code> → <code class="docutils literal notranslate"><span class="pre">tg_model/model/compile_types.py</span></code> (requirement-package policy) → <code class="docutils literal notranslate"><span class="pre">tg_model/execution/configured_model.py</span></code> → <code class="docutils literal notranslate"><span class="pre">graph_compiler.py</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluator.py</span></code></p></li>
 </ol>
 </section>
 </section>

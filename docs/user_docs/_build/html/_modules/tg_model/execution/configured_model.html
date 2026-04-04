@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -290,7 +290,12 @@
     <span class="n">ConnectionBinding</span><span class="p">,</span>
     <span class="n">ReferenceBinding</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.instances</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementInstance</span><span class="p">,</span> <span class="n">PartInstance</span><span class="p">,</span> <span class="n">PortInstance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.instances</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ElementInstance</span><span class="p">,</span>
+    <span class="n">PartInstance</span><span class="p">,</span>
+    <span class="n">PortInstance</span><span class="p">,</span>
+    <span class="n">RequirementPackageInstance</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.value_slots</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValueSlot</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.compile_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">_requirement_block_compiled_artifact</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">derive_declaration_id</span>
@@ -484,6 +489,8 @@
 <span class="sd">    Walks the compiled definition depth-first, creating</span>
 <span class="sd">    :class:`~tg_model.execution.instances.PartInstance`,</span>
 <span class="sd">    :class:`~tg_model.execution.instances.PortInstance`,</span>
+<span class="sd">    :class:`~tg_model.execution.instances.RequirementPackageInstance` (composable requirement</span>
+<span class="sd">    packages with package-level value slots),</span>
 <span class="sd">    :class:`~tg_model.execution.value_slots.ValueSlot`, connection bindings, and</span>
 <span class="sd">    allocation bindings. Registers handles then freezes all parts.</span>
 
@@ -535,9 +542,7 @@
 
     <span class="n">connections</span> <span class="o">=</span> <span class="n">_instantiate_connections</span><span class="p">(</span><span class="n">compiled</span><span class="p">,</span> <span class="n">root_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">root_type</span><span class="p">)</span>
     <span class="n">allocations</span> <span class="o">=</span> <span class="n">_instantiate_allocations</span><span class="p">(</span><span class="n">compiled</span><span class="p">,</span> <span class="n">root_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">root_type</span><span class="p">)</span>
-    <span class="n">references</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_instantiate_all_references</span><span class="p">(</span><span class="n">root_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">root_type</span><span class="p">)</span> <span class="o">+</span> <span class="n">ref_accumulator</span>
-    <span class="p">)</span>
+    <span class="n">references</span> <span class="o">=</span> <span class="n">_instantiate_all_references</span><span class="p">(</span><span class="n">root_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">root_type</span><span class="p">)</span> <span class="o">+</span> <span class="n">ref_accumulator</span>
 
     <span class="n">root_instance</span><span class="o">.</span><span class="n">freeze</span><span class="p">()</span>
 
@@ -633,27 +638,28 @@
 
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement_block&quot;</span><span class="p">:</span>
             <span class="n">block_type</span> <span class="o">=</span> <span class="n">type_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">block_instance</span> <span class="o">=</span> <span class="n">ElementInstance</span><span class="p">(</span>
+            <span class="k">if</span> <span class="n">block_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;requirement_block </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> has no target_type (internal compile error)&quot;</span><span class="p">)</span>
+            <span class="n">pkg_inst</span> <span class="o">=</span> <span class="n">RequirementPackageInstance</span><span class="p">(</span>
                 <span class="n">stable_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
                 <span class="n">definition_type</span><span class="o">=</span><span class="n">root_type</span><span class="p">,</span>
                 <span class="n">definition_path</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,),</span>
                 <span class="n">instance_path</span><span class="o">=</span><span class="n">child_path</span><span class="p">,</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span>
+                <span class="n">package_type</span><span class="o">=</span><span class="n">block_type</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">_register</span><span class="p">(</span><span class="n">block_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">block_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sub_compiled</span> <span class="o">=</span> <span class="n">_requirement_block_compiled_artifact</span><span class="p">(</span><span class="n">block_type</span><span class="p">)</span>
-                <span class="n">_instantiate_requirement_block_children</span><span class="p">(</span>
-                    <span class="n">child_path</span><span class="p">,</span>
-                    <span class="n">sub_compiled</span><span class="p">,</span>
-                    <span class="n">root_type</span><span class="p">,</span>
-                    <span class="n">root_type</span><span class="p">,</span>
-                    <span class="n">path_registry</span><span class="p">,</span>
-                    <span class="n">id_registry</span><span class="p">,</span>
-                    <span class="n">ref_accumulator</span><span class="p">,</span>
-                    <span class="n">requirement_value_slots</span><span class="p">,</span>
-                <span class="p">)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">add_requirement_package</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pkg_inst</span><span class="p">)</span>
+            <span class="n">_register</span><span class="p">(</span><span class="n">pkg_inst</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
+            <span class="n">_instantiate_requirement_block_children</span><span class="p">(</span>
+                <span class="n">pkg_inst</span><span class="p">,</span>
+                <span class="n">_requirement_block_compiled_artifact</span><span class="p">(</span><span class="n">block_type</span><span class="p">),</span>
+                <span class="n">root_type</span><span class="p">,</span>
+                <span class="n">root_type</span><span class="p">,</span>
+                <span class="n">path_registry</span><span class="p">,</span>
+                <span class="n">id_registry</span><span class="p">,</span>
+                <span class="n">ref_accumulator</span><span class="p">,</span>
+                <span class="n">requirement_value_slots</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constraint&quot;</span><span class="p">:</span>
             <span class="n">constraint_instance</span> <span class="o">=</span> <span class="n">ElementInstance</span><span class="p">(</span>
@@ -679,7 +685,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_requirement_block_children</span><span class="p">(</span>
-    <span class="n">prefix_path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">package</span><span class="p">:</span> <span class="n">RequirementPackageInstance</span><span class="p">,</span>
     <span class="n">compiled</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">definition_root_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
     <span class="n">root_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
@@ -688,8 +694,9 @@
     <span class="n">ref_accumulator</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReferenceBinding</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">requirement_value_slots</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValueSlot</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Materialize requirements/citations/nested blocks under a requirement_block (no PartInstance parent).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Materialize members under a composable requirement package (dot-access under the root part).&quot;&quot;&quot;</span>
     <span class="n">type_registry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_type_registry&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">prefix_path</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">instance_path</span>
 
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">compiled</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span>
@@ -706,6 +713,7 @@
                 <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement&quot;</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">package</span><span class="o">.</span><span class="n">add_member</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">req_instance</span><span class="p">)</span>
             <span class="n">_register</span><span class="p">(</span><span class="n">req_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;citation&quot;</span><span class="p">:</span>
             <span class="n">cite_instance</span> <span class="o">=</span> <span class="n">ElementInstance</span><span class="p">(</span>
@@ -716,35 +724,62 @@
                 <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;citation&quot;</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">package</span><span class="o">.</span><span class="n">add_member</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">cite_instance</span><span class="p">)</span>
             <span class="n">_register</span><span class="p">(</span><span class="n">cite_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement_block&quot;</span><span class="p">:</span>
             <span class="n">block_type</span> <span class="o">=</span> <span class="n">type_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">block_instance</span> <span class="o">=</span> <span class="n">ElementInstance</span><span class="p">(</span>
+            <span class="k">if</span> <span class="n">block_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;requirement_block </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> has no target_type (internal compile error)&quot;</span><span class="p">)</span>
+            <span class="n">inner_pkg</span> <span class="o">=</span> <span class="n">RequirementPackageInstance</span><span class="p">(</span>
                 <span class="n">stable_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
                 <span class="n">definition_type</span><span class="o">=</span><span class="n">definition_root_type</span><span class="p">,</span>
                 <span class="n">definition_path</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">child_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
                 <span class="n">instance_path</span><span class="o">=</span><span class="n">child_path</span><span class="p">,</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;requirement_block&quot;</span><span class="p">,</span>
+                <span class="n">package_type</span><span class="o">=</span><span class="n">block_type</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">_register</span><span class="p">(</span><span class="n">block_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">block_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">_instantiate_requirement_block_children</span><span class="p">(</span>
-                    <span class="n">child_path</span><span class="p">,</span>
-                    <span class="n">_requirement_block_compiled_artifact</span><span class="p">(</span><span class="n">block_type</span><span class="p">),</span>
-                    <span class="n">definition_root_type</span><span class="p">,</span>
-                    <span class="n">root_type</span><span class="p">,</span>
-                    <span class="n">path_registry</span><span class="p">,</span>
-                    <span class="n">id_registry</span><span class="p">,</span>
-                    <span class="n">ref_accumulator</span><span class="p">,</span>
-                    <span class="n">requirement_value_slots</span><span class="p">,</span>
-                <span class="p">)</span>
+            <span class="n">package</span><span class="o">.</span><span class="n">add_member</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">inner_pkg</span><span class="p">)</span>
+            <span class="n">_register</span><span class="p">(</span><span class="n">inner_pkg</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
+            <span class="n">_instantiate_requirement_block_children</span><span class="p">(</span>
+                <span class="n">inner_pkg</span><span class="p">,</span>
+                <span class="n">_requirement_block_compiled_artifact</span><span class="p">(</span><span class="n">block_type</span><span class="p">),</span>
+                <span class="n">definition_root_type</span><span class="p">,</span>
+                <span class="n">root_type</span><span class="p">,</span>
+                <span class="n">path_registry</span><span class="p">,</span>
+                <span class="n">id_registry</span><span class="p">,</span>
+                <span class="n">ref_accumulator</span><span class="p">,</span>
+                <span class="n">requirement_value_slots</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;parameter&quot;</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">):</span>
+            <span class="n">slot</span> <span class="o">=</span> <span class="n">ValueSlot</span><span class="p">(</span>
+                <span class="n">stable_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
+                <span class="n">instance_path</span><span class="o">=</span><span class="n">child_path</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">definition_type</span><span class="o">=</span><span class="n">definition_root_type</span><span class="p">,</span>
+                <span class="n">definition_path</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">child_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+                <span class="n">has_expr</span><span class="o">=</span><span class="s2">&quot;_expr&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">has_computed_by</span><span class="o">=</span><span class="s2">&quot;_computed_by&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">package</span><span class="o">.</span><span class="n">add_member</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">slot</span><span class="p">)</span>
+            <span class="n">_register_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constraint&quot;</span><span class="p">:</span>
+            <span class="n">constraint_instance</span> <span class="o">=</span> <span class="n">ElementInstance</span><span class="p">(</span>
+                <span class="n">stable_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
+                <span class="n">definition_type</span><span class="o">=</span><span class="n">definition_root_type</span><span class="p">,</span>
+                <span class="n">definition_path</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">child_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+                <span class="n">instance_path</span><span class="o">=</span><span class="n">child_path</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;constraint&quot;</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">package</span><span class="o">.</span><span class="n">add_member</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">constraint_instance</span><span class="p">)</span>
+            <span class="n">_register</span><span class="p">(</span><span class="n">constraint_instance</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">id_registry</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement_attribute&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">requirement_value_slots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;requirement_attribute nodes require requirement_value_slots accumulator&quot;</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;requirement_attribute nodes require requirement_value_slots accumulator&quot;</span><span class="p">)</span>
             <span class="n">req_key</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;_requirement_key&quot;</span><span class="p">]</span>
             <span class="n">aname</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;_attr_name&quot;</span><span class="p">]</span>
             <span class="n">slot_path</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">prefix_path</span><span class="p">,</span> <span class="n">req_key</span><span class="p">,</span> <span class="n">aname</span><span class="p">)</span>
@@ -764,7 +799,11 @@
 
     <span class="k">if</span> <span class="n">ref_accumulator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_wire_requirement_block_references</span><span class="p">(</span>
-            <span class="n">prefix_path</span><span class="p">,</span> <span class="n">compiled</span><span class="p">,</span> <span class="n">root_type</span><span class="p">,</span> <span class="n">path_registry</span><span class="p">,</span> <span class="n">ref_accumulator</span><span class="p">,</span>
+            <span class="n">prefix_path</span><span class="p">,</span>
+            <span class="n">compiled</span><span class="p">,</span>
+            <span class="n">root_type</span><span class="p">,</span>
+            <span class="n">path_registry</span><span class="p">,</span>
+            <span class="n">ref_accumulator</span><span class="p">,</span>
         <span class="p">)</span>
 
 
@@ -775,7 +814,7 @@
     <span class="n">path_registry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ElementInstance</span> <span class="o">|</span> <span class="n">ValueSlot</span><span class="p">],</span>
     <span class="n">out</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReferenceBinding</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.RequirementBlock`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.Requirement` package.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">compiled</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="p">[]):</span>
         <span class="k">if</span> <span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;references&quot;</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -833,12 +872,14 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection target &#39;</span><span class="si">{</span><span class="n">tgt_key</span><span class="si">}</span><span class="s2">&#39; is not a PortInstance&quot;</span><span class="p">)</span>
 
         <span class="n">conn_id</span> <span class="o">=</span> <span class="n">derive_declaration_id</span><span class="p">(</span><span class="n">root_type</span><span class="p">,</span> <span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">],</span> <span class="o">*</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">])</span>
-        <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConnectionBinding</span><span class="p">(</span>
-            <span class="n">stable_id</span><span class="o">=</span><span class="n">conn_id</span><span class="p">,</span>
-            <span class="n">source</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
-            <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
-            <span class="n">carrying</span><span class="o">=</span><span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;carrying&quot;</span><span class="p">),</span>
-        <span class="p">))</span>
+        <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ConnectionBinding</span><span class="p">(</span>
+                <span class="n">stable_id</span><span class="o">=</span><span class="n">conn_id</span><span class="p">,</span>
+                <span class="n">source</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
+                <span class="n">carrying</span><span class="o">=</span><span class="n">edge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;carrying&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">connections</span>
 
@@ -881,18 +922,18 @@
                 <span class="n">slot_key</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">root</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span> <span class="o">*</span><span class="n">rel</span><span class="p">))</span>
                 <span class="n">slot</span> <span class="o">=</span> <span class="n">path_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slot_key</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;allocate inputs[</span><span class="si">{</span><span class="n">iname</span><span class="si">!r}</span><span class="s2">] path </span><span class="si">{</span><span class="n">slot_key</span><span class="si">!r}</span><span class="s2"> is not a ValueSlot in registry&quot;</span>
-                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;allocate inputs[</span><span class="si">{</span><span class="n">iname</span><span class="si">!r}</span><span class="s2">] path </span><span class="si">{</span><span class="n">slot_key</span><span class="si">!r}</span><span class="s2"> is not a ValueSlot in registry&quot;</span><span class="p">)</span>
                 <span class="n">input_bindings</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">iname</span><span class="p">)]</span> <span class="o">=</span> <span class="n">slot</span>
 
         <span class="n">alloc_id</span> <span class="o">=</span> <span class="n">derive_declaration_id</span><span class="p">(</span><span class="n">root_type</span><span class="p">,</span> <span class="s2">&quot;allocate&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">],</span> <span class="o">*</span><span class="n">edge</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;path&quot;</span><span class="p">])</span>
-        <span class="n">allocations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AllocationBinding</span><span class="p">(</span>
-            <span class="n">stable_id</span><span class="o">=</span><span class="n">alloc_id</span><span class="p">,</span>
-            <span class="n">requirement</span><span class="o">=</span><span class="n">req</span><span class="p">,</span>
-            <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
-            <span class="n">input_bindings</span><span class="o">=</span><span class="n">input_bindings</span><span class="p">,</span>
-        <span class="p">))</span>
+        <span class="n">allocations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">AllocationBinding</span><span class="p">(</span>
+                <span class="n">stable_id</span><span class="o">=</span><span class="n">alloc_id</span><span class="p">,</span>
+                <span class="n">requirement</span><span class="o">=</span><span class="n">req</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">,</span>
+                <span class="n">input_bindings</span><span class="o">=</span><span class="n">input_bindings</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">allocations</span>
 

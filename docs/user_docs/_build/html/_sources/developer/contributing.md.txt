@@ -20,7 +20,7 @@ After editing narrative or API-adjacent docs:
 
 ```bash
 cd thundergraph-model
-uv run sphinx-build -b html docs/user_docs docs/user_docs/_build/html
+uv run --group docs sphinx-build -W -b html docs/user_docs docs/user_docs/_build/html
 ```
 
 Fix broken **internal** links reported by Sphinx before merging.

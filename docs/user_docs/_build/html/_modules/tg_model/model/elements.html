@@ -201,7 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements (inputs, derived attributes, acceptance)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -265,7 +265,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for tg_model.model.elements</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Authoring element types: :class:`Element`, :class:`Part`, :class:`System`, :class:`RequirementBlock`.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Authoring element types: :class:`Element`, :class:`Part`, :class:`System`, :class:`Requirement`.</span>
 
 <span class="sd">Subclasses implement :meth:`Element.define` to record declarations on</span>
 <span class="sd">:class:`~tg_model.model.definition_context.ModelDefinitionContext` and call</span>
@@ -288,7 +288,7 @@
 
 
 <div class="viewcode-block" id="Element">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.Element">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.Element">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Element</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base for all model element types.</span>
 
@@ -303,7 +303,7 @@
     <span class="n">_compiled_definition</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Element.define">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.Element.define">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.Element.define">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare this type&#39;s structure (override in subclasses).</span>
@@ -316,7 +316,7 @@
 
 
 <div class="viewcode-block" id="Element.compile">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.Element.compile">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.Element.compile">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compile this type&#39;s definition (cached on the class).</span>
@@ -354,42 +354,62 @@
 
 
 <div class="viewcode-block" id="Part">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.Part">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.Part">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Part</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural part in a hierarchy (may own child parts, ports, values, behavior).&quot;&quot;&quot;</span></div>
 
 
 
-<div class="viewcode-block" id="RequirementBlock">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.RequirementBlock">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RequirementBlock</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Composable requirements subtree (nested requirements and citations).</span>
+<div class="viewcode-block" id="Requirement">
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.Requirement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Requirement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Composable requirements package — **use ``parameter`` / ``attribute`` / ``constraint``**.</span>
+
+<span class="sd">    **DEFAULT PATTERN (always start here):** Inside ``define(cls, model)``, declare</span>
+<span class="sd">    ``model.parameter``, ``model.attribute``, and ``model.constraint`` at **package scope** —</span>
+<span class="sd">    the same value/check authoring surface as :class:`Part` (unlike :class:`System`,</span>
+<span class="sd">    which is restricted to structural composition and top-level parameters). Use</span>
+<span class="sd">    ``model.requirement(id, text)`` for leaf traceability statements, ``model.citation`` for</span>
+<span class="sd">    provenance, ``model.references`` for edges, and ``model.allocate`` for structural allocation.</span>
+<span class="sd">    **This is the standard, recommended API for all new requirement packages.**</span>
 
 <span class="sd">    Register on a :class:`Part` or :class:`System` via</span>
-<span class="sd">    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_block`;</span>
-<span class="sd">    navigate with :class:`~tg_model.model.refs.RequirementBlockRef` dot access.</span>
+<span class="sd">    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_package`;</span>
+<span class="sd">    navigate with :class:`~tg_model.model.refs.RequirementRef` dot access.</span>
+
+<span class="sd">    **Advanced (rare — leaf reqcheck only):** ``requirement_input``, ``requirement_attribute``,</span>
+<span class="sd">    and ``requirement_accept_expr`` are low-level helpers for INCOSE-style executable acceptance</span>
+<span class="sd">    on a **single leaf** ``model.requirement(...)``, wired through ``allocate(..., inputs=...)``.</span>
+<span class="sd">    Use them **only** when you need ``summarize_requirement_satisfaction`` per-requirement rows.</span>
+<span class="sd">    **Do not use them as the default pattern.** If your check can be a package-level</span>
+<span class="sd">    ``constraint``, use that instead.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    ``define()`` may only declare ``requirement``, ``requirement_input``,</span>
-<span class="sd">    ``requirement_attribute``, ``citation``, nested ``requirement_block``, and ``references``</span>
-<span class="sd">    (enforced at compile). Prefer</span>
-<span class="sd">    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_accept_expr`</span>
-<span class="sd">    plus :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_input` /</span>
-<span class="sd">    :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`</span>
-<span class="sd">    and :meth:`~tg_model.model.definition_context.ModelDefinitionContext.allocate` ``inputs=``</span>
-<span class="sd">    (for inputs wired from the design) for acceptance that avoids part refs inside the block.</span>
+<span class="sd">    Package-level ``parameter``, ``attribute``, and ``constraint`` nodes become</span>
+<span class="sd">    :class:`~tg_model.execution.value_slots.ValueSlot` / graph nodes under the configured root</span>
+<span class="sd">    (dot access e.g. ``configured_root.pkg.param_name``); expressions are validated during</span>
+<span class="sd">    :meth:`compile`. Package-level slots do not yet support ``computed_by=`` or</span>
+<span class="sd">    :class:`~tg_model.model.declarations.values.RollupDecl` in graph compilation; every package</span>
+<span class="sd">    ``constraint`` must supply ``expr=`` (including constant expressions with no symbols).</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 
 <div class="viewcode-block" id="System">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.System">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.System">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">System</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level system element that composes parts (typical configured root type).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level system element for composition and top-level input parameters.</span>
+
+<span class="sd">    ``System.define()`` is intentionally structural: compose child parts, declare</span>
+<span class="sd">    ports/requirements/citations as needed, and keep mission or scenario inputs as</span>
+<span class="sd">    top-level ``parameter(...)`` declarations. Derived values and executable checks</span>
+<span class="sd">    belong on owned :class:`Part` instances or requirement packages, not on the</span>
+<span class="sd">    root ``System`` itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="System.instantiate">
-<a class="viewcode-back" href="../../../api/api_root.html#tg_model.model.System.instantiate">[docs]</a>
+<a class="viewcode-back" href="../../../api/api_model.html#tg_model.model.System.instantiate">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">instantiate</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfiguredModel</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a :class:`~tg_model.execution.configured_model.ConfiguredModel` for this root type.</span>
