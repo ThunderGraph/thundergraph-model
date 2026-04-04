@@ -15,7 +15,7 @@
 [![Hatch](https://img.shields.io/badge/build-hatch-0077B5)](https://hatch.pypa.io/)
 [![uv](https://img.shields.io/badge/uv-project-0A0A0A?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
 
-[Quick start](#quick-start) · [Why this exists](#why-this-exists) · [Examples](#examples-in-this-repo) · [Docs](#documentation) · [Development](#development)
+[Quick start](#quick-start) · [Why this exists](#why-this-exists) · [Examples](#examples-in-this-repo) · [Docs](#documentation) · [Website](https://www.thundergraph.ai) · [Development](#development)
 
 </div>
 
@@ -88,6 +88,8 @@ uv run jupyter nbconvert --to notebook --execute notebooks/hpc_datacenter_parame
 ---
 
 ## Documentation
+
+Find the public documentation and project overview at [thundergraph.ai](https://www.thundergraph.ai).
 
 | Doc | Purpose |
 |-----|---------|
