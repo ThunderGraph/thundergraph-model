@@ -11,6 +11,7 @@ from tg_model.model.expr import sum_attributes
 class _RollupHost(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__rollup_host")
         a = model.parameter("a", unit=kg)
         b = model.parameter("b", unit=kg)
         c = model.parameter("c", unit=kg)

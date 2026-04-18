@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Concept: Requirements — parameter / attribute / constraint (DEFAULT)" href="concepts_requirements.html"><link rel="prev" title="Mental Model" href="mental_model.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Developer architecture" href="../developer/architecture.html"><link rel="prev" title="FAQ" href="faq.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Quickstart (Concrete Example) - ThunderGraph Model Docs</title>
+        <title>Quickstart - ThunderGraph Model Docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -196,15 +196,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mental_model.html">Mental Model</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="end_to_end_guide.html">End-to-End Guide: Building a Complete System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_parts.html">Concept: Parts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Quickstart</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
@@ -227,7 +234,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Drafts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
@@ -271,8 +278,8 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="quickstart-concrete-example">
-<h1>Quickstart (Concrete Example)<a class="headerlink" href="#quickstart-concrete-example" title="Link to this heading">¶</a></h1>
+          <section id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading">¶</a></h1>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading">¶</a></h2>
 <p>Use the published library in a normal project:</p>
@@ -281,16 +288,19 @@
 pip<span class="w"> </span>install<span class="w"> </span>thundergraph-model
 </pre></div>
 </div>
-<p>If you are working on the library itself from this repository, use the development setup:</p>
+<p>If you are working on the library itself from this repository:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>thundergraph-model
 uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
 </pre></div>
 </div>
 </section>
-<section id="recommended-instantiate-evaluate">
-<h2>Recommended: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code><a class="headerlink" href="#recommended-instantiate-evaluate" title="Link to this heading">¶</a></h2>
-<p>For most scripts and notebooks, configure a model, pass <strong>slot handles</strong> (<code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code>) and <strong>unitflow</strong> quantities, and call <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong>. The dependency graph <strong>compiles lazily</strong> on first use (cached on the <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>), and each call uses a <strong>fresh</strong> <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> unless you pass <code class="docutils literal notranslate"><span class="pre">run_context=</span></code> explicitly.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">kg</span>
+<section id="recommended-path-instantiate-evaluate">
+<h2>Recommended path: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code><a class="headerlink" href="#recommended-path-instantiate-evaluate" title="Link to this heading">¶</a></h2>
+<p>The recommended path for applications, scripts, and notebooks is:
+<code class="docutils literal notranslate"><span class="pre">instantiate(SystemType)</span></code> → <code class="docutils literal notranslate"><span class="pre">cm.evaluate(inputs={slot:</span> <span class="pre">quantity})</span></code> → inspect <code class="docutils literal notranslate"><span class="pre">RunResult</span></code>.</p>
+<p>The dependency graph compiles lazily on first use (cached on the <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>).
+Each <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> call uses a fresh <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> unless you pass <code class="docutils literal notranslate"><span class="pre">run_context=</span></code> explicitly.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">kg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Part</span><span class="p">,</span> <span class="n">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">instantiate</span>
 
@@ -298,36 +308,41 @@ uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
 <span class="k">class</span><span class="w"> </span><span class="nc">PayloadAnalysis</span><span class="p">(</span><span class="n">Part</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">PayloadSystem</span><span class="p">,</span> <span class="s2">&quot;payload_kg&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;payload_analysis&quot;</span><span class="p">)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="s2">&quot;payload_with_margin_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">payload</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;payload_limit&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="n">payload</span> <span class="o">&lt;=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;payload_within_limit&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">payload</span> <span class="o">&lt;=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PayloadSystem</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">(</span><span class="s2">&quot;analysis&quot;</span><span class="p">,</span> <span class="n">PayloadAnalysis</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;payload_system&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;analysis&quot;</span><span class="p">,</span> <span class="n">PayloadAnalysis</span><span class="p">)</span>
 
 
 <span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">PayloadSystem</span><span class="p">)</span>
-<span class="c1"># Equivalent: cm = PayloadSystem.instantiate()</span>
 
-<span class="n">payload_slot</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">payload_kg</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="n">payload_slot</span><span class="p">:</span> <span class="mi">800</span> <span class="o">*</span> <span class="n">kg</span><span class="p">})</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
+    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">:</span> <span class="mi">800</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span>
+<span class="p">})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Passed:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Margin payload:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_with_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Margin value:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_with_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">])</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">System.define()</span></code> should stay structural: compose parts and declare top-level input parameters there, but put derived values and executable checks on owned <code class="docutils literal notranslate"><span class="pre">Part</span></code> instances or requirement packages.</p>
-<p>Static validation runs before each evaluation by default (<code class="docutils literal notranslate"><span class="pre">validate=True</span></code>). For tight loops after you have validated once, pass <code class="docutils literal notranslate"><span class="pre">validate=False</span></code> (see <a class="reference internal" href="faq.html"><span class="doc">FAQ</span></a>).</p>
-<p>API details: <a class="reference internal" href="../api/api_execution.html"><span class="doc">tg_model.execution</span></a> (<code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code>, <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>).</p>
+<p>Every <code class="docutils literal notranslate"><span class="pre">define()</span></code> body must call <code class="docutils literal notranslate"><span class="pre">model.name(...)</span></code> exactly once — the compiler rejects any
+class that omits it.</p>
 </section>
-<section id="advanced-explicit-compile-graph-evaluator">
-<h2>Advanced: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code><a class="headerlink" href="#advanced-explicit-compile-graph-evaluator" title="Link to this heading">¶</a></h2>
-<p>Use the explicit pipeline when you need <strong>async</strong> externals (<code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_async</span></code>), custom wiring, or to step through compile/validate/evaluate separately (tools, tests, debugging). Behavior matches the façade when <strong>inputs</strong> are the same (keys as <code class="docutils literal notranslate"><span class="pre">stable_id</span></code> strings).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">kg</span>
+<hr class="docutils" />
+<section id="advanced-path-explicit-compile-graph-evaluator">
+<h2>Advanced path: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code><a class="headerlink" href="#advanced-path-explicit-compile-graph-evaluator" title="Link to this heading">¶</a></h2>
+<p>Use the explicit pipeline when you need async external backends
+(<code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_async</span></code>), want to inspect the <code class="docutils literal notranslate"><span class="pre">DependencyGraph</span></code> directly,
+or need fine-grained control over validation timing.</p>
+<p>Behavior is identical to the facade when inputs are the same.
+In the explicit path, input keys are <strong>stable id strings</strong> instead of slot handles.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">kg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Part</span><span class="p">,</span> <span class="n">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span><span class="p">,</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">compile_graph</span><span class="p">,</span> <span class="n">instantiate</span><span class="p">,</span> <span class="n">validate_graph</span>
 
@@ -335,16 +350,17 @@ uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
 <span class="k">class</span><span class="w"> </span><span class="nc">PayloadAnalysis</span><span class="p">(</span><span class="n">Part</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">PayloadSystem</span><span class="p">,</span> <span class="s2">&quot;payload_kg&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;payload_analysis&quot;</span><span class="p">)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="s2">&quot;payload_with_margin_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">payload</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;payload_limit&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="n">payload</span> <span class="o">&lt;=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;payload_within_limit&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">payload</span> <span class="o">&lt;=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PayloadSystem</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">(</span><span class="s2">&quot;analysis&quot;</span><span class="p">,</span> <span class="n">PayloadAnalysis</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;payload_system&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;analysis&quot;</span><span class="p">,</span> <span class="n">PayloadAnalysis</span><span class="p">)</span>
 
 
 <span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">PayloadSystem</span><span class="p">)</span>
@@ -356,82 +372,97 @@ uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">()</span>
 <span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">compute_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span>
 
-<span class="n">payload_slot</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">payload_kg</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="n">payload_slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">:</span> <span class="mi">800</span> <span class="o">*</span> <span class="n">kg</span><span class="p">})</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
+    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">:</span> <span class="mi">800</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span>
+<span class="p">})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Passed:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="s2">&quot;Payload with margin:&quot;</span><span class="p">,</span>
-    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_with_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">,</span>
     <span class="n">ctx</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_with_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="composable-requirements-next-to-part">
-<h2>Composable requirements next to <code class="docutils literal notranslate"><span class="pre">Part</span></code><a class="headerlink" href="#composable-requirements-next-to-part" title="Link to this heading">¶</a></h2>
-<p>Systems are mostly <strong><code class="docutils literal notranslate"><span class="pre">Part</span></code></strong> trees with top-level inputs on the root and executable value/check logic on owned parts. <strong>Composable requirement packages</strong> sit beside that structure: subclass <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong>, register with <strong><code class="docutils literal notranslate"><span class="pre">model.requirement_package(name,</span> <span class="pre">Type)</span></code></strong>, and navigate with <strong><code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code></strong> dot access.</p>
-<blockquote>
-<div><p><strong>Default pattern: use <code class="docutils literal notranslate"><span class="pre">parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint</span></code> on the package</strong> — exactly like a <code class="docutils literal notranslate"><span class="pre">Part</span></code>.  This is the recommended, current API for executable checks on requirements.  See <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a> for the full explanation.</p>
-</div></blockquote>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">W</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span><span class="p">,</span> <span class="n">System</span>
+<hr class="docutils" />
+<section id="requirements-alongside-a-part-tree">
+<h2>Requirements alongside a Part tree<a class="headerlink" href="#requirements-alongside-a-part-tree" title="Link to this heading">¶</a></h2>
+<p><strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> subclasses declare executable checks just like <code class="docutils literal notranslate"><span class="pre">Part</span></code> — the same
+<code class="docutils literal notranslate"><span class="pre">model.parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">model.attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">model.constraint</span></code> surface.
+Use <code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">RequirementType)</span></code> to mount a requirement tree on a <code class="docutils literal notranslate"><span class="pre">System</span></code>,
+then <code class="docutils literal notranslate"><span class="pre">model.allocate(req_ref,</span> <span class="pre">part_ref,</span> <span class="pre">inputs={...})</span></code> to wire scenario values in.</p>
+<p>Each <code class="docutils literal notranslate"><span class="pre">Requirement.define()</span></code> must also call <code class="docutils literal notranslate"><span class="pre">model.doc(...)</span></code> exactly once
+to declare its “shall” statement.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">W</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Part</span><span class="p">,</span> <span class="n">Requirement</span><span class="p">,</span> <span class="n">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">instantiate</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">PowerReqs</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerSupply</span><span class="p">(</span><span class="n">Part</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">max_draw</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;max_draw_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">actual_draw</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;actual_draw_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">headroom</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="s2">&quot;headroom_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">max_draw</span> <span class="o">-</span> <span class="n">actual_draw</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;draw_within_budget&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">headroom</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">W</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;power_supply&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;rated_output_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;actual_draw_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">)</span>
 
-        <span class="n">model</span><span class="o">.</span><span class="n">requirement</span><span class="p">(</span>
-            <span class="s2">&quot;power_budget&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Draw shall not exceed outlet budget (verification by analysis).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerBudgetReq</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;power_budget&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">doc</span><span class="p">(</span><span class="s2">&quot;Actual draw shall not exceed rated outlet capacity.&quot;</span><span class="p">)</span>
+        <span class="n">rated</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;rated_output_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">)</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;actual_draw_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">)</span>
+        <span class="n">headroom</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="s2">&quot;headroom_w&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">W</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">rated</span> <span class="o">-</span> <span class="n">actual</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;draw_within_budget&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">headroom</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">W</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Rack</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">reqs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_package</span><span class="p">(</span><span class="s2">&quot;electrical&quot;</span><span class="p">,</span> <span class="n">PowerReqs</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">allocate_to_system</span><span class="p">(</span><span class="n">reqs</span><span class="o">.</span><span class="n">power_budget</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;rack&quot;</span><span class="p">)</span>
+        <span class="n">psu</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span> <span class="n">PowerSupply</span><span class="p">)</span>
+        <span class="n">reqs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;electrical&quot;</span><span class="p">,</span> <span class="n">PowerBudgetReq</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">reqs</span><span class="p">,</span> <span class="n">psu</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;rated_output_w&quot;</span><span class="p">:</span> <span class="n">psu</span><span class="o">.</span><span class="n">rated_output_w</span><span class="p">,</span>
+            <span class="s2">&quot;actual_draw_w&quot;</span><span class="p">:</span>  <span class="n">psu</span><span class="o">.</span><span class="n">actual_draw_w</span><span class="p">,</span>
+        <span class="p">})</span>
 
 
 <span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">Rack</span><span class="p">)</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
-    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">electrical</span><span class="o">.</span><span class="n">max_draw_w</span><span class="p">:</span> <span class="mi">2000</span> <span class="o">*</span> <span class="n">W</span><span class="p">,</span>
-    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">electrical</span><span class="o">.</span><span class="n">actual_draw_w</span><span class="p">:</span> <span class="mi">1500</span> <span class="o">*</span> <span class="n">W</span><span class="p">,</span>
+    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">rated_output_w</span><span class="p">:</span> <span class="mi">2000</span> <span class="o">*</span> <span class="n">W</span><span class="p">,</span>
+    <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">actual_draw_w</span><span class="p">:</span>  <span class="mi">1500</span> <span class="o">*</span> <span class="n">W</span><span class="p">,</span>
 <span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Passed:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">cr</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">constraint_results</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cr</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="s2">&quot;| req:&quot;</span><span class="p">,</span> <span class="n">cr</span><span class="o">.</span><span class="n">requirement_path</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Sidebar: leaf <code class="docutils literal notranslate"><span class="pre">model.requirement(...)</span></code> vs composable <code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong></p>
-<ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">class</span> <span class="pre">MyPackage(Requirement)</span></code></strong> defines a <strong>composable package</strong> type (namespace for <code class="docutils literal notranslate"><span class="pre">parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">constraint</span></code>, nested <code class="docutils literal notranslate"><span class="pre">requirement_package</span></code>, and leaf <code class="docutils literal notranslate"><span class="pre">requirement</span></code> declarations). Mount it with <code class="docutils literal notranslate"><span class="pre">requirement_package</span></code>.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">model.requirement(&quot;id&quot;,</span> <span class="pre">&quot;text&quot;)</span></code></strong> declares a <strong>single</strong> requirement statement (traceability text). Use <code class="docutils literal notranslate"><span class="pre">allocate</span></code> and <code class="docutils literal notranslate"><span class="pre">references</span></code> for structural edges.</p></li>
-<li><p><strong>Root-scope traceability:</strong> use <strong><code class="docutils literal notranslate"><span class="pre">model.allocate_to_system(requirement)</span></code></strong> when a requirement applies to the structural root rather than a named child part.</p></li>
-<li><p><strong>Advanced (rare):</strong> <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>, <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> are low-level helpers for leaf-level INCOSE acceptance rows — <strong>do not use them as the default pattern</strong>. See <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a> for when they are appropriate.</p></li>
-</ul>
-<p>Details: <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a>, <a class="reference internal" href="faq.html"><span class="doc">FAQ</span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs={...})</span></code> maps requirement <code class="docutils literal notranslate"><span class="pre">parameter</span></code> names to Part slot refs.
+The constraint result rows carry <code class="docutils literal notranslate"><span class="pre">requirement_path</span></code> and <code class="docutils literal notranslate"><span class="pre">allocation_target_path</span></code> so you
+can filter results by requirement without a separate summary call.</p>
 </section>
+<hr class="docutils" />
 <section id="what-happened-both-paths">
 <h2>What happened (both paths)<a class="headerlink" href="#what-happened-both-paths" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">define()</span></code> declared symbols (parameter, attribute, constraint).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">instantiate()</span></code> (or <code class="docutils literal notranslate"><span class="pre">System.instantiate()</span></code>) created one frozen configuration.</p></li>
-<li><p><strong>Recommended path:</strong> <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> compiles the graph on first use, optionally runs <code class="docutils literal notranslate"><span class="pre">validate_graph</span></code>, then runs the evaluator.</p></li>
-<li><p><strong>Explicit path:</strong> <code class="docutils literal notranslate"><span class="pre">compile_graph()</span></code> created dependency nodes and handlers; <code class="docutils literal notranslate"><span class="pre">validate_graph(...,</span> <span class="pre">configured_model=cm)</span></code> ran static checks; <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> ran one execution with a fresh <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">define()</span></code> declared symbols (name, parameters, attributes, constraints, composition).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">instantiate()</span></code> created one frozen configuration with a full path registry.</p></li>
+<li><p><strong>Recommended path:</strong> <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> compiles the graph on first use, validates, and returns a <code class="docutils literal notranslate"><span class="pre">RunResult</span></code>.</p></li>
+<li><p><strong>Explicit path:</strong> <code class="docutils literal notranslate"><span class="pre">compile_graph()</span></code> built dependency nodes and handlers; <code class="docutils literal notranslate"><span class="pre">validate_graph()</span></code> ran static checks; <code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate()</span></code> ran one execution with a fresh <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>.</p></li>
 </ol>
 </section>
-<section id="next-examples">
-<h2>Next examples<a class="headerlink" href="#next-examples" title="Link to this heading">¶</a></h2>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a></p></li>
-<li><p><a class="reference internal" href="concepts_external_compute.html"><span class="doc">Concept: External Compute (Concrete Binding)</span></a></p></li>
-<li><p><a class="reference internal" href="../api/api_execution.html"><span class="doc">tg_model.execution</span></a></p></li>
+<li><p><a class="reference internal" href="end_to_end_guide.html"><span class="doc">End-to-End Guide: Building a Complete System</span></a> — step-by-step walkthrough building a complete system</p></li>
+<li><p><a class="reference internal" href="concepts_parts.html"><span class="doc">Concept: Parts</span></a> — Parts, composition, roll-ups</p></li>
+<li><p><a class="reference internal" href="concepts_system.html"><span class="doc">Concept: Systems</span></a> — Systems, scenario parameters, allocation wiring</p></li>
+<li><p><a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements</span></a> — Requirements deep dive</p></li>
+<li><p><a class="reference internal" href="concepts_evaluation.html"><span class="doc">Concept: Evaluation</span></a> — Evaluation paths, RunResult, constraint filtering</p></li>
+<li><p><a class="reference internal" href="concepts_external_compute.html"><span class="doc">Concept: External Compute (Concrete Binding)</span></a> — External compute bindings</p></li>
 </ul>
 </section>
 </section>
@@ -441,23 +472,23 @@ uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="concepts_requirements.html">
+          <a class="next-page" href="../developer/architecture.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</div>
+                <div class="title">Developer architecture</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="mental_model.html">
+          <a class="prev-page" href="faq.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Mental Model</div>
+                <div class="title">FAQ</div>
                 
               </div>
             </a>
@@ -491,13 +522,13 @@ uv<span class="w"> </span>sync<span class="w"> </span>--all-groups
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Quickstart (Concrete Example)</a><ul>
+<li><a class="reference internal" href="#">Quickstart</a><ul>
 <li><a class="reference internal" href="#install">Install</a></li>
-<li><a class="reference internal" href="#recommended-instantiate-evaluate">Recommended: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></a></li>
-<li><a class="reference internal" href="#advanced-explicit-compile-graph-evaluator">Advanced: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a></li>
-<li><a class="reference internal" href="#composable-requirements-next-to-part">Composable requirements next to <code class="docutils literal notranslate"><span class="pre">Part</span></code></a></li>
+<li><a class="reference internal" href="#recommended-path-instantiate-evaluate">Recommended path: <code class="docutils literal notranslate"><span class="pre">instantiate</span></code> → <code class="docutils literal notranslate"><span class="pre">evaluate</span></code></a></li>
+<li><a class="reference internal" href="#advanced-path-explicit-compile-graph-evaluator">Advanced path: explicit <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a></li>
+<li><a class="reference internal" href="#requirements-alongside-a-part-tree">Requirements alongside a Part tree</a></li>
 <li><a class="reference internal" href="#what-happened-both-paths">What happened (both paths)</a></li>
-<li><a class="reference internal" href="#next-examples">Next examples</a></li>
+<li><a class="reference internal" href="#next-steps">Next steps</a></li>
 </ul>
 </li>
 </ul>

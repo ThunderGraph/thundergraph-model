@@ -16,6 +16,7 @@ from tg_model.model.elements import Part, System
 class Battery(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("battery")
         model.parameter("voltage", unit="V")
         model.attribute("charge", unit="%")
         model.port("power_out", direction="out")
@@ -24,6 +25,7 @@ class Battery(Part):
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         model.port("power_in", direction="in")
         model.parameter("shaft_speed", unit="rpm")
         model.attribute("torque", unit="N*m")
@@ -33,8 +35,9 @@ class Motor(Part):
 class DriveSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        battery = model.part("battery", Battery)
-        motor = model.part("motor", Motor)
+        model.name("drive_system")
+        battery = model.composed_of("battery", Battery)
+        motor = model.composed_of("motor", Motor)
         model.connect(source=battery.power_out, target=motor.power_in)
 
 

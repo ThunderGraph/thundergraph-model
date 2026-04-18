@@ -5,12 +5,20 @@ from __future__ import annotations
 from tg_model.execution.configured_model import instantiate
 from tg_model.execution.instances import PartInstance, PortInstance
 from tg_model.execution.value_slots import ValueSlot
-from tg_model.model.elements import Part, System
+from tg_model.model.elements import Part, Requirement, System
+
+
+class ShallPropelRequirement(Requirement):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("shall_propel")
+        model.doc("The system shall provide propulsion.")
 
 
 class Battery(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("battery")
         model.attribute("charge", unit="%")
         model.parameter("voltage", unit="V")
         model.port("power_out", direction="out")
@@ -19,6 +27,7 @@ class Battery(Part):
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         model.port("power_in", direction="in")
         model.parameter("shaft_speed", unit="rpm")
         model.attribute("torque", unit="N*m")
@@ -28,9 +37,10 @@ class Motor(Part):
 class DriveSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        req = model.requirement("shall_propel", "The system shall provide propulsion.")
-        battery = model.part("battery", Battery)
-        motor = model.part("motor", Motor)
+        model.name("drive_system")
+        req = model.composed_of("shall_propel", ShallPropelRequirement)
+        battery = model.composed_of("battery", Battery)
+        motor = model.composed_of("motor", Motor)
         model.connect(source=battery.power_out, target=motor.power_in, carrying="electrical_power")
         model.allocate(req, motor)
 
@@ -39,6 +49,7 @@ def setup_function() -> None:
     Battery._reset_compilation()
     Motor._reset_compilation()
     DriveSystem._reset_compilation()
+    ShallPropelRequirement._reset_compilation()
 
 
 class TestFullInstantiationWorkflow:

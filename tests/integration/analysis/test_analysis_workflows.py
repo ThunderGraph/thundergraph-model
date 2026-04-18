@@ -22,6 +22,7 @@ from tg_model.model.elements import Part, System
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         torque = model.parameter("torque", unit=N * m)
         speed = model.parameter("shaft_speed", unit=m / (m * s_unit))
         power = model.attribute(
@@ -38,7 +39,8 @@ class Motor(Part):
 class SimpleSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("motor", Motor)
+        model.name("simple_system")
+        model.composed_of("motor", Motor)
 
 
 class OtherSystem(System):
@@ -46,7 +48,8 @@ class OtherSystem(System):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("motor", Motor)
+        model.name("other_system")
+        model.composed_of("motor", Motor)
 
 
 def setup_function() -> None:

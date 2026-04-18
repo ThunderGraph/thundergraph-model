@@ -27,6 +27,7 @@ from tg_model.model.elements import Part, System
 class Decider(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("decider")
         hot = model.guard("hot", predicate=lambda c, p: c.get_value(p.temp.stable_id) > 0)
         model.parameter("temp", unit="1")
         model.action("cool", effect=lambda c, p: c.bind_input(p.temp.stable_id, 0.0))
@@ -39,6 +40,7 @@ class Strict(Part):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("strict")
         hot = model.guard("hot", predicate=lambda c, p: c.get_value(p.temp.stable_id) > 0)
         model.parameter("temp", unit="1")
         model.action("cool", effect=lambda c, p: None)
@@ -48,6 +50,7 @@ class Strict(Part):
 class Forky(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("forky")
         model.action("a", effect=lambda c, p: None)
         model.action("b", effect=lambda c, p: None)
         model.action("c", effect=lambda c, p: None)
@@ -59,6 +62,7 @@ class DecisionMerge(Part):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("decision_merge")
         g = model.guard("take_a", predicate=lambda c, p: True)
         model.action("branch_a", effect=lambda c, p: None)
         model.action("branch_b", effect=lambda c, p: None)
@@ -74,6 +78,7 @@ class DecisionMerge(Part):
 class Seqgy(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("seqgy")
         model.action("s1", effect=lambda c, p: None)
         model.action("s2", effect=lambda c, p: None)
         model.sequence("main", steps=["s1", "s2"])
@@ -82,6 +87,7 @@ class Seqgy(Part):
 class Sender(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("sender")
         model.port("out", direction="out")
         model.item_kind("Msg")
 
@@ -94,6 +100,7 @@ class Sender(Part):
 class Receiver(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("receiver")
         model.port("inp", direction="in")
         model.parameter("last", unit="1")
 
@@ -112,8 +119,9 @@ class Receiver(Part):
 class Bus(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        snd = model.part("snd", Sender)
-        rcv = model.part("rcv", Receiver)
+        model.name("bus")
+        snd = model.composed_of("snd", Sender)
+        rcv = model.composed_of("rcv", Receiver)
         model.connect(source=snd.out, target=rcv.inp, carrying="Msg")
         model.scenario(
             "flow",
@@ -225,6 +233,7 @@ def test_validate_scenario_initial_from_state() -> None:
     class S(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("s")
             a = model.state("a", initial=True)
             b = model.state("b")
             e = model.event("e")
@@ -254,6 +263,7 @@ def test_validate_scenario_final_state() -> None:
     class S(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("s")
             a = model.state("a", initial=True)
             b = model.state("b")
             e = model.event("e")

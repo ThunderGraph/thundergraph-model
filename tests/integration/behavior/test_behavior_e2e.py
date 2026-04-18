@@ -20,6 +20,7 @@ from tg_model.model.elements import Part, System
 class Controller(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("controller")
         model.parameter("marker", unit="%")
         off = model.state("off", initial=True)
         running = model.state("running")
@@ -42,7 +43,8 @@ class Controller(Part):
 class Host(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("ctrl", Controller)
+        model.name("host")
+        model.composed_of("ctrl", Controller)
 
 
 class EvalThenBehavior(Part):
@@ -50,6 +52,7 @@ class EvalThenBehavior(Part):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("eval_then_behavior")
         model.parameter("marker", unit="%")
         off = model.state("off", initial=True)
         running = model.state("running")

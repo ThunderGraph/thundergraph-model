@@ -8,20 +8,28 @@ from unitflow.core.units import Unit
 
 from tg_model.execution.configured_model import instantiate
 from tg_model.model.definition_context import ModelDefinitionError
-from tg_model.model.elements import Part, System
+from tg_model.model.elements import Part, Requirement, System
 from tg_model.model.identity import qualified_name
 from tg_model.model.refs import Ref
 
 DIMLESS = Unit.dimensionless()
 
 
+class LocalBoundednessRequirement(Requirement):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("local_req")
+        model.doc("Subsystem shall be bounded.")
+
+
 class CitedPart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("cited_part")
         x = model.parameter("x", unit=DIMLESS)
         cite_a = model.citation("handbook_a", title="Example handbook", revision="2024")
         cite_b = model.citation("paper_b", doi="10.1000/182")
-        req = model.requirement("local_req", "Subsystem shall be bounded.")
+        req = model.composed_of("local_req", LocalBoundednessRequirement)
         cons = model.constraint("x_nonneg", expr=x >= Quantity(0, DIMLESS))
         model.references(x, cite_a)
         model.references(cons, cite_b)
@@ -31,8 +39,9 @@ class CitedPart(Part):
 class CitedPlant(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("cited_plant")
         lic = model.citation("reg_basis", title="Illustrative regulatory pointer", url="https://example.invalid/rule")
-        sub = model.part("subsystem", CitedPart)
+        sub = model.composed_of("subsystem", CitedPart)
         model.references(sub, lic)
 
 
@@ -62,6 +71,7 @@ def test_references_requires_citation_target() -> None:
     class Bad(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("bad")
             x = model.parameter("x", unit=DIMLESS)
             model.references(x, x)
 
@@ -70,10 +80,16 @@ def test_references_requires_citation_target() -> None:
         Bad.compile()
 
 
+def test_citations_in_compiled_edges_reset() -> None:
+    CitedPart._reset_compilation()
+    LocalBoundednessRequirement._reset_compilation()
+
+
 def test_references_resolves_unknown_source() -> None:
     class Bad(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("bad")
             c = model.citation("c1", title="only")
             fake = Ref(
                 owner_type=Bad,

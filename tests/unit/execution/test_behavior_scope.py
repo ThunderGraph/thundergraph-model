@@ -13,20 +13,23 @@ from tg_model.model.elements import Part, System
 class PeerB(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("peer_b")
         model.parameter("t", unit="1")
 
 
 class PeerA(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("peer_a")
         model.parameter("t", unit="1")
 
 
 class PeerSys(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("a", PeerA)
-        model.part("b", PeerB)
+        model.name("peer_sys")
+        model.composed_of("a", PeerA)
+        model.composed_of("b", PeerB)
 
 
 def setup_function() -> None:
@@ -39,6 +42,7 @@ def test_behavior_effect_cannot_bind_peer_slot() -> None:
     class PeerASteal(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("peer_a_steal")
             model.parameter("t", unit="1")
 
             def steal(ctx, p) -> None:
@@ -50,8 +54,9 @@ def test_behavior_effect_cannot_bind_peer_slot() -> None:
     class SysSteal(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("a", PeerASteal)
-            model.part("b", PeerB)
+            model.name("sys_steal")
+            model.composed_of("a", PeerASteal)
+            model.composed_of("b", PeerB)
 
     SysSteal._reset_compilation()
     cm = instantiate(SysSteal)
@@ -68,6 +73,7 @@ def test_get_or_create_record_respects_behavior_scope() -> None:
     class PeerASteal(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("peer_a_steal")
             model.parameter("t", unit="1")
 
             def steal(ctx, p) -> None:
@@ -79,8 +85,9 @@ def test_get_or_create_record_respects_behavior_scope() -> None:
     class SysSteal(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("a", PeerASteal)
-            model.part("b", PeerB)
+            model.name("sys_steal")
+            model.composed_of("a", PeerASteal)
+            model.composed_of("b", PeerB)
 
     SysSteal._reset_compilation()
     cm = instantiate(SysSteal)
@@ -103,6 +110,7 @@ def test_transition_guard_cannot_read_peer_slot() -> None:
     class PeerAState(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("peer_a_state")
             model.parameter("t", unit="1")
             a = model.state("a", initial=True)
             b = model.state("b")
@@ -116,8 +124,9 @@ def test_transition_guard_cannot_read_peer_slot() -> None:
     class SysGuard(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("a", PeerAState)
-            model.part("b", PeerB)
+            model.name("sys_guard")
+            model.composed_of("a", PeerAState)
+            model.composed_of("b", PeerB)
 
     SysGuard._reset_compilation()
     cm = instantiate(SysGuard)
@@ -134,6 +143,7 @@ def test_decision_predicate_cannot_read_peer_slot() -> None:
     class PeerADec(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("peer_a_dec")
             model.parameter("t", unit="1")
 
             def bad_pred(c: RunContext, p) -> bool:
@@ -146,8 +156,9 @@ def test_decision_predicate_cannot_read_peer_slot() -> None:
     class SysDec(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("a", PeerADec)
-            model.part("b", PeerB)
+            model.name("sys_dec")
+            model.composed_of("a", PeerADec)
+            model.composed_of("b", PeerB)
 
     SysDec._reset_compilation()
     cm = instantiate(SysDec)
@@ -162,6 +173,7 @@ def test_behavior_effect_can_bind_own_slot() -> None:
     class PeerAOk(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("peer_a_ok")
             model.parameter("t", unit="1")
 
             def ok(ctx, p) -> None:
@@ -173,7 +185,8 @@ def test_behavior_effect_can_bind_own_slot() -> None:
     class SysOk(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("a", PeerAOk)
+            model.name("sys_ok")
+            model.composed_of("a", PeerAOk)
 
     SysOk._reset_compilation()
     cm = instantiate(SysOk)

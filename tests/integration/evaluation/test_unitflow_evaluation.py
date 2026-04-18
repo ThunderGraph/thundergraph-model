@@ -23,6 +23,7 @@ from tg_model.model.elements import Part, System
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         torque = model.parameter("torque", unit=N * m)
         speed = model.parameter("shaft_speed", unit=rad / s)
         power = model.attribute(
@@ -39,7 +40,8 @@ class Motor(Part):
 class SimpleSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("motor", Motor)
+        model.name("simple_system")
+        model.composed_of("motor", Motor)
 
 
 def setup_function() -> None:
@@ -135,6 +137,7 @@ class TestUnitflowExpressionEvaluation:
 class SolvedMotor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("solved_motor")
         torque = model.attribute("shaft_torque", unit=N * m)
         speed = model.parameter("shaft_speed", unit=rad / s)
         power_unit = N * m / s
@@ -170,19 +173,22 @@ class TestSolveGroupEvaluation:
 class AggregatedSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("aggregated_system")
         class Box(Part):
             @classmethod
             def define(cls, m2):  # type: ignore[override]
+                m2.name("box")
                 m2.parameter("mass", unit=kg)
 
         class MassAggregation(Part):
             @classmethod
             def define(cls, m2):  # type: ignore[override]
-                m2.part("box1", Box)
-                m2.part("box2", Box)
+                m2.name("mass_aggregation")
+                m2.composed_of("box1", Box)
+                m2.composed_of("box2", Box)
                 m2.attribute("total_mass", unit=kg, expr=rollup.sum(m2.parts(), value=lambda c: c.mass))
 
-        model.part("aggregation", MassAggregation)
+        model.composed_of("aggregation", MassAggregation)
 
 
 class TestRollupEvaluation:
@@ -211,6 +217,7 @@ class TestConstantExpression:
         class ConstPart(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("const_part")
                 model.attribute("mass", unit=kg, expr=Quantity(5, kg))
 
         ConstPart._reset_compilation()
@@ -237,6 +244,7 @@ class TestSolveGroupContractEnforcement:
         class BadSolve(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("bad_solve")
                 torque = model.attribute("torque", unit=N * m)
                 drag = model.attribute("drag", unit=N * m)
                 speed = model.parameter("speed", unit=rad / s)
@@ -257,6 +265,7 @@ class TestSolveGroupContractEnforcement:
         class BadSolve(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("bad_solve")
                 torque = model.attribute("torque", unit=N * m)
                 speed = model.parameter("speed", unit=rad / s)
                 power = model.parameter("power", unit=N * m / s)
@@ -277,6 +286,7 @@ class TestSolveGroupContractEnforcement:
         class BadSolve(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("bad_solve")
                 torque = model.attribute("torque", unit=N * m)
                 speed = model.parameter("speed", unit=rad / s)
                 power = model.parameter("power", unit=N * m / s)
@@ -297,6 +307,7 @@ class TestSolveGroupContractEnforcement:
         class BadSolve(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("bad_solve")
                 torque = model.attribute("torque", unit=N * m)
                 speed = model.parameter("speed", unit=rad / s)
                 power = model.parameter("power", unit=N * m / s)

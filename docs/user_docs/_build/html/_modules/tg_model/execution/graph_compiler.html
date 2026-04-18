@@ -195,15 +195,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User</span></p>
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/mental_model.html">Mental Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/end_to_end_guide.html">End-to-End Guide: Building a Complete System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_parts.html">Concept: Parts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_system.html">Concept: Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_evaluation.html">Concept: Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/quickstart.html">Quickstart</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
@@ -226,7 +233,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Drafts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
@@ -284,7 +291,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.configured_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfiguredModel</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.connection_bindings</span><span class="w"> </span><span class="kn">import</span> <span class="n">AllocationBinding</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.dependency_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">DependencyGraph</span><span class="p">,</span> <span class="n">DependencyNode</span><span class="p">,</span> <span class="n">NodeKind</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution.external_ops</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ExternalOpsError</span><span class="p">,</span>
@@ -372,11 +378,13 @@
     <span class="n">graph</span> <span class="o">=</span> <span class="n">DependencyGraph</span><span class="p">()</span>
     <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
+    <span class="n">param_overrides_by_pkg</span> <span class="o">=</span> <span class="n">_build_param_overrides_by_pkg</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">allocation_target_by_pkg</span> <span class="o">=</span> <span class="n">_build_allocation_target_by_pkg</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="n">_compile_part</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-    <span class="n">_compile_requirement_packages_from_parts</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+    <span class="n">_compile_requirement_packages_from_parts</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span> <span class="n">allocation_target_by_pkg</span>
+    <span class="p">)</span>
     <span class="n">_compile_constraints_for_part</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-    <span class="n">_compile_requirement_derived_slots</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">)</span>
-    <span class="n">_compile_requirement_acceptance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">)</span>
     <span class="n">_compile_solve_groups_for_part</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 
     <span class="n">model</span><span class="o">.</span><span class="n">_compiled_graph</span> <span class="o">=</span> <span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">)</span>
@@ -689,87 +697,35 @@
     <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">build_rollup_handler</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">value_func</span><span class="p">,</span> <span class="n">child_slots</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_symbol_for_requirement_acceptance</span><span class="p">(</span>
-    <span class="n">sym</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">allocate_target</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">,</span>
-    <span class="n">requirement_definition_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
-    <span class="n">_model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-    <span class="n">alloc</span><span class="p">:</span> <span class="n">AllocationBinding</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValueSlot</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map a unitflow symbol to a :class:`ValueSlot` for requirement acceptance (Phase 7).</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_param_overrides_by_pkg</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a lookup: requirement package path_string → {param_name → source ValueSlot}.</span>
 
-<span class="sd">    If :class:`~tg_model.execution.connection_bindings.AllocationBinding` carries</span>
-<span class="sd">    ``input_bindings`` (from ``allocate(..., inputs=…)``), symbols owned by the configured root</span>
-<span class="sd">    whose path matches ``&lt;requirement instance path tail&gt; + (input_name,)`` resolve to the bound</span>
-<span class="sd">    part slot.</span>
-
-<span class="sd">    Otherwise: symbols declared on the **same type as the allocate() call site** use paths from</span>
-<span class="sd">    that type&#39;s root (e.g. ``(&#39;motor&#39;, &#39;shaft_power&#39;)``); we strip the allocate target&#39;s path</span>
-<span class="sd">    under the configured root and resolve the remainder from ``allocate_target``.</span>
-
-<span class="sd">    Symbols declared on the **allocate target&#39;s part type** (e.g. attributes in ``Motor.define``)</span>
-<span class="sd">    use paths relative to that part (e.g. ``(&#39;shaft_power&#39;,)``) and resolve directly from</span>
-<span class="sd">    ``allocate_target``.</span>
-
-<span class="sd">    Requirement-local :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`</span>
-<span class="sd">    values are registered as :class:`~tg_model.execution.value_slots.ValueSlot` objects on the</span>
-<span class="sd">    configured root and resolved via ``path_registry`` when not covered by ``inputs=`` bindings.</span>
+<span class="sd">    Used by :func:`_compile_requirement_package_tree` to wire requirement package parameters</span>
+<span class="sd">    as computed values (sourced from the part side) when ``allocate(..., inputs=...)`` was used.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.refs</span><span class="w"> </span><span class="kn">import</span> <span class="n">_symbol_id_to_path</span>
+    <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">alloc</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">allocations</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alloc</span><span class="o">.</span><span class="n">parameter_overrides</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">overrides</span><span class="p">[</span><span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span><span class="o">.</span><span class="n">path_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">parameter_overrides</span>
+    <span class="k">return</span> <span class="n">overrides</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">_symbol_id_to_path</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">sym</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">sym_owner</span><span class="p">,</span> <span class="n">tg_path</span> <span class="o">=</span> <span class="n">result</span>
-        <span class="n">req_inst</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span>
-        <span class="k">if</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">requirement_definition_type</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">req_inst</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">):</span>
-            <span class="n">rtail</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">req_inst</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tg_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">rtail</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">tg_path</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">rtail</span><span class="p">)]</span> <span class="o">==</span> <span class="n">rtail</span><span class="p">:</span>
-                <span class="n">iname</span> <span class="o">=</span> <span class="n">tg_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">alloc</span><span class="o">.</span><span class="n">input_bindings</span><span class="p">:</span>
-                    <span class="n">bound</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">input_bindings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">iname</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="n">bound</span>
-                <span class="n">full_key</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">req_inst</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">*</span><span class="n">tg_path</span><span class="p">))</span>
-                <span class="n">hit</span> <span class="o">=</span> <span class="n">_model</span><span class="o">.</span><span class="n">path_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">full_key</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hit</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="n">hit</span>
-                <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Requirement acceptance symbol </span><span class="si">{</span><span class="n">iname</span><span class="si">!r}</span><span class="s2"> at path </span><span class="si">{</span><span class="n">tg_path</span><span class="si">!r}</span><span class="s2"> has no &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;matching entry in allocate(..., inputs=...) or requirement_attribute slot&quot;</span>
-                <span class="p">)</span>
-        <span class="n">current</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">allocate_target</span>
-        <span class="k">if</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">allocate_target</span><span class="o">.</span><span class="n">definition_type</span><span class="p">:</span>
-            <span class="n">rel</span> <span class="o">=</span> <span class="n">tg_path</span>
-        <span class="k">elif</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">requirement_definition_type</span><span class="p">:</span>
-            <span class="n">anchor</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">allocate_target</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tg_path</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">anchor</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tg_path</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">anchor</span><span class="p">)]</span> <span class="o">!=</span> <span class="n">anchor</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; path </span><span class="si">{</span><span class="n">tg_path</span><span class="si">!r}</span><span class="s2"> is not under &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;allocate target path </span><span class="si">{</span><span class="n">anchor</span><span class="si">!r}</span><span class="s2"> from configured root&quot;</span>
-                <span class="p">)</span>
-            <span class="n">rel</span> <span class="o">=</span> <span class="n">tg_path</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">anchor</span><span class="p">)</span> <span class="p">:]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; is owned by </span><span class="si">{</span><span class="n">sym_owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">; &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;requirement acceptance allows symbols from </span><span class="si">{</span><span class="n">requirement_definition_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;or from allocate target type </span><span class="si">{</span><span class="n">allocate_target</span><span class="o">.</span><span class="n">definition_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> only.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">rel</span><span class="p">:</span>
-                <span class="n">current</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">segment</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">current</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; path </span><span class="si">{</span><span class="n">tg_path</span><span class="si">!r}</span><span class="s2"> &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;could not be resolved under &#39;</span><span class="si">{</span><span class="n">allocate_target</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39; for requirement acceptance&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_allocation_target_by_pkg</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a lookup: requirement package path_string → allocation target path_string.</span>
+
+<span class="sd">    Used to tag requirement constraint check nodes with the part they were allocated to.</span>
+<span class="sd">    Raises :class:`GraphCompilationError` if any allocation targets a non-part element</span>
+<span class="sd">    (e.g. a port).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">targets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">alloc</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">allocations</span><span class="p">:</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="n">_alloc_target_as_part</span><span class="p">(</span>
+            <span class="n">alloc</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">where</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;allocate(</span><span class="si">{</span><span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span><span class="o">.</span><span class="n">path_string</span><span class="si">!r}</span><span class="s2">, ...)&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-
-    <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; is not a canonical AttributeRef-derived symbol. &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;All expression symbols must originate from model.attribute() or model.parameter() refs.&quot;</span>
-    <span class="p">)</span>
+        <span class="n">targets</span><span class="p">[</span><span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span><span class="o">.</span><span class="n">path_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">path_string</span>
+    <span class="k">return</span> <span class="n">targets</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_symbol_to_slot</span><span class="p">(</span>
@@ -820,173 +776,13 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_sym_for_requirement_expr</span><span class="p">(</span>
-    <span class="n">sym</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">allocate_target</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">,</span>
-    <span class="n">requirement_definition_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-    <span class="n">alloc</span><span class="p">:</span> <span class="n">AllocationBinding</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValueSlot</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a symbol for :meth:`requirement_attribute` expressions (inputs, derived, root, part).&quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.refs</span><span class="w"> </span><span class="kn">import</span> <span class="n">_symbol_id_to_path</span>
-
-    <span class="n">info</span> <span class="o">=</span> <span class="n">_symbol_id_to_path</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">sym</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; is not a canonical AttributeRef-derived symbol.&quot;</span>
-        <span class="p">)</span>
-    <span class="n">sym_owner</span><span class="p">,</span> <span class="n">tg_path</span> <span class="o">=</span> <span class="n">info</span>
-    <span class="n">req_inst</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">req_inst</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">requirement_definition_type</span><span class="p">:</span>
-        <span class="n">rtail</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">req_inst</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tg_path</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">rtail</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">tg_path</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">rtail</span><span class="p">)]</span> <span class="o">==</span> <span class="n">rtail</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_resolve_symbol_for_requirement_acceptance</span><span class="p">(</span>
-                <span class="n">sym</span><span class="p">,</span>
-                <span class="n">allocate_target</span><span class="p">,</span>
-                <span class="n">requirement_definition_type</span><span class="p">,</span>
-                <span class="n">model</span><span class="p">,</span>
-                <span class="n">alloc</span><span class="p">,</span>
-            <span class="p">)</span>
-    <span class="k">if</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">definition_type</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">sym_owner</span> <span class="ow">is</span> <span class="n">allocate_target</span><span class="o">.</span><span class="n">definition_type</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">allocate_target</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Symbol &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;?&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; cannot be resolved for requirement_attribute &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;(owner </span><span class="si">{</span><span class="n">sym_owner</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is not root, allocate target, or requirement namespace).&quot;</span>
-    <span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_attribute_slot</span><span class="p">(</span>
-    <span class="n">slot</span><span class="p">:</span> <span class="n">ValueSlot</span><span class="p">,</span>
-    <span class="n">alloc</span><span class="p">:</span> <span class="n">AllocationBinding</span><span class="p">,</span>
-    <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compile one derived requirement slot (same graph pattern as :func:`_compile_slot`).&quot;&quot;&quot;</span>
-    <span class="n">target</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">target</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">PartInstance</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;requirement_attribute needs allocate target PartInstance; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-    <span class="n">req</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">)</span> <span class="ow">or</span> <span class="n">req</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span><span class="s2">&quot;requirement_attribute allocation must reference a requirement instance&quot;</span><span class="p">)</span>
-    <span class="n">req_owner_type</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">definition_type</span>
-
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">slot</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_expr&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">expr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
-            <span class="n">DependencyNode</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                <span class="n">NodeKind</span><span class="o">.</span><span class="n">ATTRIBUTE_VALUE</span><span class="p">,</span>
-                <span class="n">slot_id</span><span class="o">=</span><span class="n">slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">return</span>
-
-    <span class="n">slot_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
-        <span class="n">DependencyNode</span><span class="p">(</span>
-            <span class="n">slot_node_id</span><span class="p">,</span>
-            <span class="n">NodeKind</span><span class="o">.</span><span class="n">ATTRIBUTE_VALUE</span><span class="p">,</span>
-            <span class="n">slot_id</span><span class="o">=</span><span class="n">slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">expr_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;expr:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
-        <span class="n">DependencyNode</span><span class="p">(</span>
-            <span class="n">expr_node_id</span><span class="p">,</span>
-            <span class="n">NodeKind</span><span class="o">.</span><span class="n">LOCAL_EXPRESSION</span><span class="p">,</span>
-            <span class="n">slot_id</span><span class="o">=</span><span class="n">slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">expr_node_id</span><span class="p">,</span> <span class="n">slot_node_id</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;free_symbols&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-            <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_sym_for_requirement_expr</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">req_owner_type</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">alloc</span><span class="p">)</span>
-            <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">dep_node_id</span><span class="p">,</span> <span class="n">expr_node_id</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">make_handler</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">AllocationBinding</span><span class="p">,</span> <span class="n">cm</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">dep_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-                <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">tgt</span> <span class="o">=</span> <span class="n">_alloc_target_as_part</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s2">&quot;requirement_attribute expression&quot;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">expression</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-                    <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_sym_for_requirement_expr</span><span class="p">(</span>
-                        <span class="n">sym</span><span class="p">,</span>
-                        <span class="n">tgt</span><span class="p">,</span>
-                        <span class="n">a</span><span class="o">.</span><span class="n">requirement</span><span class="o">.</span><span class="n">definition_type</span><span class="p">,</span>
-                        <span class="n">cm</span><span class="p">,</span>
-                        <span class="n">a</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="k">if</span> <span class="n">dep_node_id</span> <span class="ow">in</span> <span class="n">dep_values</span><span class="p">:</span>
-                        <span class="n">context</span><span class="p">[</span><span class="n">sym</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_values</span><span class="p">[</span><span class="n">dep_node_id</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">expression</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">handler</span>
-
-        <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_handler</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">alloc</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;evaluate&quot;</span><span class="p">):</span>
-        <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dep_values</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">expr</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">evaluate</span><span class="p">({})</span>
-    <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
-        <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dep_values</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">expr</span><span class="p">:</span> <span class="n">fn</span><span class="p">(</span><span class="n">dep_values</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dep_values</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">expr</span><span class="p">:</span> <span class="n">val</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_derived_slots</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-    <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compile :meth:`requirement_attribute` value slots (before requirement acceptance checks).&quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_value_slots</span><span class="p">:</span>
-        <span class="k">return</span>
-
-    <span class="n">by_req</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">AllocationBinding</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">allocations</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requirement</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">)</span> <span class="ow">and</span> <span class="n">r</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement&quot;</span><span class="p">:</span>
-            <span class="n">by_req</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">path_string</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-
-    <span class="n">grouped</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValueSlot</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">requirement_value_slots</span><span class="p">:</span>
-        <span class="n">parent</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">slot</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">grouped</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">req_path</span><span class="p">,</span> <span class="n">slots</span> <span class="ow">in</span> <span class="n">grouped</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">allocs</span> <span class="o">=</span> <span class="n">by_req</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">req_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">allocs</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;requirement_attribute slot(s) under </span><span class="si">{</span><span class="n">req_path</span><span class="si">!r}</span><span class="s2"> require a matching allocate(...) edge&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">allocs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;requirement </span><span class="si">{</span><span class="n">req_path</span><span class="si">!r}</span><span class="s2"> has requirement_attribute-derived slots but multiple &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;allocate(...) edges; use a single allocation for derived requirement attributes.&quot;</span>
-            <span class="p">)</span>
-        <span class="n">alloc</span> <span class="o">=</span> <span class="n">allocs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">req</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span><span class="s2">&quot;requirement allocation invalid for requirement_attribute compile&quot;</span><span class="p">)</span>
-        <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_requirement_attribute_names&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
-        <span class="n">rank</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">)}</span>
-        <span class="n">slots_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">slots</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">rank</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">instance_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10_000</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">slots_sorted</span><span class="p">:</span>
-            <span class="n">_compile_requirement_attribute_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">alloc</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_packages_from_parts</span><span class="p">(</span>
     <span class="n">part</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">,</span>
     <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
     <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
+    <span class="n">param_overrides_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">]],</span>
+    <span class="n">allocation_target_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compile value slots and constraints declared on composable requirement packages.&quot;&quot;&quot;</span>
     <span class="n">compiled</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">definition_type</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
@@ -996,9 +792,40 @@
             <span class="k">continue</span>
         <span class="n">sub</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
-            <span class="n">_compile_requirement_package_tree</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+            <span class="n">_compile_requirement_package_tree</span><span class="p">(</span>
+                <span class="n">sub</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span> <span class="n">allocation_target_by_pkg</span>
+            <span class="p">)</span>
     <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-        <span class="n">_compile_requirement_packages_from_parts</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">_compile_requirement_packages_from_parts</span><span class="p">(</span>
+            <span class="n">child</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span> <span class="n">allocation_target_by_pkg</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compile_parameter_override</span><span class="p">(</span>
+    <span class="n">slot</span><span class="p">:</span> <span class="n">ValueSlot</span><span class="p">,</span>
+    <span class="n">source_slot</span><span class="p">:</span> <span class="n">ValueSlot</span><span class="p">,</span>
+    <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wire a requirement package parameter slot to pull its value from ``source_slot``.</span>
+
+<span class="sd">    This replaces the ``INPUT_PARAMETER`` graph node with a simple pass-through expression</span>
+<span class="sd">    so the evaluator computes the requirement parameter from the part&#39;s slot value rather</span>
+<span class="sd">    than requiring it as an external input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">slot_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">source_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">source_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">expr_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;expr:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">DependencyNode</span><span class="p">(</span><span class="n">slot_node_id</span><span class="p">,</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">ATTRIBUTE_VALUE</span><span class="p">,</span> <span class="n">slot_id</span><span class="o">=</span><span class="n">slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">))</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">DependencyNode</span><span class="p">(</span><span class="n">expr_node_id</span><span class="p">,</span> <span class="n">NodeKind</span><span class="o">.</span><span class="n">LOCAL_EXPRESSION</span><span class="p">,</span> <span class="n">slot_id</span><span class="o">=</span><span class="n">slot</span><span class="o">.</span><span class="n">stable_id</span><span class="p">))</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">source_node_id</span><span class="p">,</span> <span class="n">expr_node_id</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">expr_node_id</span><span class="p">,</span> <span class="n">slot_node_id</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">dep_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">_sid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">source_node_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dep_values</span><span class="p">[</span><span class="n">_sid</span><span class="p">]</span>
+
+    <span class="n">handlers</span><span class="p">[</span><span class="n">expr_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">handler</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_package_tree</span><span class="p">(</span>
@@ -1006,10 +833,16 @@
     <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
     <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
+    <span class="n">param_overrides_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">]],</span>
+    <span class="n">allocation_target_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">parent_target_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.declarations.values</span><span class="w"> </span><span class="kn">import</span> <span class="n">RollupDecl</span>
 
     <span class="n">compiled</span> <span class="o">=</span> <span class="n">pkg</span><span class="o">.</span><span class="n">package_type</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+    <span class="n">overrides</span> <span class="o">=</span> <span class="n">param_overrides_by_pkg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="c1"># Resolve the allocation target: own entry takes priority, then inherit from parent.</span>
+    <span class="n">target_path</span> <span class="o">=</span> <span class="n">allocation_target_by_pkg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span> <span class="n">parent_target_path</span><span class="p">)</span>
     <span class="c1"># Declaration order matches Python 3.7+ dict insertion order (same as compile_type recording).</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">compiled</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span>
@@ -1028,13 +861,21 @@
                 <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;RollupDecl is not supported on requirement package slot &#39;</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
                 <span class="p">)</span>
-            <span class="n">_compile_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;parameter&quot;</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">overrides</span><span class="p">:</span>
+                <span class="n">_compile_parameter_override</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">overrides</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_compile_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constraint&quot;</span><span class="p">:</span>
-            <span class="n">_compile_requirement_package_constraint</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+            <span class="n">_compile_requirement_package_constraint</span><span class="p">(</span>
+                <span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">target_path</span>
+            <span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement_block&quot;</span><span class="p">:</span>
             <span class="n">inner</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inner</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
-                <span class="n">_compile_requirement_package_tree</span><span class="p">(</span><span class="n">inner</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+                <span class="n">_compile_requirement_package_tree</span><span class="p">(</span>
+                    <span class="n">inner</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span>
+                    <span class="n">allocation_target_by_pkg</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span>
+                <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_package_constraint</span><span class="p">(</span>
@@ -1044,13 +885,18 @@
     <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
     <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
+    <span class="n">allocation_target_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">constraint_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;check:</span><span class="si">{</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
         <span class="n">DependencyNode</span><span class="p">(</span>
             <span class="n">constraint_node_id</span><span class="p">,</span>
             <span class="n">NodeKind</span><span class="o">.</span><span class="n">CONSTRAINT_CHECK</span><span class="p">,</span>
-            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requirement_path&quot;</span><span class="p">:</span> <span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span>
+                <span class="s2">&quot;allocation_target_path&quot;</span><span class="p">:</span> <span class="n">allocation_target_path</span><span class="p">,</span>
+            <span class="p">},</span>
         <span class="p">)</span>
     <span class="p">)</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_expr&quot;</span><span class="p">)</span>
@@ -1144,107 +990,6 @@
 
     <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
         <span class="n">_compile_constraints_for_part</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_compile_requirement_acceptance</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-    <span class="n">graph</span><span class="p">:</span> <span class="n">DependencyGraph</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add constraint-check nodes for requirements with ``_accept_expr`` per allocation (Phase 7).</span>
-
-<span class="sd">    Uses :func:`_resolve_symbol_for_requirement_acceptance` (not :func:`_resolve_symbol_to_slot`):</span>
-<span class="sd">    symbols may be authored on the requirement owner type (system path prefix stripped to the</span>
-<span class="sd">    allocate target) or on the allocate target&#39;s part type. Same ``Evaluator`` / graph kinds as</span>
-<span class="sd">    part constraints; resolution rules differ.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">alloc</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">allocations</span><span class="p">:</span>
-        <span class="n">req</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">requirement</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">ElementInstance</span><span class="p">)</span> <span class="ow">or</span> <span class="n">req</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;requirement&quot;</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">expr</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_accept_expr&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">expr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">.</span><span class="n">target</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">PartInstance</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Requirement acceptance for &#39;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39; needs allocate target to be a &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;PartInstance; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> at &#39;</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-            <span class="p">)</span>
-        <span class="n">req_def_type</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">definition_type</span>
-        <span class="n">node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;reqcheck:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">alloc</span><span class="o">.</span><span class="n">stable_id</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
-            <span class="n">DependencyNode</span><span class="p">(</span>
-                <span class="n">node_id</span><span class="p">,</span>
-                <span class="n">NodeKind</span><span class="o">.</span><span class="n">CONSTRAINT_CHECK</span><span class="p">,</span>
-                <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">node_id</span><span class="p">,</span>
-                    <span class="s2">&quot;requirement_path&quot;</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span>
-                    <span class="s2">&quot;allocation_target_path&quot;</span><span class="p">:</span> <span class="n">target</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span>
-                    <span class="s2">&quot;check_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;requirement_acceptance&quot;</span><span class="p">,</span>
-                <span class="p">},</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;free_symbols&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Requirement &#39;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39; acceptance expr has no free_symbols; &quot;</span>
-                <span class="s2">&quot;use the same expression types as model.constraint(expr=...).&quot;</span>
-            <span class="p">)</span>
-        <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-            <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_for_requirement_acceptance</span><span class="p">(</span>
-                <span class="n">sym</span><span class="p">,</span>
-                <span class="n">target</span><span class="p">,</span>
-                <span class="n">req_def_type</span><span class="p">,</span>
-                <span class="n">model</span><span class="p">,</span>
-                <span class="n">alloc</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">dep_node_id</span><span class="p">,</span> <span class="n">node_id</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-            <span class="n">anchor</span> <span class="o">=</span> <span class="n">_first_value_graph_node_id_under_part</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">anchor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">GraphCompilationError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Requirement &#39;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39; has a constant acceptance expr but allocate &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;target &#39;</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&#39; has no value slots to order evaluation after.&quot;</span>
-                <span class="p">)</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">anchor</span><span class="p">,</span> <span class="n">node_id</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">make_req_accept_handler</span><span class="p">(</span>
-            <span class="n">constraint_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-            <span class="n">owner_part</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">,</span>
-            <span class="n">cm</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
-            <span class="n">req_owner_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
-            <span class="n">binding</span><span class="p">:</span> <span class="n">AllocationBinding</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">dep_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-                <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">constraint_expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-                    <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_for_requirement_acceptance</span><span class="p">(</span>
-                        <span class="n">sym</span><span class="p">,</span>
-                        <span class="n">owner_part</span><span class="p">,</span>
-                        <span class="n">req_owner_type</span><span class="p">,</span>
-                        <span class="n">cm</span><span class="p">,</span>
-                        <span class="n">binding</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="k">if</span> <span class="n">dep_node_id</span> <span class="ow">in</span> <span class="n">dep_values</span><span class="p">:</span>
-                        <span class="n">context</span><span class="p">[</span><span class="n">sym</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_values</span><span class="p">[</span><span class="n">dep_node_id</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">constraint_expr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">handler</span>
-
-        <span class="n">handlers</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_req_accept_handler</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">req_def_type</span><span class="p">,</span> <span class="n">alloc</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_first_value_graph_node_id_under_part</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;First ``val:...`` node id in a deterministic DFS under ``part`` (for ordering-only edges).&quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">value_slots</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-        <span class="n">found</span> <span class="o">=</span> <span class="n">_first_value_graph_node_id_under_part</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">found</span>
-    <span class="k">return</span> <span class="kc">None</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_path_to_slot</span><span class="p">(</span>

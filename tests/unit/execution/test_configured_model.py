@@ -7,12 +7,13 @@ import pytest
 from tg_model.execution.configured_model import ConfiguredModel, instantiate
 from tg_model.execution.instances import PartInstance, PortInstance
 from tg_model.execution.value_slots import ValueSlot
-from tg_model.model.elements import Part, System
+from tg_model.model.elements import Part, Requirement, System
 
 
 class Battery(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("battery")
         model.attribute("charge", unit="%")
         model.parameter("voltage", unit="V")
         model.port("power_out", direction="out")
@@ -21,6 +22,7 @@ class Battery(Part):
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         model.port("power_in", direction="in")
         model.parameter("shaft_speed", unit="rpm")
         model.attribute("torque", unit="N*m")
@@ -29,8 +31,9 @@ class Motor(Part):
 class DriveSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        battery = model.part("battery", Battery)
-        motor = model.part("motor", Motor)
+        model.name("drive_system")
+        battery = model.composed_of("battery", Battery)
+        motor = model.composed_of("motor", Motor)
         model.connect(source=battery.power_out, target=motor.power_in, carrying="electrical_power")
 
 
@@ -167,21 +170,30 @@ class TestConnections:
 
 class TestAllocations:
     def test_allocations_resolved(self) -> None:
+        class Req1Requirement(Requirement):
+            @classmethod
+            def define(cls, model):  # type: ignore[override]
+                model.name("req1")
+                model.doc("Shall do X.")
+
         class AllocSystem(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                req = model.requirement("req1", "Shall do X.")
-                motor = model.part("motor", Motor)
+                model.name("alloc_system")
+                req = model.composed_of("req1", Req1Requirement)
+                motor = model.composed_of("motor", Motor)
                 model.allocate(req, motor)
 
+        Req1Requirement._reset_compilation()
         cm = instantiate(AllocSystem)
         assert len(cm.allocations) == 1
         alloc = cm.allocations[0]
-        assert alloc.requirement.kind == "requirement"
+        assert alloc.requirement.kind == "requirement_block"
         assert alloc.target.kind == "part"
         assert "req1" in alloc.requirement.path_string
         assert "motor" in alloc.target.path_string
         AllocSystem._reset_compilation()
+        Req1Requirement._reset_compilation()
 
 
 class TestTopologyFreeze:

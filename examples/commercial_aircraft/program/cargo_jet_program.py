@@ -18,6 +18,7 @@ class CargoJetProgram(System):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("cargo_jet_program")
         model.parameter("scenario_payload_mass_kg", unit=kg)
         model.parameter("scenario_design_range_m", unit=m)
         model.parameter("mission_desk_baseline_max_range_m", unit=m)
@@ -46,13 +47,13 @@ class CargoJetProgram(System):
             ),
         }
 
-        l1 = model.requirement_package("l1", L1RequirementsRoot)
-        aircraft = model.part("aircraft", Aircraft)
+        l1 = model.composed_of("l1", L1RequirementsRoot)
+        aircraft = model.composed_of("aircraft", Aircraft)
 
-        # --- Citations and allocation for each Level-1 requirement (explicit, same order as blocks) ---
+        # --- Citations and allocation for each Level-1 requirement ---
 
-        r_payload = l1.mission.req_cargo_design_mission_payload_closure
-        r_range = l1.mission.req_cargo_design_mission_range_closure
+        r_payload = l1.mission.payload_closure
+        r_range = l1.mission.range_closure
         for r_mission in (r_payload, r_range):
             model.references(r_mission, citations["c_far25"])
             model.references(r_mission, citations["c_ac25_7c"])
@@ -73,20 +74,20 @@ class CargoJetProgram(System):
             },
         )
 
-        r_part25 = l1.airworthiness.req_transport_category_part25
+        r_part25 = l1.airworthiness.part25
         model.references(r_part25, citations["c_far25"])
         model.allocate_to_system(r_part25)
 
-        r_airport = l1.product.req_airport_planning_representative
+        r_airport = l1.product.airport_planning
         model.references(r_airport, citations["c_acaps"])
         model.references(r_airport, citations["c_far25"])
         model.allocate(r_airport, aircraft)
 
-        r_trace = l1.product.req_verification_traceability
+        r_trace = l1.product.verification_traceability
         model.references(r_trace, citations["c_far25"])
         model.references(r_trace, citations["c_ac25_7c"])
         model.allocate(r_trace, aircraft)
 
-        r_ft = l1.airworthiness.req_flight_test_methodology_alignment
+        r_ft = l1.airworthiness.flight_test
         model.references(r_ft, citations["c_ac25_7c"])
         model.allocate_to_system(r_ft)

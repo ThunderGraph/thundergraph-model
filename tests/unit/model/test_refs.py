@@ -11,6 +11,7 @@ from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref
 class SimplePart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("simple_part")
         model.attribute("mass", unit="kg")
         model.port("power_out", direction="out")
 
@@ -18,7 +19,8 @@ class SimplePart(Part):
 class SimpleSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("child", SimplePart)
+        model.name("simple_system")
+        model.composed_of("child", SimplePart)
 
 
 class TestRefBasics:

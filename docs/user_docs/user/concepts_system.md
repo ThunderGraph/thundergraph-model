@@ -1,0 +1,186 @@
+# Concept: Systems
+
+A `System` is the **root** of an executable model. It owns the `Part` tree, the
+`Requirement` tree, and the allocation wiring between them.
+There is exactly one `System` per configured model.
+
+---
+
+## Anatomy of a System
+
+```python
+from unitflow.catalogs.si import kg, m
+from tg_model import Part, Requirement, System
+
+
+class TankPart(Part):
+    @classmethod
+    def define(cls, model):
+        model.name("tank_part")
+        model.parameter("capacity_kg", unit=kg)
+        model.parameter("loaded_mass_kg", unit=kg)
+
+
+class MassReq(Requirement):
+    @classmethod
+    def define(cls, model):
+        model.name("mass_req")
+        model.doc("Loaded mass shall not exceed tank capacity.")
+        capacity = model.parameter("capacity_kg", unit=kg)
+        loaded   = model.parameter("loaded_mass_kg", unit=kg)
+        margin   = model.attribute("margin_kg", unit=kg, expr=capacity - loaded)
+        model.constraint("within_capacity", expr=margin >= 0 * kg)
+
+
+class FuelSystem(System):
+    @classmethod
+    def define(cls, model):
+        model.name("fuel_system")                          # required
+
+        # 1. Compose Parts
+        tank = model.composed_of("tank", TankPart)
+
+        # 2. Compose Requirements
+        reqs = model.composed_of("reqs", MassReq)
+
+        # 3. Allocate: wire requirement parameters to Part slots
+        model.allocate(reqs, tank, inputs={
+            "capacity_kg":    tank.capacity_kg,
+            "loaded_mass_kg": tank.loaded_mass_kg,
+        })
+```
+
+The three responsibilities of a `System.define()`:
+1. **Compose** the Part tree via `model.composed_of(name, PartType)`.
+2. **Compose** the Requirement tree via `model.composed_of(name, RequirementType)`.
+3. **Allocate** requirements to Parts via `model.allocate(req_ref, part_ref, inputs={...})`.
+
+---
+
+## Scenario parameters on a System
+
+Systems can declare their own parameters for scenario values that are not owned by any
+single Part. These appear directly on `cm.root` after instantiation:
+
+```python
+class MissionSystem(System):
+    @classmethod
+    def define(cls, model):
+        model.name("mission_system")
+
+        # Scenario-level inputs live directly on the System
+        scenario_dv = model.parameter("scenario_delta_v_m_s", unit=m_per_s)
+        design_dv   = model.parameter("design_delta_v_m_s",  unit=m_per_s)
+
+        vehicle = model.composed_of("vehicle", VehiclePart)
+        reqs    = model.composed_of("reqs",    DeltaVReq)
+
+        model.allocate(reqs, vehicle, inputs={
+            "scenario_dv": scenario_dv,
+            "design_dv":   design_dv,
+        })
+```
+
+After `instantiate`, bind these as: `cm.evaluate(inputs={cm.root.scenario_delta_v_m_s: 3800 * m_per_s, ...})`.
+
+---
+
+## Allocation wiring in depth
+
+`model.allocate(req_ref, target_ref, inputs={...})` is where requirement parameters get
+their values at evaluation time.
+
+**`req_ref`** — the `RequirementRef` to allocate. Obtain it from the return value of
+`model.composed_of("name", RequirementType)`. For nested packages, navigate with dot
+access: `reqs.l1_mission.payload`.
+
+**`target_ref`** — the `PartRef` representing the design element being allocated to.
+The `allocation_target_path` in `ConstraintResult` rows matches the path to this Part.
+
+**`inputs`** — maps each `parameter` name declared in the `Requirement` class to an
+`AttributeRef` that provides its value at runtime. The ref must point to a slot
+accessible from the System — either a direct System parameter, or a slot on a child Part:
+
+```python
+# System-level parameter → requirement parameter
+model.allocate(reqs.payload, aircraft, inputs={
+    "scenario_payload_kg": scenario_payload_param,   # AttributeRef from model.parameter(...)
+    "envelope_payload_kg": aircraft.max_payload_kg,  # AttributeRef from a child Part slot
+})
+```
+
+Every `parameter` declared in the `Requirement` must appear in `inputs` for the
+constraint to evaluate correctly (unbound parameters are free inputs that must be
+supplied separately).
+
+---
+
+## Allocating nested requirement packages
+
+When a `Requirement` composes children, allocate each child independently:
+
+```python
+class L1Reqs(Requirement):
+    @classmethod
+    def define(cls, model):
+        model.name("l1_reqs")
+        model.doc("L1 requirements.")
+        model.composed_of("payload", PayloadReq)
+        model.composed_of("range",   RangeReq)
+
+
+class ProgramSystem(System):
+    @classmethod
+    def define(cls, model):
+        model.name("program_system")
+        aircraft = model.composed_of("aircraft", Aircraft)
+        reqs     = model.composed_of("reqs",     L1Reqs)
+
+        # Allocate each leaf package separately
+        model.allocate(reqs.payload, aircraft, inputs={
+            "scenario_payload_kg": ...,
+            "envelope_payload_kg": aircraft.max_payload_kg,
+        })
+        model.allocate(reqs.range, aircraft, inputs={
+            "scenario_range_m": ...,
+            "envelope_range_m": aircraft.max_range_m,
+        })
+```
+
+---
+
+## Multiple allocations across different Parts
+
+A requirement package can be allocated to different Parts to verify the same
+property against different targets:
+
+```python
+model.allocate(reqs.mass_budget, fuselage, inputs={
+    "allowable_mass_kg": fuselage.structural_mass_limit_kg,
+    "actual_mass_kg":    fuselage.oem_kg,
+})
+model.allocate(reqs.mass_budget, wing, inputs={
+    "allowable_mass_kg": wing.structural_mass_limit_kg,
+    "actual_mass_kg":    wing.oem_kg,
+})
+```
+
+Each allocation produces its own `ConstraintResult` row with distinct `allocation_target_path`.
+
+---
+
+## Reference: System methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `model.name(str)` | `None` | Required once. |
+| `model.parameter(name, unit=...)` | `AttributeRef` | Scenario-level input. |
+| `model.composed_of(name, PartType)` | `PartRef` | Declare a child Part. |
+| `model.composed_of(name, RequirementType)` | `RequirementRef` | Mount a requirement tree. |
+| `model.allocate(req_ref, target_ref, inputs={})` | `None` | Wire requirement parameters to Part slots. |
+| `model.citation(name, ...)` | `Ref` | External provenance reference. |
+| `model.references(node, citation)` | `None` | Traceability edge to a citation. |
+
+> `model.attribute` and `model.constraint` are **not allowed** on `System` and raise
+> `ModelDefinitionError`. Value logic and checks belong on the owning `Part` or a
+> `Requirement` package — keep `System.define()` focused on composition and wiring.

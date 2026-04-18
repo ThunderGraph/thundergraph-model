@@ -18,6 +18,7 @@ from tg_model.model.elements import Part
 class Tiny(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("tiny")
         off = model.state("off", initial=True)
         on = model.state("on")
         ev = model.event("go")
@@ -47,6 +48,7 @@ class TestDispatch:
         class Guarded(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("guarded")
                 a = model.state("a", initial=True)
                 b = model.state("b")
                 e = model.event("e")
@@ -65,6 +67,7 @@ class TestDispatch:
         class Order(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("order")
                 a = model.state("a", initial=True)
                 b = model.state("b")
                 ev = model.event("ev")
@@ -85,6 +88,7 @@ class TestDispatch:
         class Boom(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("boom")
                 a = model.state("a", initial=True)
                 b = model.state("b")
                 ev = model.event("ev")
@@ -110,6 +114,7 @@ class TestScenario:
         class S(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("s")
                 a = model.state("a", initial=True)
                 b = model.state("b")
                 c = model.state("c")

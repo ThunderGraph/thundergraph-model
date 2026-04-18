@@ -27,6 +27,7 @@ class _StubExt:
 class _Leaf(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__leaf")
         orbit = parameter_ref(_Mission, "scenario_orbit_m")
         assert orbit.owner_type is _Mission
         b = ExternalComputeBinding(_StubExt(), inputs={"orbit_m": orbit})
@@ -36,9 +37,10 @@ class _Leaf(Part):
 class _Mission(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__mission")
         model.parameter("scenario_orbit_m", unit=m)
         model.parameter("scenario_payload_kg", unit=kg)
-        model.part("leaf", _Leaf)
+        model.composed_of("leaf", _Leaf)
 
 
 class _ExprLeaf(Part):
@@ -46,6 +48,7 @@ class _ExprLeaf(Part):
 
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__expr_leaf")
         local_mass = model.parameter("local_mass_kg", unit=kg)
         root_payload = parameter_ref(_ExprRoot, "payload_kg")
         model.attribute("total_kg", unit=kg, expr=local_mass + root_payload)
@@ -56,8 +59,9 @@ class _ExprLeaf(Part):
 class _ExprRoot(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__expr_root")
         model.parameter("payload_kg", unit=kg)
-        model.part("child", _ExprLeaf)
+        model.composed_of("child", _ExprLeaf)
 
 
 _ALL_TYPES = (_Mission, _Leaf, _ExprRoot, _ExprLeaf)
@@ -85,13 +89,15 @@ def test_parameter_ref_wrong_name_raises() -> None:
     class _BadLeaf(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad_leaf")
             parameter_ref(_BadMission, "nope")
 
     class _BadMission(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad_mission")
             model.parameter("scenario_orbit_m", unit=m)
-            model.part("leaf", _BadLeaf)
+            model.composed_of("leaf", _BadLeaf)
 
     _BadMission._reset_compilation()
     _BadLeaf._reset_compilation()
@@ -103,17 +109,20 @@ def test_parameter_ref_not_parameter_kind_raises() -> None:
     class _HasAttr(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__has_attr")
             model.attribute("not_a_param", unit=kg, expr=QuantityExpr(Quantity(0, kg)))
 
     class _Bad(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad")
             parameter_ref(_HasAttr, "not_a_param")
 
     class _Root(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("leaf", _Bad)
+            model.name("__root")
+            model.composed_of("leaf", _Bad)
 
     _HasAttr.compile()
     _Root._reset_compilation()
@@ -128,6 +137,7 @@ def test_leaf_compile_without_root_compiled_first_fails() -> None:
     class _LonelyLeaf(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__lonely_leaf")
             parameter_ref(_Mission, "scenario_orbit_m")
 
     _Mission._reset_compilation()

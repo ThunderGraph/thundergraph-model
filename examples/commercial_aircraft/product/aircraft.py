@@ -31,6 +31,7 @@ class Aircraft(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("aircraft")
         from commercial_aircraft.program.cargo_jet_program import CargoJetProgram
 
         modeled_max_design_range_m = model.parameter("modeled_max_design_range_m", unit=m)
@@ -40,12 +41,12 @@ class Aircraft(Part):
         scenario_payload = model.parameter("scenario_payload_mass_kg", unit=kg)
         scenario_range = model.parameter("scenario_design_range_m", unit=m)
 
-        fuselage = model.part("fuselage", FuselageAssembly)
-        wing = model.part("wing", WingAssembly)
-        empennage = model.part("empennage", EmpennageAssembly)
-        landing_gear = model.part("landing_gear", LandingGearAssembly)
-        propulsion_installation = model.part("propulsion_installation", PropulsionInstallation)
-        aircraft_systems = model.part("aircraft_systems", AircraftSystemsPart)
+        fuselage = model.composed_of("fuselage", FuselageAssembly)
+        wing = model.composed_of("wing", WingAssembly)
+        empennage = model.composed_of("empennage", EmpennageAssembly)
+        landing_gear = model.composed_of("landing_gear", LandingGearAssembly)
+        propulsion_installation = model.composed_of("propulsion_installation", PropulsionInstallation)
+        aircraft_systems = model.composed_of("aircraft_systems", AircraftSystemsPart)
 
         operating_empty_mass_kg = model.attribute(
             "operating_empty_mass_kg",

@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Developer architecture" href="../developer/architecture.html"><link rel="prev" title="Concept: External Compute (Concrete Binding)" href="concepts_external_compute.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Quickstart" href="quickstart.html"><link rel="prev" title="Concept: External Compute (Concrete Binding)" href="concepts_external_compute.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>FAQ - ThunderGraph Model Docs</title>
@@ -196,15 +196,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User</span></p>
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mental_model.html">Mental Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="end_to_end_guide.html">End-to-End Guide: Building a Complete System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_parts.html">Concept: Parts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
@@ -227,7 +234,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Drafts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
@@ -273,71 +280,156 @@
         <article role="main" id="furo-main-content">
           <section id="faq">
 <h1>FAQ<a class="headerlink" href="#faq" title="Link to this heading">¶</a></h1>
+<section id="where-do-i-start-if-i-am-new">
+<h2>Where do I start if I am new?<a class="headerlink" href="#where-do-i-start-if-i-am-new" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="end_to_end_guide.html"><span class="doc">End-to-End Guide: Building a Complete System</span></a> — the recommended starting point, a full walkthrough</p></li>
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> — shorter examples for each major path</p></li>
+<li><p><a class="reference internal" href="mental_model.html"><span class="doc">Mental Model</span></a> — the three-layer execution model</p></li>
+<li><p><a class="reference internal" href="../api/index.html"><span class="doc">API Reference</span></a> — API reference</p></li>
+</ul>
+</section>
+<hr class="docutils" />
 <section id="when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator">
 <h2>When should I use <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> vs <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code>?<a class="headerlink" href="#when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator" title="Link to this heading">¶</a></h2>
-<p><strong>Default:</strong> Call <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong> on the configured model after <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>. You pass <strong>handles</strong> (<code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code>) and quantities; the library compiles the graph on first use, validates by default, and returns a <strong><code class="docutils literal notranslate"><span class="pre">RunResult</span></code></strong>. That is the path we recommend for applications, notebooks, and most scripts.</p>
-<p><strong>Use the explicit pipeline</strong> (<code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> → <code class="docutils literal notranslate"><span class="pre">validate_graph</span></code> → <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> + <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>) when you need:</p>
+<p><strong>Default:</strong> call <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> after <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>. Pass <strong>slot handles</strong>
+(<code class="docutils literal notranslate"><span class="pre">ValueSlot</span></code> objects like <code class="docutils literal notranslate"><span class="pre">cm.root.some_param</span></code>) and unitflow quantities. The library
+compiles the graph on first use, validates by default, and returns a <code class="docutils literal notranslate"><span class="pre">RunResult</span></code>.</p>
+<p><strong>Use the explicit pipeline</strong> when you need:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_async</span></code> (async external backends)</p></li>
-<li><p>to <strong>inspect or reuse</strong> the <code class="docutils literal notranslate"><span class="pre">DependencyGraph</span></code> or handler map</p></li>
-<li><p>to <strong>control validation timing</strong> (e.g. validate once, then many evaluations with <code class="docutils literal notranslate"><span class="pre">evaluate(...,</span> <span class="pre">validate=False)</span></code> is also available on the façade)</p></li>
-<li><p>to integrate with tooling that already assembles <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> and <code class="docutils literal notranslate"><span class="pre">RunContext</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_async</span></code> (async external compute backends)</p></li>
+<li><p>direct inspection or reuse of the <code class="docutils literal notranslate"><span class="pre">DependencyGraph</span></code></p></li>
+<li><p>control over validation timing (e.g. validate once, then loop with <code class="docutils literal notranslate"><span class="pre">evaluate(...,</span> <span class="pre">validate=False)</span></code>)</p></li>
+<li><p>integration with tooling that constructs <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> and <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> externally</p></li>
 </ul>
-<p>Both paths share the <strong>same</strong> compiled graph cache on the <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> when you mix them on one instance.</p>
-<p>See <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart (Concrete Example)</span></a> and <a class="reference internal" href="../api/api_execution.html"><span class="doc">tg_model.execution</span></a>.</p>
+<p>Both paths share the same compiled graph cache on the <code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> when you mix them.</p>
+<p>See <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> and <a class="reference internal" href="concepts_evaluation.html"><span class="doc">Concept: Evaluation</span></a>.</p>
 </section>
+<hr class="docutils" />
 <section id="why-do-i-need-runcontext">
 <h2>Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?<a class="headerlink" href="#why-do-i-need-runcontext" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ConfiguredModel</span></code> is frozen topology. <code class="docutils literal notranslate"><span class="pre">RunContext</span></code> stores per-run mutable values and results.</p>
 <ul class="simple">
-<li><p><strong>Default <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> path:</strong> you usually <strong>do not</strong> create a <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>; the method uses a fresh one per call unless you pass <code class="docutils literal notranslate"><span class="pre">run_context=</span></code> for advanced testing.</p></li>
-<li><p><strong>Explicit <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> path:</strong> you create <code class="docutils literal notranslate"><span class="pre">RunContext()</span></code> and pass it to <code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate</span></code> / <code class="docutils literal notranslate"><span class="pre">evaluate_async</span></code>.</p></li>
+<li><p><strong>Default <code class="docutils literal notranslate"><span class="pre">evaluate()</span></code> path:</strong> you do not create a <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>; the method creates a
+fresh one per call unless you pass <code class="docutils literal notranslate"><span class="pre">run_context=</span></code> explicitly.</p></li>
+<li><p><strong>Explicit <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code> path:</strong> create <code class="docutils literal notranslate"><span class="pre">RunContext()</span></code> and pass it to <code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate</span></code>
+or <code class="docutils literal notranslate"><span class="pre">evaluate_async</span></code>.</p></li>
 </ul>
 </section>
+<hr class="docutils" />
 <section id="why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">
 <h2>Why are inputs bound by stable id in the explicit pipeline?<a class="headerlink" href="#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline" title="Link to this heading">¶</a></h2>
-<p>The evaluator’s wire format is keyed by <strong>stable slot ids</strong> (strings). Stable ids are deterministic and unambiguous for a configured topology.</p>
-<p>On the <strong>facade</strong>, prefer <strong>slot handles</strong> as keys (<code class="docutils literal notranslate"><span class="pre">cm.root.some_param</span></code>) instead of raw strings — same binding, less error-prone. String keys are allowed when they refer to a <strong>parameter/attribute</strong> slot’s <code class="docutils literal notranslate"><span class="pre">stable_id</span></code> (not arbitrary part ids).</p>
+<p>The evaluator’s wire format is keyed by <strong>stable slot ids</strong> (strings). Stable ids are
+deterministic and unambiguous for a configured topology.</p>
+<p>On the <strong>facade</strong>, prefer <strong>slot handles</strong> as keys (<code class="docutils literal notranslate"><span class="pre">cm.root.some_param</span></code>) — same binding,
+less error-prone. String keys are allowed when they refer to a parameter/attribute slot’s
+<code class="docutils literal notranslate"><span class="pre">stable_id</span></code>.</p>
 </section>
+<hr class="docutils" />
 <section id="i-changed-code-in-a-notebook-and-behavior-is-weird">
 <h2>I changed code in a notebook and behavior is weird.<a class="headerlink" href="#i-changed-code-in-a-notebook-and-behavior-is-weird" title="Link to this heading">¶</a></h2>
-<p>If declarations changed, restart kernel and re-run compile/instantiate cells.
+<p>If declarations changed, restart the kernel and re-run compile/instantiate cells.
 Old class artifacts may still be cached.</p>
 </section>
-<section id="when-should-i-use-requirement-composable-requirement-package">
-<h2>When should I use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> (composable requirement package)?<a class="headerlink" href="#when-should-i-use-requirement-composable-requirement-package" title="Link to this heading">¶</a></h2>
-<p>Use <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong> when requirements need <strong>structure</strong>, <strong>ownership</strong>, and <strong>local</strong> acceptance logic—same idea as using <strong><code class="docutils literal notranslate"><span class="pre">Part</span></code></strong> for structure, but for requirement namespaces.</p>
-<p>Register packages with <strong><code class="docutils literal notranslate"><span class="pre">model.requirement_package(name,</span> <span class="pre">type)</span></code></strong>.</p>
-<blockquote>
-<div><p><strong>Default:</strong> Inside <code class="docutils literal notranslate"><span class="pre">Requirement.define()</span></code>, use <strong><code class="docutils literal notranslate"><span class="pre">model.parameter</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">model.attribute</span></code></strong>, and <strong><code class="docutils literal notranslate"><span class="pre">model.constraint</span></code></strong> at package scope — the same surface you use on <code class="docutils literal notranslate"><span class="pre">Part</span></code> / <code class="docutils literal notranslate"><span class="pre">System</span></code>. <strong>This is the standard, recommended pattern for all new requirement packages.</strong> Use <code class="docutils literal notranslate"><span class="pre">model.requirement(id,</span> <span class="pre">text)</span></code> for leaf traceability statements, and <code class="docutils literal notranslate"><span class="pre">model.allocate</span></code> / <code class="docutils literal notranslate"><span class="pre">model.references</span></code> for structural edges and citations.</p>
-<p><strong>Advanced (rare):</strong> <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code>, <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>, and <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code> are low-level helpers for <strong>INCOSE-style leaf acceptance rows</strong> only. Use them when you need <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction</span></code> per-requirement pass/fail rows wired through <code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs=...)</span></code>. <strong>Do not use them as the default pattern.</strong> If your check can be a package-level <code class="docutils literal notranslate"><span class="pre">constraint</span></code>, use that instead. See <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a>.</p>
-</div></blockquote>
-<section id="upgrading-from-thundergraph-model-before-0-2-0">
-<h3>Upgrading from thundergraph-model before 0.2.0<a class="headerlink" href="#upgrading-from-thundergraph-model-before-0-2-0" title="Link to this heading">¶</a></h3>
-<p><strong>0.2.0</strong> removed the temporary compatibility names <strong><code class="docutils literal notranslate"><span class="pre">RequirementBlock</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">RequirementBlockRef</span></code></strong>, and <strong><code class="docutils literal notranslate"><span class="pre">ModelDefinitionContext.requirement_block(...)</span></code></strong>. Use <strong><code class="docutils literal notranslate"><span class="pre">Requirement</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code></strong>, and <strong><code class="docutils literal notranslate"><span class="pre">requirement_package</span></code></strong> instead. <strong>Internal</strong> compiled node <strong><code class="docutils literal notranslate"><span class="pre">kind</span></code></strong> is still the string <strong><code class="docutils literal notranslate"><span class="pre">&quot;requirement_block&quot;</span></code></strong> — that is not a Python API and did not change.</p>
+<hr class="docutils" />
+<section id="when-should-i-use-requirement">
+<h2>When should I use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code>?<a class="headerlink" href="#when-should-i-use-requirement" title="Link to this heading">¶</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> whenever requirements need <strong>structure</strong>, <strong>local acceptance logic</strong>,
+and <strong>traceability</strong> to a “shall” statement.</p>
+<p>Every <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> class must call <code class="docutils literal notranslate"><span class="pre">model.name(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">model.doc(...)</span></code> exactly once.
+Inside <code class="docutils literal notranslate"><span class="pre">define()</span></code>, use the same authoring surface as <code class="docutils literal notranslate"><span class="pre">Part</span></code>:
+<code class="docutils literal notranslate"><span class="pre">model.parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">model.attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">model.constraint</span></code>, and <code class="docutils literal notranslate"><span class="pre">model.composed_of</span></code>.</p>
+<p>Mount the requirement tree on a <code class="docutils literal notranslate"><span class="pre">System</span></code> with <code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">RequirementType)</span></code>,
+then wire values in with <code class="docutils literal notranslate"><span class="pre">model.allocate(req_ref,</span> <span class="pre">part_ref,</span> <span class="pre">inputs={...})</span></code>.</p>
+<p>See <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements</span></a> for the full pattern.</p>
 </section>
+<hr class="docutils" />
+<section id="how-do-i-split-requirements-into-a-hierarchy">
+<h2>How do I split requirements into a hierarchy?<a class="headerlink" href="#how-do-i-split-requirements-into-a-hierarchy" title="Link to this heading">¶</a></h2>
+<p>Create a separate <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> subclass for each coherent group of checks, then compose
+them with <code class="docutils literal notranslate"><span class="pre">model.composed_of</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ThermalReq</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;thermal_req&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">doc</span><span class="p">(</span><span class="s2">&quot;Thermal envelope shall not be exceeded.&quot;</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;peak_temp_c&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">degC</span><span class="p">)</span>
+        <span class="n">limit</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;temp_limit_c&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">degC</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">constraint</span><span class="p">(</span><span class="s2">&quot;temp_within_limit&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">temp</span> <span class="o">&lt;=</span> <span class="n">limit</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">L1SafetyReqs</span><span class="p">(</span><span class="n">Requirement</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;l1_safety_reqs&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">doc</span><span class="p">(</span><span class="s2">&quot;Level-1 safety requirements.&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;thermal&quot;</span><span class="p">,</span> <span class="n">ThermalReq</span><span class="p">)</span>
+        <span class="c1"># ...more children...</span>
+</pre></div>
+</div>
+<p>There is no limit to nesting depth.</p>
 </section>
-<section id="what-is-the-difference-between-requirement-input-and-requirement-attribute">
-<h2>What is the difference between <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>?<a class="headerlink" href="#what-is-the-difference-between-requirement-input-and-requirement-attribute" title="Link to this heading">¶</a></h2>
-<blockquote>
-<div><p><strong>Note:</strong> These are <strong>advanced, rare helpers</strong> for leaf-level INCOSE acceptance rows.  For new requirement packages, <strong>use package-level <code class="docutils literal notranslate"><span class="pre">parameter</span></code> / <code class="docutils literal notranslate"><span class="pre">attribute</span></code> / <code class="docutils literal notranslate"><span class="pre">constraint</span></code> instead</strong> — see <a class="reference internal" href="concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a>.</p>
-</div></blockquote>
-<p><strong><code class="docutils literal notranslate"><span class="pre">requirement_input</span></code></strong> declares <strong>slots that you map</strong> from the design at allocation time (<code class="docutils literal notranslate"><span class="pre">allocate(...,</span> <span class="pre">inputs={name:</span> <span class="pre">AttributeRef,</span> <span class="pre">...})</span></code>).</p>
-<p><strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong> declares <strong>values computed on the requirement</strong> from an <code class="docutils literal notranslate"><span class="pre">expr=</span></code> (and <code class="docutils literal notranslate"><span class="pre">unit=</span></code>). Names must not overlap with inputs on the same requirement; declare attributes <strong>before</strong> <code class="docutils literal notranslate"><span class="pre">requirement_accept_expr</span></code>. If you use <strong><code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code></strong>, that requirement may only have <strong>one</strong> <code class="docutils literal notranslate"><span class="pre">allocate(...)</span></code> edge.</p>
-</section>
-<section id="where-do-i-start-if-i-am-new">
-<h2>Where do I start if I am new?<a class="headerlink" href="#where-do-i-start-if-i-am-new" title="Link to this heading">¶</a></h2>
+<hr class="docutils" />
+<section id="when-does-model-composed-of-return-a-partref-vs-requirementref">
+<h2>When does <code class="docutils literal notranslate"><span class="pre">model.composed_of</span></code> return a <code class="docutils literal notranslate"><span class="pre">PartRef</span></code> vs <code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code>?<a class="headerlink" href="#when-does-model-composed-of-return-a-partref-vs-requirementref" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">ChildType)</span></code> dispatches on the type of <code class="docutils literal notranslate"><span class="pre">ChildType</span></code>:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart (Concrete Example)</span></a></p></li>
-<li><p><a class="reference internal" href="mental_model.html"><span class="doc">Mental Model</span></a></p></li>
-<li><p><a class="reference internal" href="../api/index.html"><span class="doc">API Reference</span></a></p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">ChildType</span></code> is a <code class="docutils literal notranslate"><span class="pre">Part</span></code> subclass → returns a <code class="docutils literal notranslate"><span class="pre">PartRef</span></code></p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">ChildType</span></code> is a <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> subclass → returns a <code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code></p></li>
+<li><p>Anything else → <code class="docutils literal notranslate"><span class="pre">ModelDefinitionError</span></code></p></li>
+</ul>
+<p>Use the returned ref to navigate children in <code class="docutils literal notranslate"><span class="pre">allocate</span></code> calls:
+<code class="docutils literal notranslate"><span class="pre">model.allocate(reqs.child_name,</span> <span class="pre">part_ref,</span> <span class="pre">inputs={...})</span></code>.</p>
+</section>
+<hr class="docutils" />
+<section id="the-graph-compiled-but-evaluate-failed-or-results-look-wrong">
+<h2>The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong.<a class="headerlink" href="#the-graph-compiled-but-evaluate-failed-or-results-look-wrong" title="Link to this heading">¶</a></h2>
+<p>Compilation only builds topology; it does not prove inputs, units, or external bindings
+are coherent. With the explicit pipeline, call <code class="docutils literal notranslate"><span class="pre">validate_graph(graph,</span> <span class="pre">configured_model=cm)</span></code>
+after <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> and inspect <code class="docutils literal notranslate"><span class="pre">ValidationResult.failures</span></code> before evaluating.
+With <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code>, validation runs automatically unless you pass <code class="docutils literal notranslate"><span class="pre">validate=False</span></code>.</p>
+<p>If validation passes but evaluation still fails, check:</p>
+<ul class="simple">
+<li><p>missing required parameters (not bound in <code class="docutils literal notranslate"><span class="pre">inputs=</span></code>)</p></li>
+<li><p>wrong keys in the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> map (use slot handles on the facade, stable id strings on the explicit path)</p></li>
+<li><p>external <code class="docutils literal notranslate"><span class="pre">compute</span></code> exceptions — the failing check name in <code class="docutils literal notranslate"><span class="pre">RunResult.constraint_results</span></code> usually points to the cause</p></li>
 </ul>
 </section>
-<section id="the-graph-compiled-but-evaluate-failed-or-results-look-wrong">
-<h2>The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong<a class="headerlink" href="#the-graph-compiled-but-evaluate-failed-or-results-look-wrong" title="Link to this heading">¶</a></h2>
-<p>Compilation only builds topology; it does not prove inputs, units, or external bindings are coherent. With the <strong>explicit</strong> pipeline, call <code class="docutils literal notranslate"><span class="pre">validate_graph(graph,</span> <span class="pre">configured_model=cm)</span></code> after <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> and inspect <code class="docutils literal notranslate"><span class="pre">ValidationResult.failures</span></code> before evaluating. With <strong><code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code></strong>, validation runs automatically unless you pass <code class="docutils literal notranslate"><span class="pre">validate=False</span></code>.</p>
-<p>For requirement-heavy models, use <code class="docutils literal notranslate"><span class="pre">summarize_requirement_satisfaction(result)</span></code> to see which acceptance rows failed rather than relying on a single boolean.</p>
-<p>If validation passes but evaluation still fails, check missing required parameters, wrong keys in the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> map, and external <code class="docutils literal notranslate"><span class="pre">compute</span></code> exceptions — the same <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> constraint rows usually point to the failing check name.</p>
+<hr class="docutils" />
+<section id="how-do-i-filter-constraint-results-by-requirement">
+<h2>How do I filter constraint results by requirement?<a class="headerlink" href="#how-do-i-filter-constraint-results-by-requirement" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ConstraintResult</span></code> rows carry <code class="docutils literal notranslate"><span class="pre">requirement_path</span></code> (dot-separated path string of the
+requirement package) and <code class="docutils literal notranslate"><span class="pre">allocation_target_path</span></code> (path of the allocated Part) when
+the constraint belongs to an allocated requirement package.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># All failing constraints from a specific requirement subtree</span>
+<span class="n">failures</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">cr</span> <span class="k">for</span> <span class="n">cr</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">constraint_results</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cr</span><span class="o">.</span><span class="n">passed</span> <span class="ow">and</span> <span class="n">cr</span><span class="o">.</span><span class="n">requirement_path</span> <span class="ow">and</span> <span class="s2">&quot;l1_safety&quot;</span> <span class="ow">in</span> <span class="n">cr</span><span class="o">.</span><span class="n">requirement_path</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="the-graph-compiled-but-evaluate-is-very-slow">
+<h2>The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> is very slow.<a class="headerlink" href="#the-graph-compiled-but-evaluate-is-very-slow" title="Link to this heading">¶</a></h2>
+<p>For tight evaluation loops after you have validated once, pass <code class="docutils literal notranslate"><span class="pre">validate=False</span></code> to skip
+the static checks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="how-do-i-run-a-parameter-sweep">
+<h2>How do I run a parameter sweep?<a class="headerlink" href="#how-do-i-run-a-parameter-sweep" title="Link to this heading">¶</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">tg_model.analysis.sweep</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">sweep</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">(</span><span class="n">cm</span><span class="p">,</span> <span class="n">param_slot</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">750</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../api/api_analysis.html"><span class="doc">tg_model.analysis</span></a> for the full signature.</p>
 </section>
 </section>
 
@@ -346,12 +438,12 @@ Old class artifacts may still be cached.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../developer/architecture.html">
+          <a class="next-page" href="quickstart.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Developer architecture</div>
+                <div class="title">Quickstart</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -397,17 +489,18 @@ Old class artifacts may still be cached.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">FAQ</a><ul>
+<li><a class="reference internal" href="#where-do-i-start-if-i-am-new">Where do I start if I am new?</a></li>
 <li><a class="reference internal" href="#when-should-i-use-configuredmodel-evaluate-vs-compile-graph-evaluator">When should I use <code class="docutils literal notranslate"><span class="pre">ConfiguredModel.evaluate</span></code> vs <code class="docutils literal notranslate"><span class="pre">compile_graph</span></code> + <code class="docutils literal notranslate"><span class="pre">Evaluator</span></code>?</a></li>
 <li><a class="reference internal" href="#why-do-i-need-runcontext">Why do I need <code class="docutils literal notranslate"><span class="pre">RunContext</span></code>?</a></li>
 <li><a class="reference internal" href="#why-are-inputs-bound-by-stable-id-in-the-explicit-pipeline">Why are inputs bound by stable id in the explicit pipeline?</a></li>
 <li><a class="reference internal" href="#i-changed-code-in-a-notebook-and-behavior-is-weird">I changed code in a notebook and behavior is weird.</a></li>
-<li><a class="reference internal" href="#when-should-i-use-requirement-composable-requirement-package">When should I use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> (composable requirement package)?</a><ul>
-<li><a class="reference internal" href="#upgrading-from-thundergraph-model-before-0-2-0">Upgrading from thundergraph-model before 0.2.0</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#what-is-the-difference-between-requirement-input-and-requirement-attribute">What is the difference between <code class="docutils literal notranslate"><span class="pre">requirement_input</span></code> and <code class="docutils literal notranslate"><span class="pre">requirement_attribute</span></code>?</a></li>
-<li><a class="reference internal" href="#where-do-i-start-if-i-am-new">Where do I start if I am new?</a></li>
-<li><a class="reference internal" href="#the-graph-compiled-but-evaluate-failed-or-results-look-wrong">The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong</a></li>
+<li><a class="reference internal" href="#when-should-i-use-requirement">When should I use <code class="docutils literal notranslate"><span class="pre">Requirement</span></code>?</a></li>
+<li><a class="reference internal" href="#how-do-i-split-requirements-into-a-hierarchy">How do I split requirements into a hierarchy?</a></li>
+<li><a class="reference internal" href="#when-does-model-composed-of-return-a-partref-vs-requirementref">When does <code class="docutils literal notranslate"><span class="pre">model.composed_of</span></code> return a <code class="docutils literal notranslate"><span class="pre">PartRef</span></code> vs <code class="docutils literal notranslate"><span class="pre">RequirementRef</span></code>?</a></li>
+<li><a class="reference internal" href="#the-graph-compiled-but-evaluate-failed-or-results-look-wrong">The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> failed or results look wrong.</a></li>
+<li><a class="reference internal" href="#how-do-i-filter-constraint-results-by-requirement">How do I filter constraint results by requirement?</a></li>
+<li><a class="reference internal" href="#the-graph-compiled-but-evaluate-is-very-slow">The graph compiled but <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> is very slow.</a></li>
+<li><a class="reference internal" href="#how-do-i-run-a-parameter-sweep">How do I run a parameter sweep?</a></li>
 </ul>
 </li>
 </ul>

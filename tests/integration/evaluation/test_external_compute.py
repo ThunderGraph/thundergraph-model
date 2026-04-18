@@ -68,6 +68,7 @@ class _FakeAsyncScale:
 class ExtPart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("ext_part")
         a = model.parameter("a", unit=m)
         b = model.parameter("b", unit=m)
         binding = ExternalComputeBinding(
@@ -80,6 +81,7 @@ class ExtPart(Part):
 class MultiOutPart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("multi_out_part")
         x = model.parameter("x", unit=m)
         binding = ExternalComputeBinding(_FakeSplit(), inputs={"x": x})
         p = model.attribute("p", unit=m, computed_by=binding)
@@ -90,6 +92,7 @@ class MultiOutPart(Part):
 class AsyncPart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("async_part")
         x = model.parameter("x", unit=m)
         binding = ExternalComputeBinding(_FakeAsyncScale(), inputs={"x": x})
         model.attribute("scaled", unit=m, computed_by=binding)
@@ -98,6 +101,7 @@ class AsyncPart(Part):
 class ValidatedPart(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("validated_part")
         a = model.parameter("a", unit=m)
         b = model.parameter("b", unit=m)
         binding = ExternalComputeBinding(
@@ -110,25 +114,29 @@ class ValidatedPart(Part):
 class WrapValidated(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("v", ValidatedPart)
+        model.name("wrap_validated")
+        model.composed_of("v", ValidatedPart)
 
 
 class Wrap(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("ext", ExtPart)
+        model.name("wrap")
+        model.composed_of("ext", ExtPart)
 
 
 class WrapMulti(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("m", MultiOutPart)
+        model.name("wrap_multi")
+        model.composed_of("m", MultiOutPart)
 
 
 class WrapAsync(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("a", AsyncPart)
+        model.name("wrap_async")
+        model.composed_of("a", AsyncPart)
 
 
 def setup_function() -> None:
@@ -234,6 +242,7 @@ class TestExternalComputeIntegration:
         class Bad(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("bad")
                 x = model.parameter("x", unit=m)
                 b = ExternalComputeBinding(_FakeSplit(), inputs={"x": x})
                 model.attribute("y", unit=m, expr=x * 2, computed_by=b)
@@ -241,7 +250,8 @@ class TestExternalComputeIntegration:
         class BadWrap(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                model.part("b", Bad)
+                model.name("bad_wrap")
+                model.composed_of("b", Bad)
 
         Bad._reset_compilation()
         BadWrap._reset_compilation()

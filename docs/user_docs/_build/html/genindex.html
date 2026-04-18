@@ -194,15 +194,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User</span></p>
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="user/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/mental_model.html">Mental Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/end_to_end_guide.html">End-to-End Guide: Building a Complete System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_parts.html">Concept: Parts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_system.html">Concept: Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_requirements.html">Concept: Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/concepts_evaluation.html">Concept: Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/quickstart.html">Quickstart</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
@@ -225,7 +232,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Drafts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
 <li class="toctree-l1"><a class="reference internal" href="drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
@@ -400,13 +407,15 @@
 </li>
         <li><a href="api/api_analysis.html#tg_model.analysis.compare_variants_async">compare_variants_async() (in module tg_model.analysis)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_analysis.html#tg_model.analysis.CompareVariantsValidationError">CompareVariantsValidationError</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_model.html#tg_model.model.Element.compile">compile() (tg_model.model.Element class method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.compile_graph">compile_graph() (in module tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.composed_of">composed_of() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_integrations.html#tg_model.integrations.AsyncExternalCompute.compute">compute() (tg_model.integrations.AsyncExternalCompute method)</a>
 
@@ -472,10 +481,10 @@
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.dependency_closure">dependency_closure() (tg_model.execution.DependencyGraph method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_analysis.html#tg_model.analysis.dependency_impact">dependency_impact() (in module tg_model.analysis)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph">DependencyGraph (class in tg_model.execution)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyNode">DependencyNode (class in tg_model.execution)</a>
@@ -499,6 +508,8 @@
         <li><a href="api/api_execution.html#tg_model.execution.DispatchOutcome">DispatchOutcome (class in tg_model.execution)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.DispatchResult">DispatchResult (class in tg_model.execution)</a>
+</li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.doc">doc() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_analysis.html#tg_model.analysis.ImpactReport.downstream_slot_ids">downstream_slot_ids (tg_model.analysis.ImpactReport attribute)</a>
 </li>
@@ -653,8 +664,6 @@
         <li><a href="api/api_analysis.html#tg_model.analysis.SweepRecord.index">index (tg_model.analysis.SweepRecord attribute)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.DependencyGraph.induced_subgraph">induced_subgraph() (tg_model.execution.DependencyGraph method)</a>
-</li>
-        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.input_bindings">input_bindings (tg_model.execution.AllocationBinding attribute)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.NodeKind.INPUT_PARAMETER">INPUT_PARAMETER (tg_model.execution.NodeKind attribute)</a>
 </li>
@@ -819,6 +828,8 @@
           <li><a href="api/api_integrations.html#tg_model.integrations.ExternalCompute.name">(tg_model.integrations.ExternalCompute property)</a>
 </li>
         </ul></li>
+        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.name">name() (tg_model.model.ModelDefinitionContext method)</a>
+</li>
         <li><a href="api/api_execution.html#tg_model.execution.DecisionDispatchOutcome.NO_ACTION">NO_ACTION (tg_model.execution.DecisionDispatchOutcome attribute)</a>
 </li>
     </ul></td>
@@ -887,6 +898,8 @@
 </li>
         <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.parameter">parameter() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
+        <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.parameter_overrides">parameter_overrides (tg_model.execution.AllocationBinding attribute)</a>
+</li>
         <li><a href="api/api_model.html#tg_model.model.parameter_ref">parameter_ref() (in module tg_model.model)</a>
 
         <ul>
@@ -894,8 +907,6 @@
 </li>
         </ul></li>
         <li><a href="api/api_model.html#tg_model.model.Part">Part (class in tg_model.model)</a>
-</li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.part">part() (tg_model.model.ModelDefinitionContext method)</a>
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.BehaviorStep.part_path">part_path (tg_model.execution.BehaviorStep attribute)</a>
 
@@ -993,30 +1004,20 @@
 </li>
         <li><a href="api/api_execution.html#tg_model.execution.AllocationBinding.requirement">requirement (tg_model.execution.AllocationBinding attribute)</a>
 </li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement">requirement() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_accept_expr">requirement_accept_expr() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_attribute">requirement_attribute() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_input">requirement_input() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
-        <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_package">requirement_package() (tg_model.model.ModelDefinitionContext method)</a>
-</li>
         <li><a href="api/api_execution.html#tg_model.execution.ConstraintResult.requirement_path">requirement_path (tg_model.execution.ConstraintResult attribute)</a>
 
         <ul>
           <li><a href="api/api_execution.html#tg_model.execution.RequirementSatisfactionResult.requirement_path">(tg_model.execution.RequirementSatisfactionResult attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_model.html#tg_model.model.requirement_ref">requirement_ref() (in module tg_model.model)</a>
 
         <ul>
           <li><a href="api/api_model.html#tg_model.model.ModelDefinitionContext.requirement_ref">(tg_model.model.ModelDefinitionContext method)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/api_execution.html#tg_model.execution.RequirementPackageInstance">RequirementPackageInstance (class in tg_model.execution)</a>
 </li>
         <li><a href="api/api_model.html#tg_model.model.RequirementRef">RequirementRef (class in tg_model.model)</a>

@@ -1,4 +1,4 @@
-"""Composable Requirement nesting, refs, instantiate, and requirement_ref."""
+"""Composable Requirement nesting, refs, instantiate, and requirement_ref — new API."""
 
 from __future__ import annotations
 
@@ -23,42 +23,46 @@ from tg_model.model.elements import Part, Requirement, System
 from tg_model.model.refs import AttributeRef, RequirementRef
 
 
+# ---------------------------------------------------------------------------
+# Shared fixtures
+# ---------------------------------------------------------------------------
+
+
 class _InnerMission(Requirement):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        r = model.requirement("range_ok", "Range shall be positive.")
-        c = model.citation("c_inner", title="inner", uri="https://example.invalid/inner")
-        model.references(r, c)
+        model.name("inner")
+        model.doc("Range shall be positive.")
 
 
 class _Mission(Requirement):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        r = model.requirement("payload_ok", "Payload shall be within limits.")
+        model.name("mission")
+        model.doc("Payload shall be within limits.")
         c = model.citation("c_mission", title="m", uri="https://example.invalid/m")
-        model.references(r, c)
-        model.requirement_package("inner", _InnerMission)
+        inner = model.composed_of("inner", _InnerMission)
+        model.references(inner, c)
 
 
 class _Gadget(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        _ = requirement_ref(_RootSys, ("mission", "inner", "range_ok"))
+        model.name("gadget")
+        _ = requirement_ref(_RootSys, ("mission", "inner"))
 
 
 class _RootSys(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("root_sys")
         model.parameter("mass_kg", unit=kg)
-        mref = model.requirement_package("mission", _Mission)
+        mref = model.composed_of("mission", _Mission)
         assert isinstance(mref, RequirementRef)
-        assert mref.payload_ok.kind == "requirement"
-        assert mref.payload_ok.path == ("mission", "payload_ok")
-        inner_m = mref.inner
-        assert isinstance(inner_m, RequirementRef)
-        assert inner_m.range_ok.path == ("mission", "inner", "range_ok")
-        g = model.part("gadget", _Gadget)
-        model.allocate(inner_m.range_ok, g)
+        assert mref.inner.kind == "requirement_block"
+        assert mref.inner.path == ("mission", "inner")
+        g = model.composed_of("gadget", _Gadget)
+        model.allocate(mref.inner, g)
 
 
 def setup_function() -> None:
@@ -72,13 +76,13 @@ def test_requirement_block_compile_and_nested_paths() -> None:
     art = _RootSys.compile()
     assert art["nodes"]["mission"]["kind"] == "requirement_block"
     m_comp = _Mission.compile()
-    assert "payload_ok" in m_comp["nodes"]
     assert m_comp["nodes"]["inner"]["kind"] == "requirement_block"
 
 
 def test_allocate_nested_requirement_instantiate_and_graph() -> None:
     cm = instantiate(_RootSys)
-    key = f"{_RootSys.__name__}.mission.inner.range_ok"
+    # inner requirement block should appear in path registry
+    key = f"{_RootSys.__name__}.mission.inner"
     assert key in cm.path_registry
     inputs = {cm.mass_kg.stable_id: Quantity(1.0, kg)}
     graph, handlers = compile_graph(cm)
@@ -87,23 +91,25 @@ def test_allocate_nested_requirement_instantiate_and_graph() -> None:
     assert not result.failures
 
 
-def test_requirement_package_allows_parameter_attribute_constraint() -> None:
-    """Phase 2: composable Requirement may own package-level parameters, attributes, constraints."""
+def test_requirement_block_allows_parameter_attribute_constraint() -> None:
+    """Composable Requirement may own package-level parameters, attributes, constraints."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("x shall be usable")
             x = model.parameter("x_m", unit=m)
             _ = model.attribute("twice_m", expr=x + x, unit=m)
             model.constraint("x_positive", expr=x > QuantityExpr(Quantity(0, m)))
-            r = model.requirement("r_ok", "x shall be usable")
             c = model.citation("c1", title="t", uri="https://example.invalid/x")
-            model.references(r, c)
+            model.references(model.composed_of("sub", _InnerMission), c)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -115,23 +121,23 @@ def test_requirement_package_allows_parameter_attribute_constraint() -> None:
     assert inner["nodes"]["x_positive"]["kind"] == "constraint"
 
 
-def test_requirement_package_instantiate_graph_evaluate() -> None:
-    """Phase 3: package parameters/attributes/constraints get slots and run in the graph."""
+def test_requirement_block_instantiate_graph_evaluate() -> None:
+    """Package parameters/attributes/constraints get slots and run in the graph."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("x shall be usable")
             x = model.parameter("x_m", unit=m)
             _ = model.attribute("twice_m", expr=x + x, unit=m)
             model.constraint("x_positive", expr=x > QuantityExpr(Quantity(0, m)))
-            r = model.requirement("r_ok", "x shall be usable")
-            c = model.citation("c1", title="t", uri="https://example.invalid/x")
-            model.references(r, c)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -149,19 +155,22 @@ def test_requirement_package_instantiate_graph_evaluate() -> None:
     assert not result_handles.failures
 
 
-def test_requirement_package_attribute_passthrough_attributeref_expr() -> None:
+def test_requirement_block_attribute_passthrough_attributeref_expr() -> None:
     """Package attribute may use bare ``AttributeRef`` as ``expr=`` (identity passthrough)."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("x passthrough")
             x = model.parameter("x_m", unit=m)
             _ = model.attribute("copy_m", expr=x, unit=m)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -177,18 +186,21 @@ def test_requirement_package_attribute_passthrough_attributeref_expr() -> None:
     assert out.is_close(Quantity(2.25, m))
 
 
-def test_requirement_package_constraint_requires_expr() -> None:
-    """Composable requirement package constraints must not omit ``expr``."""
+def test_requirement_block_constraint_requires_expr() -> None:
+    """Composable requirement constraints must not omit ``expr``."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             model.constraint("empty", expr=None)  # type: ignore[arg-type]
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -196,17 +208,21 @@ def test_requirement_package_constraint_requires_expr() -> None:
         _S.compile()
 
 
-def test_requirement_package_nested_outer_inner_evaluate() -> None:
-    """Inner package attributes/constraints may reference outer package parameters (threaded symbols)."""
+def test_requirement_block_nested_outer_inner_evaluate() -> None:
+    """Inner package attributes/constraints may reference outer package parameters."""
 
     class _NestedOuter(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("nested_outer")
+            model.doc("outer package")
             a = model.parameter("a_m", unit=m)
 
             class _NestedInner(Requirement):
                 @classmethod
                 def define(inner_cls, inner_model):  # type: ignore[override]
+                    inner_model.name("nested_inner")
+                    inner_model.doc("inner package")
                     y = inner_model.parameter("y_m", unit=m)
                     _ = inner_model.attribute("sum_m", expr=a + y, unit=m)
                     inner_model.constraint(
@@ -214,12 +230,13 @@ def test_requirement_package_nested_outer_inner_evaluate() -> None:
                         expr=(a + y) > QuantityExpr(Quantity(0, m)),
                     )
 
-            model.requirement_package("inner", _NestedInner)
+            model.composed_of("inner", _NestedInner)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("mission", _NestedOuter)
+            model.name("s")
+            model.composed_of("mission", _NestedOuter)
 
     _S._reset_compilation()
     _NestedOuter._reset_compilation()
@@ -239,18 +256,21 @@ def test_requirement_package_nested_outer_inner_evaluate() -> None:
     assert not result.failures
 
 
-def test_slot_ids_for_part_subtree_includes_requirement_package_slots() -> None:
-    """Subtree slot ids include values under composable requirement packages."""
+def test_slot_ids_for_part_subtree_includes_requirement_block_slots() -> None:
+    """Subtree slot ids include values under composable requirement blocks."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             model.parameter("p_m", unit=m)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("q", _R)
+            model.name("s")
+            model.composed_of("q", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -259,19 +279,22 @@ def test_slot_ids_for_part_subtree_includes_requirement_package_slots() -> None:
     assert cm.q.p_m.stable_id in ids
 
 
-def test_requirement_package_constant_constraint_no_symbols() -> None:
+def test_requirement_block_constant_constraint_no_symbols() -> None:
     """Package constraints with no free symbols still get an evaluator handler."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             model.parameter("x_m", unit=m)
             model.constraint("tautology", expr=True)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -285,18 +308,21 @@ def test_requirement_package_constant_constraint_no_symbols() -> None:
     assert not result.failures
 
 
-def test_requirement_package_forbids_port() -> None:
-    """Ports are structural; composable requirement packages reject ``port`` declarations."""
+def test_requirement_block_forbids_port() -> None:
+    """Ports are structural; composable requirement blocks reject ``port`` declarations."""
 
     class _Bad(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("bad")
+            model.doc("stub.")
             model.port("in1", "in")
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("b", _Bad)
+            model.name("s")
+            model.composed_of("b", _Bad)
 
     _S._reset_compilation()
     _Bad._reset_compilation()
@@ -304,19 +330,21 @@ def test_requirement_package_forbids_port() -> None:
         _S.compile()
 
 
-def test_requirement_package_forbids_allocate_edge() -> None:
-    """``allocate`` is valid on System/Part contexts but must not appear inside a package."""
+def test_requirement_block_forbids_allocate_edge() -> None:
+    """``allocate`` must not appear inside a Requirement.define()."""
 
     class _Bad(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            r = model.requirement("q", "text")
-            model.allocate(r, model.root_block())
+            model.name("bad")
+            model.doc("stub.")
+            model.allocate(model.root_block(), model.root_block())
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("b", _Bad)
+            model.name("s")
+            model.composed_of("b", _Bad)
 
     _S._reset_compilation()
     _Bad._reset_compilation()
@@ -324,17 +352,20 @@ def test_requirement_package_forbids_allocate_edge() -> None:
         _S.compile()
 
 
-def test_requirement_package_attribute_rejects_foreign_parameter_ref() -> None:
+def test_requirement_block_attribute_rejects_foreign_parameter_ref() -> None:
     """Package ``attribute`` expr must not pull symbols from unrelated element types."""
 
     class _Other(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("other")
             model.parameter("ext_m", unit=m)
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             p = model.parameter("p", unit=m)
             ext = parameter_ref(_Other, "ext_m")
             model.attribute("bad", expr=p + ext, unit=m)
@@ -342,7 +373,8 @@ def test_requirement_package_attribute_rejects_foreign_parameter_ref() -> None:
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _Other._reset_compilation()
     _S._reset_compilation()
@@ -352,15 +384,17 @@ def test_requirement_package_attribute_rejects_foreign_parameter_ref() -> None:
         _S.compile()
 
 
-def test_requirement_package_attribute_rejects_undeclared_slot() -> None:
+def test_requirement_block_attribute_rejects_undeclared_slot() -> None:
     """Flat package symbols in exprs must name parameters/attributes declared earlier."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             p = model.parameter("p", unit=m)
             ghost = AttributeRef(
-                owner_type=cls,
+                owner_type=_R,
                 path=("ghost",),
                 kind="parameter",
                 metadata={"unit": m},
@@ -370,7 +404,8 @@ def test_requirement_package_attribute_rejects_undeclared_slot() -> None:
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -378,15 +413,17 @@ def test_requirement_package_attribute_rejects_undeclared_slot() -> None:
         _S.compile()
 
 
-def test_requirement_package_attribute_rejects_attributeref_wrong_owner() -> None:
-    """Bare ``AttributeRef`` in ``attribute`` ``expr=`` must use configured-root owner, not ``Requirement`` type."""
+def test_requirement_block_attribute_rejects_attributeref_wrong_owner() -> None:
+    """Bare ``AttributeRef`` in ``attribute`` ``expr=`` must use configured-root owner."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             model.parameter("p", unit=m)
             bad = AttributeRef(
-                owner_type=cls,
+                owner_type=_R,
                 path=("pkg", "p"),
                 kind="parameter",
                 metadata={"unit": m},
@@ -396,7 +433,8 @@ def test_requirement_package_attribute_rejects_attributeref_wrong_owner() -> Non
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -404,12 +442,14 @@ def test_requirement_package_attribute_rejects_attributeref_wrong_owner() -> Non
         _S.compile()
 
 
-def test_requirement_package_attribute_rejects_attributeref_undeclared_leaf() -> None:
-    """Bare ``AttributeRef`` must name a parameter or attribute declared earlier in the package."""
+def test_requirement_block_attribute_rejects_attributeref_undeclared_leaf() -> None:
+    """Bare ``AttributeRef`` must name a parameter or attribute declared earlier."""
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("r")
+            model.doc("stub.")
             _ = model.parameter("p", unit=m)
             bad = AttributeRef(
                 owner_type=_S,
@@ -422,7 +462,8 @@ def test_requirement_package_attribute_rejects_attributeref_undeclared_leaf() ->
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("pkg", _R)
+            model.name("s")
+            model.composed_of("pkg", _R)
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -430,18 +471,21 @@ def test_requirement_package_attribute_rejects_attributeref_undeclared_leaf() ->
         _S.compile()
 
 
-def test_requirement_package_forbids_state() -> None:
+def test_requirement_block_forbids_state() -> None:
     """Behavior / structure outside the allow-list remains rejected."""
 
     class _Bad(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("bad")
+            model.doc("stub.")
             model.state("s0", initial=True)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("b", _Bad)
+            model.name("s")
+            model.composed_of("b", _Bad)
 
     _S._reset_compilation()
     _Bad._reset_compilation()
@@ -449,21 +493,26 @@ def test_requirement_package_forbids_state() -> None:
         _S.compile()
 
 
-def test_requirement_block_forbids_part() -> None:
+def test_requirement_block_forbids_composed_of_part() -> None:
+    """A Requirement block may not compose a Part child."""
+
     class _Leaf(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            pass
+            model.name("leaf")
 
     class _Bad(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.part("nope", _Leaf)
+            model.name("bad")
+            model.doc("stub.")
+            model.composed_of("nope", _Leaf)
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement_package("b", _Bad)
+            model.name("s")
+            model.composed_of("b", _Bad)
 
     _S._reset_compilation()
     _Bad._reset_compilation()
@@ -472,50 +521,45 @@ def test_requirement_block_forbids_part() -> None:
         _S.compile()
 
 
-def test_requirement_acceptance_expr_needs_allocate_full_path() -> None:
-    class _R(Requirement):
+def test_requirement_ref_wrong_terminal_kind_raises() -> None:
+    """requirement_ref raises when the terminal node is not a requirement_block."""
+
+    class _SysWithParam(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            model.requirement(
-                "q",
-                "x",
-                expr=QuantityExpr(Quantity(1, m)) > QuantityExpr(Quantity(0, m)),
-            )
+            model.name("sys_with_param")
+            model.parameter("max_load", unit=kg)
 
-    class _S(System):
-        @classmethod
-        def define(cls, model):  # type: ignore[override]
-            b = model.requirement_package("blk", _R)
-            p = model.part()
-            model.allocate(b.q, p)
-
-    _S._reset_compilation()
-    _R._reset_compilation()
-    _S.compile()
+    _SysWithParam._reset_compilation()
+    _SysWithParam.compile()
+    with pytest.raises(ModelDefinitionError, match="terminal kind"):
+        requirement_ref(_SysWithParam, ("max_load",))
 
 
-def test_requirement_input_allocate_inputs_graph() -> None:
+def test_requirement_block_with_allocate_and_parameter_override() -> None:
+    """allocate(..., inputs=...) wires values into package-level parameters."""
+
     class _Motor(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("motor")
             model.parameter("rpm", unit=rad / s)
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            r = model.requirement("speed_ok", "speed positive")
-            rpm_in = model.requirement_input(r, "rpm", unit=rad / s)
-            model.requirement_accept_expr(
-                r,
-                expr=rpm_in > QuantityExpr(Quantity(0, rad / s)),
-            )
+            model.name("speed_req")
+            model.doc("Speed shall be positive.")
+            rpm_in = model.parameter("rpm", unit=rad / s)
+            model.constraint("rpm_positive", expr=rpm_in > QuantityExpr(Quantity(0, rad / s)))
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            b = model.requirement_package("blk", _R)
-            m = model.part("motor", _Motor)
-            model.allocate(b.speed_ok, m, inputs={"rpm": m.rpm})
+            model.name("s")
+            b = model.composed_of("blk", _R)
+            motor = model.composed_of("motor", _Motor)
+            model.allocate(b, motor, inputs={"rpm": motor.rpm})
 
     _S._reset_compilation()
     _R._reset_compilation()
@@ -530,41 +574,38 @@ def test_requirement_input_allocate_inputs_graph() -> None:
     assert not result.failures
 
 
-def test_requirement_attribute_sum_and_acceptance() -> None:
+def test_requirement_block_allocate_with_attribute_sum() -> None:
+    """Package parameter + attribute + constraint work correctly end-to-end with allocate."""
+
     class _Motor(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("motor")
             model.parameter("a_m", unit=m)
             model.parameter("b_m", unit=m)
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            r = model.requirement("sum_positive", "sum positive")
-            a = model.requirement_input(r, "a_m", unit=m)
-            b = model.requirement_input(r, "b_m", unit=m)
-            s = model.requirement_attribute(r, "sum_m", expr=a + b, unit=m)
-            model.requirement_accept_expr(
-                r,
-                expr=s > QuantityExpr(Quantity(0, m)),
-            )
+            model.name("sum_req")
+            model.doc("Sum shall be positive.")
+            a = model.parameter("a_m", unit=m)
+            b = model.parameter("b_m", unit=m)
+            s = model.attribute("sum_m", expr=a + b, unit=m)
+            model.constraint("sum_positive", expr=s > QuantityExpr(Quantity(0, m)))
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            blk = model.requirement_package("blk", _R)
-            m = model.part("motor", _Motor)
-            model.allocate(
-                blk.sum_positive,
-                m,
-                inputs={"a_m": m.a_m, "b_m": m.b_m},
-            )
+            model.name("s")
+            blk = model.composed_of("blk", _R)
+            motor = model.composed_of("motor", _Motor)
+            model.allocate(blk, motor, inputs={"a_m": motor.a_m, "b_m": motor.b_m})
 
     _S._reset_compilation()
     _R._reset_compilation()
     _Motor._reset_compilation()
     cm = instantiate(_S)
-    assert any("sum_m" in s.path_string for s in cm.requirement_value_slots)
     graph, handlers = compile_graph(cm)
     assert validate_graph(graph).passed
     result = Evaluator(graph, compute_handlers=handlers).evaluate(
@@ -577,74 +618,30 @@ def test_requirement_attribute_sum_and_acceptance() -> None:
     assert not result.failures
 
 
-def test_allocate_omits_requirement_inputs_raises() -> None:
+def test_requirement_block_full_evaluate_pipeline() -> None:
+    """compile + instantiate + graph + evaluate end-to-end."""
+
     class _Motor(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("motor")
             model.parameter("rpm", unit=rad / s)
 
     class _R(Requirement):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            r = model.requirement("speed_ok", "speed positive")
-            rpm_in = model.requirement_input(r, "rpm", unit=rad / s)
-            model.requirement_accept_expr(
-                r,
-                expr=rpm_in > QuantityExpr(Quantity(0, rad / s)),
-            )
+            model.name("speed_req")
+            model.doc("Speed shall be positive.")
+            rpm = model.parameter("rpm", unit=rad / s)
+            model.constraint("rpm_positive", expr=rpm > QuantityExpr(Quantity(0, rad / s)))
 
     class _S(System):
         @classmethod
         def define(cls, model):  # type: ignore[override]
-            b = model.requirement_package("blk", _R)
-            m = model.part("motor", _Motor)
-            model.allocate(b.speed_ok, m)
-
-    _S._reset_compilation()
-    _R._reset_compilation()
-    _Motor._reset_compilation()
-    with pytest.raises(ModelDefinitionError, match="must include inputs"):
-        _S.compile()
-
-
-def test_requirement_ref_wrong_terminal_kind_raises() -> None:
-    class _S(System):
-        @classmethod
-        def define(cls, model):  # type: ignore[override]
-            model.requirement_package("mission", _Mission)
-
-    _S._reset_compilation()
-    _Mission._reset_compilation()
-    _InnerMission._reset_compilation()
-    _S.compile()
-    with pytest.raises(ModelDefinitionError, match="terminal kind"):
-        requirement_ref(_S, ("mission",))
-
-
-def test_requirement_package_full_evaluate_pipeline() -> None:
-    """compile + instantiate + graph + evaluate for a registered requirement package."""
-
-    class _Motor(Part):
-        @classmethod
-        def define(cls, model):  # type: ignore[override]
-            model.parameter("rpm", unit=rad / s)
-
-    class _R(Requirement):
-        @classmethod
-        def define(cls, model):  # type: ignore[override]
-            r = model.requirement("speed_ok", "speed positive")
-            rpm_in = model.requirement_input(r, "rpm", unit=rad / s)
-            model.requirement_accept_expr(
-                r,
-                expr=rpm_in > QuantityExpr(Quantity(0, rad / s)),
-            )
-
-    class _S(System):
-        @classmethod
-        def define(cls, model):  # type: ignore[override]
-            b = model.requirement_package("blk", _R)
-            m = model.part("motor", _Motor)
-            model.allocate(b.speed_ok, m, inputs={"rpm": m.rpm})
+            model.name("s")
+            b = model.composed_of("blk", _R)
+            motor = model.composed_of("motor", _Motor)
+            model.allocate(b, motor, inputs={"rpm": motor.rpm})
 
     _S._reset_compilation()
     _R._reset_compilation()

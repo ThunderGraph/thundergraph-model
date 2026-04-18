@@ -635,7 +635,7 @@ def _instantiate_allocations(
         if not isinstance(tgt, ElementInstance):
             raise ValueError(f"Allocation target '{tgt_key}' is not an ElementInstance")
 
-        input_bindings: dict[str, ValueSlot] = {}
+        parameter_overrides: dict[str, ValueSlot] = {}
         raw_inputs = edge.get("_allocate_inputs")
         if raw_inputs:
             for iname, spec in raw_inputs.items():
@@ -644,7 +644,7 @@ def _instantiate_allocations(
                 slot = path_registry.get(slot_key)
                 if not isinstance(slot, ValueSlot):
                     raise ValueError(f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry")
-                input_bindings[str(iname)] = slot
+                parameter_overrides[str(iname)] = slot
 
         alloc_id = derive_declaration_id(root_type, "allocate", *edge["source"]["path"], *edge["target"]["path"])
         allocations.append(
@@ -652,7 +652,7 @@ def _instantiate_allocations(
                 stable_id=alloc_id,
                 requirement=req,
                 target=tgt,
-                input_bindings=input_bindings,
+                parameter_overrides=parameter_overrides,
             )
         )
 

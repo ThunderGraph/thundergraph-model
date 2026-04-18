@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
-from tg_model.model.elements import Part, System
+from tg_model.model.elements import Part, Requirement, System
 from tg_model.model.refs import AttributeRef, PartRef, PortRef
+
+
+class ShallProvidePropulsionRequirement(Requirement):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("shall_provide_propulsion")
+        model.doc("The drive system shall provide propulsion torque.")
 
 
 class PowerInterface(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("power_interface")
         model.attribute("voltage", unit="V")
         model.attribute("current", unit="A")
 
@@ -16,6 +24,7 @@ class PowerInterface(Part):
 class Battery(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("battery")
         model.attribute("charge", unit="%")
         model.parameter("voltage", unit="V")
         model.port("power_out", direction="out")
@@ -24,6 +33,7 @@ class Battery(Part):
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         model.port("power_in", direction="in")
         model.parameter("shaft_speed", unit="rpm")
         model.attribute("torque", unit="N*m")
@@ -33,12 +43,10 @@ class Motor(Part):
 class DriveSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        shall_propel = model.requirement(
-            "shall_provide_propulsion",
-            "The drive system shall provide propulsion torque.",
-        )
-        battery = model.part("battery", Battery)
-        motor = model.part("motor", Motor)
+        model.name("drive_system")
+        shall_propel = model.composed_of("shall_provide_propulsion", ShallProvidePropulsionRequirement)
+        battery = model.composed_of("battery", Battery)
+        motor = model.composed_of("motor", Motor)
         model.connect(
             source=battery.power_out,
             target=motor.power_in,
@@ -52,6 +60,7 @@ def setup_function() -> None:
     Battery._reset_compilation()
     Motor._reset_compilation()
     DriveSystem._reset_compilation()
+    ShallProvidePropulsionRequirement._reset_compilation()
 
 
 class TestDriveSystemEndToEnd:
@@ -70,8 +79,7 @@ class TestDriveSystemEndToEnd:
         result = DriveSystem.compile()
         assert "shall_provide_propulsion" in result["nodes"]
         node = result["nodes"]["shall_provide_propulsion"]
-        assert node["kind"] == "requirement"
-        assert "text" in node["metadata"]
+        assert node["kind"] == "requirement_block"
 
     def test_has_connection_edge(self) -> None:
         result = DriveSystem.compile()

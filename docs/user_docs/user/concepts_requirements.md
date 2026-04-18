@@ -1,147 +1,185 @@
-# Concept: Requirements — parameter / attribute / constraint (DEFAULT)
+# Concept: Requirements
 
-> **TL;DR — When writing a new `Requirement` package, use `model.parameter`, `model.attribute`, and `model.constraint`.  That is the default, recommended, current API.**
->
-> `requirement_input`, `requirement_attribute`, and `requirement_accept_expr` exist **only** for a rare, advanced leaf-reqcheck pattern (INCOSE-style acceptance rows wired through `allocate(..., inputs=...)`).  **Do not reach for them first.**  If you are not sure whether you need them, **you don't**.
+Requirements in `tg_model` are **executable packages** — not just text. Each `Requirement`
+subclass owns parameters, attributes, and constraints using the same surface as a `Part`.
+The difference is that a `Requirement` also carries a `model.doc(...)` "shall" statement
+and participates in allocation wiring.
 
 ---
 
-## The default pattern: package-level `parameter` / `attribute` / `constraint`
+## The authoring pattern
 
-A composable **`Requirement`** package uses the same value/check authoring surface as a `Part`. Unlike a `System`, it may own `attribute(...)` and `constraint(...)` declarations directly:
+Every `Requirement` class follows this shape, no exceptions:
 
 ```python
 from unitflow.catalogs.si import kN
-from unitflow.core.units import Unit
 from tg_model import Requirement
 
-DIMLESS = Unit.dimensionless()
 
-
-class PropulsionReqs(Requirement):
+class ThrustReq(Requirement):
     @classmethod
     def define(cls, model):
-        required = model.parameter("required_vacuum_thrust", unit=kN)
-        declared = model.parameter("declared_vacuum_thrust", unit=kN)
-        margin = model.attribute(
-            "vacuum_thrust_margin", unit=kN, expr=declared - required,
+        model.name("thrust_req")                          # required once
+        model.doc(                                         # required once, Requirement only
+            "The propulsion subsystem shall deliver vacuum thrust "
+            "no less than the mission floor."
         )
+
+        required = model.parameter("required_thrust", unit=kN)
+        declared = model.parameter("declared_thrust", unit=kN)
+        margin = model.attribute("thrust_margin", unit=kN, expr=declared - required)
         model.constraint("thrust_margin_non_negative", expr=margin >= 0 * kN)
-
-        model.requirement(
-            "req_vacuum_thrust_capability",
-            "The propulsion subsystem shall deliver vacuum thrust no less than "
-            "the mission floor (verification by test / analysis).",
-        )
 ```
 
-**That's it.**  `parameter`, `attribute`, `constraint` on the package, plus `model.requirement` for the formal "shall" text.  The constraint enforces the executable check; the requirement node carries the traceability text and can be `allocate`d and `references`d for citations.
+| Rule | Detail |
+|------|--------|
+| `model.name(str)` | Required exactly once. Identifies the package. |
+| `model.doc(str)` | Required exactly once. The "shall" statement. Requirement-only. |
+| `model.parameter(name, unit=...)` | Bindable input slot. Wired at allocation time. |
+| `model.attribute(name, unit=..., expr=...)` | Derived value from an expression. |
+| `model.constraint(name, expr=...)` | Boolean pass/fail check. |
+| `model.composed_of(name, ChildRequirementType)` | Nest a child requirement package. |
 
-After `instantiate`, the slots live at `cm.requirements.propulsion.required_vacuum_thrust` etc., and constraints appear in `RunResult.constraint_results` alongside part constraints.
-
-### When to use this pattern
-
-**Always.**  For every new requirement package, start here.  This is the primary modeling surface for requirements.
-
----
-
-## Leaf `model.requirement(...)` vs composable `Requirement`
-
-- **`Requirement`** (the class) is a **composable package type**.  You subclass it, implement `define(cls, model)`, and register it with `model.requirement_package(name, YourType)`.  Navigate with `RequirementRef` dot access (e.g. `reqs.mission.req_delta_v_closure`).
-- **`model.requirement(id, text)`** declares **one leaf** requirement statement inside a package.  It returns a `Ref` for `allocate`, `references`, and (in the rare advanced case) `requirement_input` / `requirement_accept_expr`.
-
-Keeping those two straight avoids confusion with the class name.
+The compiler rejects any `Requirement` class missing `model.name()` or `model.doc()`.
+Both must be called exactly once — a second call raises `ModelDefinitionError`.
 
 ---
 
-## Package-level value surface
+## Composing requirement packages
 
-Inside `Requirement.define()`:
-
-| Method | What it does | Same as on `Part`? |
-|--------|-------------|-------------------|
-| `model.parameter(name, unit=...)` | Externally bound input slot | Yes |
-| `model.attribute(name, unit=..., expr=...)` | Derived value from expression | Yes |
-| `model.constraint(name, expr=...)` | Pass/fail check on the expression | Yes |
-| `model.requirement(id, text)` | Leaf "shall" statement (traceability) | Requirement-only |
-| `model.requirement_package(name, Type)` | Nested composable sub-package | Requirement-only |
-| `model.citation(name, ...)` | External provenance node | Yes |
-| `model.references(req, citation)` | Traceability edge | Requirement-only |
-
-**Limitations (today):** package-level slots do not support `computed_by=` or rollups in graph compilation; every package `constraint` must supply `expr=`.
-
----
-
-## Advanced (rare): leaf-level `requirement_input` / `requirement_attribute` / `requirement_accept_expr`
-
-> **⚠️  Stop.  You almost certainly do not need this section for new code.**
->
-> These three helpers exist for **one specific pattern**: encoding an INCOSE-style executable acceptance test on a **single leaf** `model.requirement(...)`, where:
->
-> 1. You declare `requirement_input` slots on the leaf requirement.
-> 2. You wire those inputs from the design via `allocate(..., inputs={name: part_ref.slot})`.
-> 3. You optionally compute a `requirement_attribute` margin.
-> 4. You set a `requirement_accept_expr` boolean check.
-> 5. `summarize_requirement_satisfaction` then reports per-requirement pass/fail rows.
->
-> **If your check can be expressed as a package-level `constraint`, use that instead.**  It is simpler, more readable, and produces the same pass/fail result in `RunResult.constraint_results`.
-
-### When the leaf reqcheck pattern is appropriate
-
-- You have a **formal Level-1 "shall" statement** with its own acceptance criterion.
-- You want `summarize_requirement_satisfaction` to print a **per-requirement row** (tagged with `requirement_path`).
-- The acceptance wiring needs **`allocate(..., inputs=...)`** to map scenario values and design envelope values into requirement-local input slots.
-
-### Example (mission closure — the rare case)
+Use `model.composed_of(name, ChildType)` to build a hierarchy:
 
 ```python
-from unitflow.catalogs.si import m
+from unitflow.catalogs.si import kg, m
+from tg_model import Requirement
 
-m_per_s = m / s
 
-
-class MissionClosure(Requirement):
+class PayloadReq(Requirement):
     @classmethod
     def define(cls, model):
-        r_dv = model.requirement(
-            "req_delta_v_closure",
-            "Design shall close scenario delta-v within declared envelope.",
-        )
-        scenario_dv = model.requirement_input(r_dv, "scenario_delta_v", unit=m_per_s)
-        envelope_dv = model.requirement_input(r_dv, "envelope_delta_v", unit=m_per_s)
-        dv_margin = model.requirement_attribute(
-            r_dv, "delta_v_margin", expr=envelope_dv - scenario_dv, unit=m_per_s,
-        )
-        model.requirement_accept_expr(r_dv, expr=dv_margin >= 0 * m_per_s)
+        model.name("payload_req")
+        model.doc("Design payload mass shall not exceed structural envelope.")
+        scenario = model.parameter("scenario_payload_kg", unit=kg)
+        envelope = model.parameter("envelope_payload_kg", unit=kg)
+        margin = model.attribute("payload_margin_kg", unit=kg, expr=envelope - scenario)
+        model.constraint("payload_margin_non_negative", expr=margin >= 0 * kg)
+
+
+class RangeReq(Requirement):
+    @classmethod
+    def define(cls, model):
+        model.name("range_req")
+        model.doc("Design mission range shall not exceed modeled envelope.")
+        scenario = model.parameter("scenario_range_m", unit=m)
+        envelope = model.parameter("envelope_range_m", unit=m)
+        margin = model.attribute("range_margin_m", unit=m, expr=envelope - scenario)
+        model.constraint("range_margin_non_negative", expr=margin >= 0 * m)
+
+
+class L1MissionReqs(Requirement):
+    @classmethod
+    def define(cls, model):
+        model.name("l1_mission_reqs")
+        model.doc("Level-1 mission closure requirements.")
+        model.composed_of("payload", PayloadReq)
+        model.composed_of("range", RangeReq)
 ```
 
-Then on the `System`:
-
-```python
-model.allocate(
-    rq.mission.req_delta_v_closure,
-    design_envelope,
-    inputs={
-        "scenario_delta_v": scenario_dv_param,
-        "envelope_delta_v": design_envelope.design_delta_v_capability,
-    },
-)
-```
-
-### Rules and limitations (leaf reqcheck)
-
-- Names — An input name and an attribute name on the **same** requirement cannot collide.
-- Order — Declare all `requirement_input` and `requirement_attribute` calls **before** `requirement_accept_expr`.
-- Allocations — If a requirement declares `requirement_attribute`, it must have **at most one** `allocate(...)` edge.
+`L1MissionReqs` owns both children. After `instantiate`, slots are accessible at
+`cm.root.reqs.payload.scenario_payload_kg` etc.
 
 ---
 
-## Summary: which pattern to use
+## Mounting requirements on a System
 
-| Situation | Pattern |
-|-----------|---------|
-| **New requirement package** (99% of cases) | `parameter` + `attribute` + `constraint` on the package |
-| **Formal leaf acceptance test** (rare, INCOSE-style) | `requirement_input` + `requirement_attribute` + `requirement_accept_expr` on a leaf `model.requirement(...)` |
-| **Traceability text** | `model.requirement(id, text)` + `model.allocate(req, part)` + `model.references(req, citation)` |
+Use `model.composed_of(name, RequirementType)` on a `System` to mount the requirement tree,
+then `model.allocate(req_ref, part_ref, inputs={...})` to wire values in:
 
-**Default to the first row.  Always.**
+```python
+from unitflow.catalogs.si import kg, m
+from tg_model import Part, System
+
+
+class Aircraft(Part):
+    @classmethod
+    def define(cls, model):
+        model.name("aircraft")
+        model.parameter("max_payload_kg", unit=kg)
+        model.parameter("max_range_m", unit=m)
+
+
+class MissionProgram(System):
+    @classmethod
+    def define(cls, model):
+        model.name("mission_program")
+        scenario_payload = model.parameter("scenario_payload_kg", unit=kg)
+        scenario_range = model.parameter("scenario_range_m", unit=m)
+
+        aircraft = model.composed_of("aircraft", Aircraft)
+        reqs = model.composed_of("reqs", L1MissionReqs)
+
+        model.allocate(reqs.payload, aircraft, inputs={
+            "scenario_payload_kg": scenario_payload,
+            "envelope_payload_kg": aircraft.max_payload_kg,
+        })
+        model.allocate(reqs.range, aircraft, inputs={
+            "scenario_range_m":   scenario_range,
+            "envelope_range_m":   aircraft.max_range_m,
+        })
+```
+
+`model.allocate(req_ref, target_ref, inputs={...})` takes:
+
+- `req_ref` — a `RequirementRef` pointing to the package to satisfy (obtained from `model.composed_of` or dot-navigation into a composed tree)
+- `target_ref` — a `PartRef` or similar ref to the design element being allocated to
+- `inputs` — a `dict[str, AttributeRef]` mapping each `parameter` name declared in the requirement class to the Part slot that provides the value
+
+---
+
+## Reading constraint results
+
+After `evaluate`, requirement constraints appear in `RunResult.constraint_results`
+tagged with `requirement_path` and `allocation_target_path`:
+
+```python
+cm = instantiate(MissionProgram)
+result = cm.evaluate(inputs={
+    cm.root.scenario_payload_kg: 45_000 * kg,
+    cm.root.aircraft.max_payload_kg: 50_000 * kg,
+    cm.root.scenario_range_m: 8_000_000 * m,
+    cm.root.aircraft.max_range_m: 9_000_000 * m,
+})
+
+print("Overall passed:", result.passed)
+
+for cr in result.constraint_results:
+    print(
+        f"{cr.name}: {'PASS' if cr.passed else 'FAIL'}"
+        f"  requirement={cr.requirement_path}"
+        f"  target={cr.allocation_target_path}"
+    )
+```
+
+Filter by requirement path to get per-package results:
+
+```python
+payload_results = [
+    cr for cr in result.constraint_results
+    if cr.requirement_path and "payload" in cr.requirement_path
+]
+```
+
+---
+
+## Available methods inside `Requirement.define()`
+
+| Method | Description |
+|--------|-------------|
+| `model.name(str)` | Human-readable identifier. Required once. |
+| `model.doc(str)` | "Shall" statement. Required once. Requirement-only. |
+| `model.parameter(name, unit=...)` | Bindable input slot. Wired via `allocate(..., inputs=...)`. |
+| `model.attribute(name, unit=..., expr=...)` | Derived value. |
+| `model.constraint(name, expr=...)` | Pass/fail check. |
+| `model.composed_of(name, ChildRequirementType)` | Nested child requirement package. |
+| `model.citation(name, ...)` | External provenance (standard, clause, URI). |
+| `model.references(node, citation)` | Traceability edge from a node to a citation. |

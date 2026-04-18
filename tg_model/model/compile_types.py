@@ -129,6 +129,7 @@ def compile_type(
                 )
                 type_registry[decl.name] = decl.target_type
 
+        _validate_name_and_doc_required(element_cls, ctx)
         _validate_requirement_block_if_needed(element_cls, ctx)
         _validate_requirement_package_value_exprs(ctx)
 
@@ -137,9 +138,6 @@ def compile_type(
                 _validate_port_ref(ctx, edge["source"])
                 _validate_port_ref(ctx, edge["target"])
 
-        _validate_requirement_acceptance(ctx, child_types, type_registry)
-        _validate_requirement_attributes_exprs(ctx)
-        _validate_allocate_input_bindings(ctx)
         _validate_references_edges(ctx)
 
         if ctx.behavior_transitions:
@@ -340,6 +338,24 @@ def _cache_behavior_runtime_facets(element_cls: type, ctx: Any) -> None:
     element_cls._tg_initial_state_name = initials[0] if len(initials) == 1 else None
 
 
+def _validate_name_and_doc_required(element_cls: type, ctx: Any) -> None:
+    """Enforce that every element calls ``model.name()`` and every Requirement calls ``model.doc()``."""
+    from tg_model.model.elements import Element, Part, Requirement, System
+
+    # Skip validation on the abstract base classes themselves
+    if element_cls in (Element, Part, System, Requirement):
+        return
+
+    if ctx._declared_name is None:
+        raise ModelDefinitionError(
+            f"{element_cls.__name__}: model.name(...) is required in define()"
+        )
+    if issubclass(element_cls, Requirement) and ctx._declared_doc is None:
+        raise ModelDefinitionError(
+            f"{element_cls.__name__}: model.doc(...) is required in Requirement.define()"
+        )
+
+
 def _validate_requirement_block_if_needed(element_cls: type, ctx: Any) -> None:
     """Enforce authoring policy on :class:`~tg_model.model.elements.Requirement` composable packages.
 
@@ -361,11 +377,8 @@ def _validate_requirement_block_if_needed(element_cls: type, ctx: Any) -> None:
         return
     allowed_nodes = frozenset(
         {
-            "requirement",
             "citation",
             "requirement_block",
-            "requirement_input",
-            "requirement_attribute",
             "parameter",
             "attribute",
             "constraint",
@@ -580,243 +593,6 @@ def _walk_path_in_compiled_subtree(path: tuple[str, ...], compiled: dict[str, An
     return None
 
 
-def _collect_requirement_paths_with_accept_expr(ctx: Any) -> set[tuple[str, ...]]:
-    """All requirement paths (including under requirement_block subtrees) that carry ``_accept_expr``."""
-    out: set[tuple[str, ...]] = set()
-
-    def walk_subtree(prefix: tuple[str, ...], nodes: dict[str, Any], tr: dict[str, type]) -> None:
-        for name, node in nodes.items():
-            path = (*prefix, name)
-            meta = node.get("metadata", {})
-            if node.get("kind") == "requirement" and meta.get("_accept_expr") is not None:
-                out.add(path)
-            if node.get("kind") == "requirement_block":
-                bt = tr.get(name)
-                if bt is not None:
-                    sub = _requirement_block_compiled_artifact(bt)
-                    walk_subtree(path, sub["nodes"], sub.get("_type_registry", {}))
-
-    for name, decl in ctx.nodes.items():
-        if decl.kind == "requirement" and decl.metadata.get("_accept_expr") is not None:
-            out.add((name,))
-        if decl.kind == "requirement_block" and decl.target_type is not None:
-            sub = _requirement_block_compiled_artifact(decl.target_type)
-            walk_subtree((name,), sub["nodes"], sub.get("_type_registry", {}))
-    return out
-
-
-def _validate_requirement_acceptance(
-    ctx: Any,
-    child_types: dict[str, dict[str, Any]],
-    type_registry: dict[str, type],
-) -> None:
-    """Requirements with ``_accept_expr`` must have at least one ``allocate`` from that requirement path."""
-    from tg_model.model.elements import Requirement
-
-    _ = child_types, type_registry
-    if issubclass(ctx.owner_type, Requirement):
-        return
-    reqs_with_expr = _collect_requirement_paths_with_accept_expr(ctx)
-    if not reqs_with_expr:
-        return
-    allocated: set[tuple[str, ...]] = set()
-    for edge in ctx.edges:
-        if edge.get("kind") != "allocate":
-            continue
-        src = edge.get("source")
-        if src is None or getattr(src, "kind", None) != "requirement":
-            continue
-        path = tuple(getattr(src, "path", ()))
-        if path:
-            allocated.add(path)
-    missing = sorted(reqs_with_expr - allocated, key=lambda p: (len(p), p))
-    if missing:
-        raise ModelDefinitionError(
-            f"{ctx.owner_type.__name__}: requirement(s) with acceptance expr but no "
-            f"allocate(...) from them: {missing!r}"
-        )
-
-
-def _requirement_metadata_at_path(ctx: Any, path: tuple[str, ...]) -> dict[str, Any] | None:
-    """Return requirement node metadata for a full path from the root owner (e.g. allocate source)."""
-    if not path:
-        return None
-    decl = ctx.nodes.get(path[0])
-    if decl is None:
-        return None
-    if len(path) == 1:
-        if decl.kind != "requirement":
-            return None
-        return dict(decl.metadata)
-    if decl.kind != "requirement_block" or decl.target_type is None:
-        return None
-    sub = getattr(decl.target_type, "_compiled_definition", None)
-    if sub is None:
-        return None
-    return _requirement_metadata_at_path_compiled(sub, path[1:])
-
-
-def _requirement_metadata_at_path_compiled(
-    compiled: dict[str, Any],
-    path: tuple[str, ...],
-) -> dict[str, Any] | None:
-    if not path:
-        return None
-    name, *rest = path
-    node = compiled.get("nodes", {}).get(name)
-    if node is None:
-        return None
-    if not rest:
-        if node.get("kind") != "requirement":
-            return None
-        return dict(node.get("metadata") or {})
-    if node.get("kind") != "requirement_block":
-        return None
-    tr: dict[str, type] = compiled.get("_type_registry", {})
-    bt = tr.get(name)
-    if bt is None:
-        return None
-    sub = getattr(bt, "_compiled_definition", None)
-    if sub is None:
-        return None
-    return _requirement_metadata_at_path_compiled(sub, tuple(rest))
-
-
-def _requirement_allowed_symbol_names(meta: dict[str, Any]) -> frozenset[str]:
-    """Requirement-local names (inputs + derived attributes) for acceptance validation."""
-    inames = list(meta.get("_requirement_input_names") or [])
-    anames = list(meta.get("_requirement_attribute_names") or [])
-    return frozenset([*inames, *anames])
-
-
-def _validate_requirement_attributes_exprs(ctx: Any) -> None:
-    """Each ``requirement_attribute`` expr may only reference allowed symbols."""
-    from tg_model.model.elements import Requirement
-
-    if issubclass(ctx.owner_type, Requirement):
-        return
-
-    def walk_subtree(prefix: tuple[str, ...], nodes: dict[str, Any], tr: dict[str, type]) -> None:
-        for name, node in nodes.items():
-            path = (*prefix, name)
-            meta = node.get("metadata", {})
-            if node.get("kind") == "requirement" and meta.get("_requirement_attributes"):
-                _validate_one_requirement_attributes(
-                    ctx.owner_type.__name__,
-                    ctx.owner_type,
-                    path,
-                    meta,
-                )
-            if node.get("kind") == "requirement_block":
-                bt = tr.get(name)
-                if bt is not None:
-                    sub = _requirement_block_compiled_artifact(bt)
-                    walk_subtree(path, sub["nodes"], sub.get("_type_registry", {}))
-
-    for name, decl in ctx.nodes.items():
-        if decl.kind == "requirement" and decl.metadata.get("_requirement_attributes"):
-            _validate_one_requirement_attributes(
-                ctx.owner_type.__name__,
-                ctx.owner_type,
-                (name,),
-                dict(decl.metadata),
-            )
-        if decl.kind == "requirement_block" and decl.target_type is not None:
-            sub = _requirement_block_compiled_artifact(decl.target_type)
-            walk_subtree((name,), sub["nodes"], sub.get("_type_registry", {}))
-
-
-def _validate_one_requirement_attributes(
-    owner_name: str,
-    root_owner: type,
-    path: tuple[str, ...],
-    meta: dict[str, Any],
-) -> None:
-    from tg_model.model.definition_context import ModelDefinitionError
-    from tg_model.model.refs import _symbol_id_to_path
-
-    inames = list(meta.get("_requirement_input_names") or [])
-    decls = list(meta.get("_requirement_attributes") or [])
-    seen_attr: set[str] = set()
-    for idx, (aname, expr) in enumerate(decls):
-        if aname in seen_attr:
-            raise ModelDefinitionError(
-                f"{owner_name}: duplicate requirement_attribute name {aname!r} under requirement {path!r}"
-            )
-        seen_attr.add(aname)
-        if expr is None or not hasattr(expr, "free_symbols"):
-            continue
-        allowed_prev = frozenset([*inames, *[n for n, _ in decls[:idx]]])
-        for sym in expr.free_symbols:
-            info = _symbol_id_to_path.get(id(sym))
-            if info is None:
-                continue
-            sym_owner, sym_path = info
-            if sym_owner is not root_owner:
-                continue
-            if len(sym_path) != len(path) + 1 or sym_path[: len(path)] != path:
-                continue
-            leaf = sym_path[-1]
-            if leaf in allowed_prev:
-                continue
-            raise ModelDefinitionError(
-                f"{owner_name}: requirement_attribute {aname!r} expr references {leaf!r} under "
-                f"{path!r} but allowed names (inputs + earlier attributes) are {sorted(allowed_prev)!r}"
-            )
-
-
-def _validate_allocate_input_bindings(ctx: Any) -> None:
-    """If a requirement declares inputs, every allocate must supply them; expr symbols must be bound."""
-    from tg_model.model.elements import Requirement
-    from tg_model.model.refs import _symbol_id_to_path
-
-    if issubclass(ctx.owner_type, Requirement):
-        return
-
-    for edge in ctx.edges:
-        if edge.get("kind") != "allocate":
-            continue
-        src = edge.get("source")
-        if src is None or getattr(src, "kind", None) != "requirement":
-            continue
-        path = tuple(getattr(src, "path", ()))
-        meta = _requirement_metadata_at_path(ctx, path)
-        if meta is None:
-            continue
-        inames = list(meta.get("_requirement_input_names") or [])
-        allowed_names = _requirement_allowed_symbol_names(meta)
-        inputs = edge.get("_allocate_inputs") or {}
-        if inames:
-            missing = [n for n in inames if n not in inputs]
-            if missing:
-                raise ModelDefinitionError(
-                    f"{ctx.owner_type.__name__}: allocate(..., {path!r}, ...) must include "
-                    f"inputs= for requirement inputs {inames!r}; missing {missing!r}"
-                )
-        expr = meta.get("_accept_expr")
-        if expr is None or not hasattr(expr, "free_symbols"):
-            continue
-        root_owner = ctx.owner_type
-        for sym in expr.free_symbols:
-            info = _symbol_id_to_path.get(id(sym))
-            if info is None:
-                continue
-            sym_owner, sym_path = info
-            if sym_owner is not root_owner:
-                continue
-            if len(sym_path) == len(path) + 1 and sym_path[: len(path)] == path:
-                iname = sym_path[-1]
-                if iname not in allowed_names:
-                    raise ModelDefinitionError(
-                        f"{ctx.owner_type.__name__}: acceptance expr uses symbol {iname!r} under "
-                        f"{path!r} but declared requirement_input / requirement_attribute names are "
-                        f"{sorted(allowed_names)!r}"
-                    )
-                if iname in inames and iname not in inputs:
-                    raise ModelDefinitionError(
-                        f"{ctx.owner_type.__name__}: allocate(..., {path!r}, ...) needs "
-                        f"inputs[{iname!r}] for acceptance expression"
-                    )
 
 
 def _serialize_edge(edge: dict[str, Any]) -> dict[str, Any]:

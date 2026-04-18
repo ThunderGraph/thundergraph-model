@@ -66,7 +66,7 @@ def test_mars_ntp_report_extract_and_snapshot() -> None:
     data = extract_mars_ntp_evaluation_report(cm, result)
     assert data["evaluation_passed"]
     assert data["reqcheck_all_passed"]
-    assert data["reqcheck_count"] == 2
+    assert data["reqcheck_count"] == 10
     assert data["mission_desk_outputs"]["sim_propellant_required_kg"]
 
     text = format_mars_ntp_report(data)

@@ -4,15 +4,25 @@ ThunderGraph Model is an executable systems modeling library for Python.
 
 ```{toctree}
 :maxdepth: 2
-:caption: User
+:caption: User Guide
 
 user/install
 user/overview
 user/mental_model
-user/quickstart
+user/end_to_end_guide
+user/concepts_parts
+user/concepts_system
 user/concepts_requirements
+user/concepts_evaluation
 user/concepts_external_compute
 user/faq
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Quickstart
+
+user/quickstart
 ```
 
 ```{toctree}
@@ -37,7 +47,7 @@ api/index
 
 ```{toctree}
 :maxdepth: 2
-:caption: Phase 2 Drafts (working pages)
+:caption: Drafts
 
 drafts/what_is_thundergraph_model
 drafts/execution_pipeline

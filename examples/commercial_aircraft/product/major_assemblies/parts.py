@@ -25,6 +25,7 @@ class FuselageAssembly(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("fuselage_assembly")
         dry = model.parameter("dry_mass_kg", unit=kg)
         _non_negative_dry_mass(model, dry)
 
@@ -34,6 +35,7 @@ class WingAssembly(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("wing_assembly")
         from commercial_aircraft.integrations.bindings import make_wing_structural_intensity_binding
         from commercial_aircraft.program.cargo_jet_program import CargoJetProgram
 
@@ -59,6 +61,7 @@ class EmpennageAssembly(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("empennage_assembly")
         dry = model.parameter("dry_mass_kg", unit=kg)
         _non_negative_dry_mass(model, dry)
 
@@ -68,6 +71,7 @@ class LandingGearAssembly(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("landing_gear_assembly")
         dry = model.parameter("dry_mass_kg", unit=kg)
         _non_negative_dry_mass(model, dry)
 
@@ -77,6 +81,7 @@ class PropulsionInstallation(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("propulsion_installation")
         dry = model.parameter("dry_mass_kg", unit=kg)
         _non_negative_dry_mass(model, dry)
 
@@ -86,5 +91,6 @@ class AircraftSystemsPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("aircraft_systems")
         dry = model.parameter("dry_mass_kg", unit=kg)
         _non_negative_dry_mass(model, dry)

@@ -5,36 +5,39 @@ from __future__ import annotations
 import pytest
 
 from tg_model.model.definition_context import ModelDefinitionContext, ModelDefinitionError
-from tg_model.model.elements import Part, System
-from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref
+from tg_model.model.elements import Part, Requirement, System
+from tg_model.model.refs import AttributeRef, PartRef, PortRef, RequirementRef
 
 
 class DummyPart(Part):
     pass
 
 
+class DummyRequirement(Requirement):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("dummy_requirement")
+        model.doc("Stub requirement for unit tests.")
+
+
 class TestDeclarations:
-    def test_part_declaration(self) -> None:
+    def test_composed_of_part_declaration(self) -> None:
         ctx = ModelDefinitionContext(System)
-        ref = ctx.part("battery", DummyPart)
+        ref = ctx.composed_of("battery", DummyPart)
         assert isinstance(ref, PartRef)
         assert ref.path == ("battery",)
         assert ref.kind == "part"
         assert ref.target_type is DummyPart
         assert "battery" in ctx.nodes
 
-    def test_part_no_args_returns_root_ref_without_node(self) -> None:
+    def test_composed_of_requirement_declaration(self) -> None:
         ctx = ModelDefinitionContext(System)
-        rocket = ctx.part()
-        assert isinstance(rocket, PartRef)
-        assert rocket.path == ()
-        assert rocket.target_type is System
-        assert len(ctx.nodes) == 0
-
-    def test_part_only_name_raises(self) -> None:
-        ctx = ModelDefinitionContext(System)
-        with pytest.raises(ModelDefinitionError, match="no arguments"):
-            ctx.part("only_name")  # type: ignore[call-arg]
+        ref = ctx.composed_of("req1", DummyRequirement)
+        assert isinstance(ref, RequirementRef)
+        assert ref.path == ("req1",)
+        assert ref.kind == "requirement_block"
+        assert ref.target_type is DummyRequirement
+        assert "req1" in ctx.nodes
 
     def test_port_declaration(self) -> None:
         ctx = ModelDefinitionContext(Part)
@@ -56,13 +59,6 @@ class TestDeclarations:
         assert isinstance(ref, AttributeRef)
         assert ref.kind == "parameter"
         assert ref.metadata["unit"] == "V"
-
-    def test_requirement_declaration(self) -> None:
-        ctx = ModelDefinitionContext(System)
-        ref = ctx.requirement("req1", "The system shall do X.")
-        assert isinstance(ref, Ref)
-        assert ref.kind == "requirement"
-        assert ref.metadata["text"] == "The system shall do X."
 
 
 class TestDuplicateRejection:
@@ -91,23 +87,11 @@ class TestConnections:
             ctx.connect(attr, port)  # type: ignore[arg-type]
 
 
-class TestSystemRestrictions:
-    def test_system_attribute_declaration_rejected(self) -> None:
-        ctx = ModelDefinitionContext(System)
-        with pytest.raises(ModelDefinitionError, match="System\\.define\\(\\) may not declare attribute"):
-            ctx.attribute("mass", unit="kg")
-
-    def test_system_constraint_declaration_rejected(self) -> None:
-        ctx = ModelDefinitionContext(System)
-        with pytest.raises(ModelDefinitionError, match="System\\.define\\(\\) may not declare constraint"):
-            ctx.constraint("mass_positive", expr=True)
-
-
 class TestAllocations:
     def test_allocate_records_edge(self) -> None:
         ctx = ModelDefinitionContext(System)
-        req = ctx.requirement("req1", "Shall do X.")
-        part = ctx.part("motor", DummyPart)
+        req = ctx.composed_of("req1", DummyRequirement)
+        part = ctx.composed_of("motor", DummyPart)
         ctx.allocate(req, part)
         assert len(ctx.edges) == 1
         assert ctx.edges[0]["kind"] == "allocate"
@@ -124,29 +108,25 @@ class TestAllocations:
         ctx = ModelDefinitionContext(System)
         assert ctx.root_block().path == ctx.owner_part().path == ()
 
-    def test_part_no_args_matches_root_block(self) -> None:
-        ctx = ModelDefinitionContext(System)
-        assert ctx.part().path == ctx.root_block().path == ()
-
     def test_allocate_to_system_target_matches_allocate_root_block(self) -> None:
         ctx = ModelDefinitionContext(System)
-        req = ctx.requirement("req1", "Shall do X.")
+        req = ctx.composed_of("req1", DummyRequirement)
         ctx.allocate_to_system(req)
         assert len(ctx.edges) == 1
         assert ctx.edges[0]["kind"] == "allocate"
         ctx2 = ModelDefinitionContext(System)
-        req2 = ctx2.requirement("req1", "Shall do X.")
+        req2 = ctx2.composed_of("req1", DummyRequirement)
         ctx2.allocate(req2, ctx2.root_block())
         assert ctx.edges[0]["target"].path == ctx2.edges[0]["target"].path
 
     def test_allocate_to_root_alias_matches_allocate_to_system(self) -> None:
         ctx = ModelDefinitionContext(System)
-        req = ctx.requirement("req1", "Shall do X.")
+        req = ctx.composed_of("req1", DummyRequirement)
         ctx.allocate_to_root(req)
         assert len(ctx.edges) == 1
         assert ctx.edges[0]["kind"] == "allocate"
         ctx2 = ModelDefinitionContext(System)
-        req2 = ctx2.requirement("req1", "Shall do X.")
+        req2 = ctx2.composed_of("req1", DummyRequirement)
         ctx2.allocate_to_system(req2)
         assert ctx.edges[0]["target"].path == ctx2.edges[0]["target"].path
 

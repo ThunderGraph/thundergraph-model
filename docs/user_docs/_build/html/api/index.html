@@ -196,15 +196,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User</span></p>
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../user/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/mental_model.html">Mental Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart (Concrete Example)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/end_to_end_guide.html">End-to-End Guide: Building a Complete System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_parts.html">Concept: Parts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_system.html">Concept: Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_evaluation.html">Concept: Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/quickstart.html">Quickstart</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer</span></p>
 <ul>
@@ -227,7 +234,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Phase 2 Drafts (working pages)</span></p>
+<p class="caption" role="heading"><span class="caption-text">Drafts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/what_is_thundergraph_model.html">What ThunderGraph Model Is</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../drafts/execution_pipeline.html">Execution Pipeline (Compile -&gt; Instantiate -&gt; Graph -&gt; Evaluate)</a></li>
@@ -274,7 +281,7 @@
           <section id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
 <p><strong>Execution façade:</strong> :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.configured_model.ConfiguredModel</span></code> (<code class="docutils literal notranslate"><span class="pre">evaluate</span></code>), :func:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.configured_model.instantiate</span></code>, and :meth:<code class="docutils literal notranslate"><span class="pre">tg_model.model.elements.System.instantiate</span></code> are documented under <strong>tg_model.execution</strong> and <strong>tg_model.model</strong> below.</p>
-<p><strong>Composable requirements:</strong> :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.elements.Requirement</span></code>, :meth:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.definition_context.ModelDefinitionContext.requirement_package</span></code>, and dot-navigation :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.refs.RequirementRef</span></code>. Declare a leaf requirement with :meth:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.definition_context.ModelDefinitionContext.requirement</span></code> inside :meth:<code class="docutils literal notranslate"><span class="pre">Requirement.define()</span> <span class="pre">&lt;tg_model.model.elements.Element.define&gt;</span></code>. After :func:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.configured_model.instantiate</span></code>, packages appear as :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.instances.RequirementPackageInstance</span></code> under the owning part. Compiled artifacts still label package nodes with internal <code class="docutils literal notranslate"><span class="pre">kind</span></code> <code class="docutils literal notranslate"><span class="pre">&quot;requirement_block&quot;</span></code>. Narrative: <a class="reference internal" href="../user/concepts_requirements.html"><span class="doc">Concept: Requirements — parameter / attribute / constraint (DEFAULT)</span></a> and <a class="reference internal" href="../user/faq.html"><span class="doc">FAQ</span></a>.</p>
+<p><strong>Composable requirements:</strong> :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.elements.Requirement</span></code>, :meth:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.definition_context.ModelDefinitionContext.requirement_package</span></code>, and dot-navigation :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.refs.RequirementRef</span></code>. Declare a leaf requirement with :meth:<code class="docutils literal notranslate"><span class="pre">~tg_model.model.definition_context.ModelDefinitionContext.requirement</span></code> inside :meth:<code class="docutils literal notranslate"><span class="pre">Requirement.define()</span> <span class="pre">&lt;tg_model.model.elements.Element.define&gt;</span></code>. After :func:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.configured_model.instantiate</span></code>, packages appear as :class:<code class="docutils literal notranslate"><span class="pre">~tg_model.execution.instances.RequirementPackageInstance</span></code> under the owning part. Compiled artifacts still label package nodes with internal <code class="docutils literal notranslate"><span class="pre">kind</span></code> <code class="docutils literal notranslate"><span class="pre">&quot;requirement_block&quot;</span></code>. Narrative: <a class="reference internal" href="../user/concepts_requirements.html"><span class="doc">Concept: Requirements</span></a> and <a class="reference internal" href="../user/faq.html"><span class="doc">FAQ</span></a>.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api_root.html"><code class="docutils literal notranslate"><span class="pre">tg_model</span></code></a></li>

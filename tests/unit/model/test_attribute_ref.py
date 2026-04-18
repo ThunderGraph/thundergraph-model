@@ -15,6 +15,7 @@ from tg_model.model.identity import qualified_name
 class _Leaf(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__leaf")
         snap = attribute_ref(_MissionRoot, "sim_kg")
         model.attribute("mirrored_kg", unit=kg, expr=snap)
 
@@ -22,8 +23,9 @@ class _Leaf(Part):
 class _MissionRoot(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__mission_root")
         model.attribute("sim_kg", unit=kg, expr=QuantityExpr(Quantity(3, kg)))
-        model.part("leaf", _Leaf)
+        model.composed_of("leaf", _Leaf)
 
 
 def setup_function() -> None:
@@ -47,13 +49,15 @@ def test_attribute_ref_wrong_name_raises() -> None:
     class _BadLeaf(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad_leaf")
             attribute_ref(_BadRoot, "nope")
 
     class _BadRoot(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad_root")
             model.attribute("sim_kg", unit=kg, expr=QuantityExpr(Quantity(1, kg)))
-            model.part("leaf", _BadLeaf)
+            model.composed_of("leaf", _BadLeaf)
 
     _BadRoot._reset_compilation()
     _BadLeaf._reset_compilation()
@@ -65,13 +69,15 @@ def test_attribute_ref_not_attribute_kind_raises() -> None:
     class _BadLeaf2(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__bad_leaf2")
             attribute_ref(_Root2, "only_param")
 
     class _Root2(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("__root2")
             model.parameter("only_param", unit=kg)
-            model.part("leaf", _BadLeaf2)
+            model.composed_of("leaf", _BadLeaf2)
 
     _Root2._reset_compilation()
     _BadLeaf2._reset_compilation()

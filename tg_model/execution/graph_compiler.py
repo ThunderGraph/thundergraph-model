@@ -17,7 +17,6 @@ from typing import Any
 from unitflow import Quantity
 
 from tg_model.execution.configured_model import ConfiguredModel
-from tg_model.execution.connection_bindings import AllocationBinding
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
 from tg_model.execution.external_ops import (
     ExternalOpsError,
@@ -100,11 +99,13 @@ def compile_graph(model: ConfiguredModel) -> tuple[DependencyGraph, dict[str, Ca
     graph = DependencyGraph()
     handlers: dict[str, Callable] = {}
 
+    param_overrides_by_pkg = _build_param_overrides_by_pkg(model)
+    allocation_target_by_pkg = _build_allocation_target_by_pkg(model)
     _compile_part(model.root, graph, handlers, model)
-    _compile_requirement_packages_from_parts(model.root, graph, handlers, model)
+    _compile_requirement_packages_from_parts(
+        model.root, graph, handlers, model, param_overrides_by_pkg, allocation_target_by_pkg
+    )
     _compile_constraints_for_part(model.root, graph, handlers, model)
-    _compile_requirement_derived_slots(model, graph, handlers)
-    _compile_requirement_acceptance(model, graph, handlers)
     _compile_solve_groups_for_part(model.root, graph, handlers, model)
 
     model._compiled_graph = (graph, handlers)
@@ -416,87 +417,35 @@ def _compile_rollup(
     handlers[expr_node_id] = build_rollup_handler(expr.kind, expr.value_func, child_slots)
 
 
-def _resolve_symbol_for_requirement_acceptance(
-    sym: Any,
-    allocate_target: PartInstance,
-    requirement_definition_type: type,
-    _model: ConfiguredModel,
-    alloc: AllocationBinding,
-) -> ValueSlot:
-    """Map a unitflow symbol to a :class:`ValueSlot` for requirement acceptance (Phase 7).
+def _build_param_overrides_by_pkg(model: ConfiguredModel) -> dict[str, dict[str, ValueSlot]]:
+    """Build a lookup: requirement package path_string → {param_name → source ValueSlot}.
 
-    If :class:`~tg_model.execution.connection_bindings.AllocationBinding` carries
-    ``input_bindings`` (from ``allocate(..., inputs=…)``), symbols owned by the configured root
-    whose path matches ``<requirement instance path tail> + (input_name,)`` resolve to the bound
-    part slot.
-
-    Otherwise: symbols declared on the **same type as the allocate() call site** use paths from
-    that type's root (e.g. ``('motor', 'shaft_power')``); we strip the allocate target's path
-    under the configured root and resolve the remainder from ``allocate_target``.
-
-    Symbols declared on the **allocate target's part type** (e.g. attributes in ``Motor.define``)
-    use paths relative to that part (e.g. ``('shaft_power',)``) and resolve directly from
-    ``allocate_target``.
-
-    Requirement-local :meth:`~tg_model.model.definition_context.ModelDefinitionContext.requirement_attribute`
-    values are registered as :class:`~tg_model.execution.value_slots.ValueSlot` objects on the
-    configured root and resolved via ``path_registry`` when not covered by ``inputs=`` bindings.
+    Used by :func:`_compile_requirement_package_tree` to wire requirement package parameters
+    as computed values (sourced from the part side) when ``allocate(..., inputs=...)`` was used.
     """
-    from tg_model.model.refs import _symbol_id_to_path
+    overrides: dict[str, dict[str, ValueSlot]] = {}
+    for alloc in model.allocations:
+        if not alloc.parameter_overrides:
+            continue
+        overrides[alloc.requirement.path_string] = alloc.parameter_overrides
+    return overrides
 
-    result = _symbol_id_to_path.get(id(sym))
-    if result is not None:
-        sym_owner, tg_path = result
-        req_inst = alloc.requirement
-        if sym_owner is requirement_definition_type and isinstance(req_inst, ElementInstance):
-            rtail = tuple(req_inst.instance_path[1:])
-            if len(tg_path) == len(rtail) + 1 and tg_path[: len(rtail)] == rtail:
-                iname = tg_path[-1]
-                if alloc.input_bindings:
-                    bound = alloc.input_bindings.get(iname)
-                    if bound is not None:
-                        return bound
-                full_key = ".".join((req_inst.instance_path[0], *tg_path))
-                hit = _model.path_registry.get(full_key)
-                if isinstance(hit, ValueSlot):
-                    return hit
-                raise GraphCompilationError(
-                    f"Requirement acceptance symbol {iname!r} at path {tg_path!r} has no "
-                    f"matching entry in allocate(..., inputs=...) or requirement_attribute slot"
-                )
-        current: Any = allocate_target
-        if sym_owner is allocate_target.definition_type:
-            rel = tg_path
-        elif sym_owner is requirement_definition_type:
-            anchor = tuple(allocate_target.instance_path[1:])
-            if len(tg_path) < len(anchor) or tg_path[: len(anchor)] != anchor:
-                raise GraphCompilationError(
-                    f"Symbol '{getattr(sym, 'name', '?')}' path {tg_path!r} is not under "
-                    f"allocate target path {anchor!r} from configured root"
-                )
-            rel = tg_path[len(anchor) :]
-        else:
-            raise GraphCompilationError(
-                f"Symbol '{getattr(sym, 'name', '?')}' is owned by {sym_owner.__name__}; "
-                f"requirement acceptance allows symbols from {requirement_definition_type.__name__} "
-                f"or from allocate target type {allocate_target.definition_type.__name__} only."
-            )
-        try:
-            for segment in rel:
-                current = getattr(current, segment)
-            if isinstance(current, ValueSlot):
-                return current
-        except AttributeError:
-            pass
-        raise GraphCompilationError(
-            f"Symbol '{getattr(sym, 'name', '?')}' path {tg_path!r} "
-            f"could not be resolved under '{allocate_target.path_string}' for requirement acceptance"
+
+def _build_allocation_target_by_pkg(model: ConfiguredModel) -> dict[str, str]:
+    """Build a lookup: requirement package path_string → allocation target path_string.
+
+    Used to tag requirement constraint check nodes with the part they were allocated to.
+    Raises :class:`GraphCompilationError` if any allocation targets a non-part element
+    (e.g. a port).
+    """
+    targets: dict[str, str] = {}
+    for alloc in model.allocations:
+        part = _alloc_target_as_part(
+            alloc.target,
+            where=f"allocate({alloc.requirement.path_string!r}, ...)",
         )
-
-    raise GraphCompilationError(
-        f"Symbol '{getattr(sym, 'name', '?')}' is not a canonical AttributeRef-derived symbol. "
-        f"All expression symbols must originate from model.attribute() or model.parameter() refs."
-    )
+        targets[alloc.requirement.path_string] = part.path_string
+    return targets
 
 
 def _resolve_symbol_to_slot(
@@ -547,173 +496,13 @@ def _resolve_symbol_to_slot(
     )
 
 
-def _resolve_sym_for_requirement_expr(
-    sym: Any,
-    allocate_target: PartInstance,
-    requirement_definition_type: type,
-    model: ConfiguredModel,
-    alloc: AllocationBinding,
-) -> ValueSlot:
-    """Resolve a symbol for :meth:`requirement_attribute` expressions (inputs, derived, root, part)."""
-    from tg_model.model.refs import _symbol_id_to_path
-
-    info = _symbol_id_to_path.get(id(sym))
-    if info is None:
-        raise GraphCompilationError(
-            f"Symbol '{getattr(sym, 'name', '?')}' is not a canonical AttributeRef-derived symbol."
-        )
-    sym_owner, tg_path = info
-    req_inst = alloc.requirement
-    if isinstance(req_inst, ElementInstance) and sym_owner is requirement_definition_type:
-        rtail = tuple(req_inst.instance_path[1:])
-        if len(tg_path) == len(rtail) + 1 and tg_path[: len(rtail)] == rtail:
-            return _resolve_symbol_for_requirement_acceptance(
-                sym,
-                allocate_target,
-                requirement_definition_type,
-                model,
-                alloc,
-            )
-    if sym_owner is model.root.definition_type:
-        return _resolve_symbol_to_slot(sym, model.root, model)
-    if sym_owner is allocate_target.definition_type:
-        return _resolve_symbol_to_slot(sym, allocate_target, model)
-    raise GraphCompilationError(
-        f"Symbol '{getattr(sym, 'name', '?')}' cannot be resolved for requirement_attribute "
-        f"(owner {sym_owner.__name__} is not root, allocate target, or requirement namespace)."
-    )
-
-
-def _compile_requirement_attribute_slot(
-    slot: ValueSlot,
-    alloc: AllocationBinding,
-    graph: DependencyGraph,
-    handlers: dict[str, Callable],
-    model: ConfiguredModel,
-) -> None:
-    """Compile one derived requirement slot (same graph pattern as :func:`_compile_slot`)."""
-    target = alloc.target
-    if not isinstance(target, PartInstance):
-        raise GraphCompilationError(
-            f"requirement_attribute needs allocate target PartInstance; got {type(target).__name__}"
-        )
-    req = alloc.requirement
-    if not isinstance(req, ElementInstance) or req.kind != "requirement":
-        raise GraphCompilationError("requirement_attribute allocation must reference a requirement instance")
-    req_owner_type = req.definition_type
-
-    expr = slot.metadata.get("_expr")
-    if expr is None:
-        graph.add_node(
-            DependencyNode(
-                f"val:{slot.path_string}",
-                NodeKind.ATTRIBUTE_VALUE,
-                slot_id=slot.stable_id,
-            )
-        )
-        return
-
-    slot_node_id = f"val:{slot.path_string}"
-    graph.add_node(
-        DependencyNode(
-            slot_node_id,
-            NodeKind.ATTRIBUTE_VALUE,
-            slot_id=slot.stable_id,
-        )
-    )
-    expr_node_id = f"expr:{slot.path_string}"
-    graph.add_node(
-        DependencyNode(
-            expr_node_id,
-            NodeKind.LOCAL_EXPRESSION,
-            slot_id=slot.stable_id,
-        )
-    )
-    graph.add_edge(expr_node_id, slot_node_id)
-
-    if hasattr(expr, "free_symbols") and expr.free_symbols:
-        for sym in expr.free_symbols:
-            dep_slot = _resolve_sym_for_requirement_expr(sym, target, req_owner_type, model, alloc)
-            dep_node_id = f"val:{dep_slot.path_string}"
-            graph.add_edge(dep_node_id, expr_node_id)
-
-        def make_handler(expression: Any, a: AllocationBinding, cm: ConfiguredModel) -> Callable:
-            def handler(dep_values: dict[str, Any]) -> Any:
-                context: dict[Any, Any] = {}
-                tgt = _alloc_target_as_part(a.target, where="requirement_attribute expression")
-                for sym in expression.free_symbols:
-                    dep_slot = _resolve_sym_for_requirement_expr(
-                        sym,
-                        tgt,
-                        a.requirement.definition_type,
-                        cm,
-                        a,
-                    )
-                    dep_node_id = f"val:{dep_slot.path_string}"
-                    if dep_node_id in dep_values:
-                        context[sym] = dep_values[dep_node_id]
-                return expression.evaluate(context)
-
-            return handler
-
-        handlers[expr_node_id] = make_handler(expr, alloc, model)
-    elif hasattr(expr, "evaluate"):
-        handlers[expr_node_id] = lambda dep_values, e=expr: e.evaluate({})
-    elif callable(expr):
-        handlers[expr_node_id] = lambda dep_values, fn=expr: fn(dep_values)
-    else:
-        handlers[expr_node_id] = lambda dep_values, val=expr: val
-
-
-def _compile_requirement_derived_slots(
-    model: ConfiguredModel,
-    graph: DependencyGraph,
-    handlers: dict[str, Callable],
-) -> None:
-    """Compile :meth:`requirement_attribute` value slots (before requirement acceptance checks)."""
-    from collections import defaultdict
-
-    if not model.requirement_value_slots:
-        return
-
-    by_req: dict[str, list[AllocationBinding]] = defaultdict(list)
-    for a in model.allocations:
-        r = a.requirement
-        if isinstance(r, ElementInstance) and r.kind == "requirement":
-            by_req[r.path_string].append(a)
-
-    grouped: dict[str, list[ValueSlot]] = defaultdict(list)
-    for slot in model.requirement_value_slots:
-        parent = ".".join(slot.instance_path[:-1])
-        grouped[parent].append(slot)
-
-    for req_path, slots in grouped.items():
-        allocs = by_req.get(req_path)
-        if not allocs:
-            raise GraphCompilationError(
-                f"requirement_attribute slot(s) under {req_path!r} require a matching allocate(...) edge"
-            )
-        if len(allocs) > 1:
-            raise GraphCompilationError(
-                f"requirement {req_path!r} has requirement_attribute-derived slots but multiple "
-                f"allocate(...) edges; use a single allocation for derived requirement attributes."
-            )
-        alloc = allocs[0]
-        req = alloc.requirement
-        if not isinstance(req, ElementInstance):
-            raise GraphCompilationError("requirement allocation invalid for requirement_attribute compile")
-        order = list(req.metadata.get("_requirement_attribute_names") or [])
-        rank = {n: i for i, n in enumerate(order)}
-        slots_sorted = sorted(slots, key=lambda s: rank.get(s.instance_path[-1], 10_000))
-        for slot in slots_sorted:
-            _compile_requirement_attribute_slot(slot, alloc, graph, handlers, model)
-
-
 def _compile_requirement_packages_from_parts(
     part: PartInstance,
     graph: DependencyGraph,
     handlers: dict[str, Callable],
     model: ConfiguredModel,
+    param_overrides_by_pkg: dict[str, dict[str, ValueSlot]],
+    allocation_target_by_pkg: dict[str, str],
 ) -> None:
     """Compile value slots and constraints declared on composable requirement packages."""
     compiled = part.definition_type.compile()
@@ -723,9 +512,40 @@ def _compile_requirement_packages_from_parts(
             continue
         sub = getattr(part, name, None)
         if isinstance(sub, RequirementPackageInstance):
-            _compile_requirement_package_tree(sub, graph, handlers, model)
+            _compile_requirement_package_tree(
+                sub, graph, handlers, model, param_overrides_by_pkg, allocation_target_by_pkg
+            )
     for child in part.children:
-        _compile_requirement_packages_from_parts(child, graph, handlers, model)
+        _compile_requirement_packages_from_parts(
+            child, graph, handlers, model, param_overrides_by_pkg, allocation_target_by_pkg
+        )
+
+
+def _compile_parameter_override(
+    slot: ValueSlot,
+    source_slot: ValueSlot,
+    graph: DependencyGraph,
+    handlers: dict[str, Callable],
+) -> None:
+    """Wire a requirement package parameter slot to pull its value from ``source_slot``.
+
+    This replaces the ``INPUT_PARAMETER`` graph node with a simple pass-through expression
+    so the evaluator computes the requirement parameter from the part's slot value rather
+    than requiring it as an external input.
+    """
+    slot_node_id = f"val:{slot.path_string}"
+    source_node_id = f"val:{source_slot.path_string}"
+    expr_node_id = f"expr:{slot.path_string}"
+
+    graph.add_node(DependencyNode(slot_node_id, NodeKind.ATTRIBUTE_VALUE, slot_id=slot.stable_id))
+    graph.add_node(DependencyNode(expr_node_id, NodeKind.LOCAL_EXPRESSION, slot_id=slot.stable_id))
+    graph.add_edge(source_node_id, expr_node_id)
+    graph.add_edge(expr_node_id, slot_node_id)
+
+    def handler(dep_values: dict[str, Any], _sid: str = source_node_id) -> Any:
+        return dep_values[_sid]
+
+    handlers[expr_node_id] = handler
 
 
 def _compile_requirement_package_tree(
@@ -733,10 +553,16 @@ def _compile_requirement_package_tree(
     graph: DependencyGraph,
     handlers: dict[str, Callable],
     model: ConfiguredModel,
+    param_overrides_by_pkg: dict[str, dict[str, ValueSlot]],
+    allocation_target_by_pkg: dict[str, str],
+    parent_target_path: str = "",
 ) -> None:
     from tg_model.model.declarations.values import RollupDecl
 
     compiled = pkg.package_type.compile()
+    overrides = param_overrides_by_pkg.get(pkg.path_string, {})
+    # Resolve the allocation target: own entry takes priority, then inherit from parent.
+    target_path = allocation_target_by_pkg.get(pkg.path_string, parent_target_path)
     # Declaration order matches Python 3.7+ dict insertion order (same as compile_type recording).
     for name, node in compiled["nodes"].items():
         kind = node["kind"]
@@ -755,13 +581,21 @@ def _compile_requirement_package_tree(
                 raise GraphCompilationError(
                     f"RollupDecl is not supported on requirement package slot '{slot.path_string}'"
                 )
-            _compile_slot(slot, model.root, graph, handlers, model)
+            if kind == "parameter" and name in overrides:
+                _compile_parameter_override(slot, overrides[name], graph, handlers)
+            else:
+                _compile_slot(slot, model.root, graph, handlers, model)
         elif kind == "constraint":
-            _compile_requirement_package_constraint(pkg, name, node, graph, handlers, model)
+            _compile_requirement_package_constraint(
+                pkg, name, node, graph, handlers, model, target_path
+            )
         elif kind == "requirement_block":
             inner = getattr(pkg, name, None)
             if isinstance(inner, RequirementPackageInstance):
-                _compile_requirement_package_tree(inner, graph, handlers, model)
+                _compile_requirement_package_tree(
+                    inner, graph, handlers, model, param_overrides_by_pkg,
+                    allocation_target_by_pkg, target_path,
+                )
 
 
 def _compile_requirement_package_constraint(
@@ -771,13 +605,18 @@ def _compile_requirement_package_constraint(
     graph: DependencyGraph,
     handlers: dict[str, Callable],
     model: ConfiguredModel,
+    allocation_target_path: str = "",
 ) -> None:
     constraint_node_id = f"check:{pkg.path_string}.{name}"
     graph.add_node(
         DependencyNode(
             constraint_node_id,
             NodeKind.CONSTRAINT_CHECK,
-            metadata={"name": f"{pkg.path_string}.{name}"},
+            metadata={
+                "name": f"{pkg.path_string}.{name}",
+                "requirement_path": pkg.path_string,
+                "allocation_target_path": allocation_target_path,
+            },
         )
     )
     expr = node.get("metadata", {}).get("_expr")
@@ -871,107 +710,6 @@ def _compile_constraints_for_part(
 
     for child in part.children:
         _compile_constraints_for_part(child, graph, handlers, model)
-
-
-def _compile_requirement_acceptance(
-    model: ConfiguredModel,
-    graph: DependencyGraph,
-    handlers: dict[str, Callable],
-) -> None:
-    """Add constraint-check nodes for requirements with ``_accept_expr`` per allocation (Phase 7).
-
-    Uses :func:`_resolve_symbol_for_requirement_acceptance` (not :func:`_resolve_symbol_to_slot`):
-    symbols may be authored on the requirement owner type (system path prefix stripped to the
-    allocate target) or on the allocate target's part type. Same ``Evaluator`` / graph kinds as
-    part constraints; resolution rules differ.
-    """
-    for alloc in model.allocations:
-        req = alloc.requirement
-        if not isinstance(req, ElementInstance) or req.kind != "requirement":
-            continue
-        expr = req.metadata.get("_accept_expr")
-        if expr is None:
-            continue
-        target = alloc.target
-        if not isinstance(target, PartInstance):
-            raise GraphCompilationError(
-                f"Requirement acceptance for '{req.path_string}' needs allocate target to be a "
-                f"PartInstance; got {type(target).__name__} at '{target.path_string}'"
-            )
-        req_def_type = req.definition_type
-        node_id = f"reqcheck:{req.path_string}@{alloc.stable_id}"
-        graph.add_node(
-            DependencyNode(
-                node_id,
-                NodeKind.CONSTRAINT_CHECK,
-                metadata={
-                    "name": node_id,
-                    "requirement_path": req.path_string,
-                    "allocation_target_path": target.path_string,
-                    "check_kind": "requirement_acceptance",
-                },
-            )
-        )
-        if not hasattr(expr, "free_symbols"):
-            raise GraphCompilationError(
-                f"Requirement '{req.path_string}' acceptance expr has no free_symbols; "
-                "use the same expression types as model.constraint(expr=...)."
-            )
-        for sym in expr.free_symbols:
-            dep_slot = _resolve_symbol_for_requirement_acceptance(
-                sym,
-                target,
-                req_def_type,
-                model,
-                alloc,
-            )
-            dep_node_id = f"val:{dep_slot.path_string}"
-            graph.add_edge(dep_node_id, node_id)
-        if not expr.free_symbols:
-            anchor = _first_value_graph_node_id_under_part(target)
-            if anchor is None:
-                raise GraphCompilationError(
-                    f"Requirement '{req.path_string}' has a constant acceptance expr but allocate "
-                    f"target '{target.path_string}' has no value slots to order evaluation after."
-                )
-            graph.add_edge(anchor, node_id)
-
-        def make_req_accept_handler(
-            constraint_expr: Any,
-            owner_part: PartInstance,
-            cm: ConfiguredModel,
-            req_owner_type: type,
-            binding: AllocationBinding,
-        ) -> Callable[..., bool]:
-            def handler(dep_values: dict[str, Any]) -> bool:
-                context: dict[Any, Any] = {}
-                for sym in constraint_expr.free_symbols:
-                    dep_slot = _resolve_symbol_for_requirement_acceptance(
-                        sym,
-                        owner_part,
-                        req_owner_type,
-                        cm,
-                        binding,
-                    )
-                    dep_node_id = f"val:{dep_slot.path_string}"
-                    if dep_node_id in dep_values:
-                        context[sym] = dep_values[dep_node_id]
-                return constraint_expr.evaluate(context)
-
-            return handler
-
-        handlers[node_id] = make_req_accept_handler(expr, target, model, req_def_type, alloc)
-
-
-def _first_value_graph_node_id_under_part(part: PartInstance) -> str | None:
-    """First ``val:...`` node id in a deterministic DFS under ``part`` (for ordering-only edges)."""
-    for slot in part.value_slots:
-        return f"val:{slot.path_string}"
-    for child in part.children:
-        found = _first_value_graph_node_id_under_part(child)
-        if found is not None:
-            return found
-    return None
 
 
 def _resolve_path_to_slot(

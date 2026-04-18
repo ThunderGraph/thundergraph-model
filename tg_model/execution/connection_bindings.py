@@ -59,16 +59,18 @@ class ReferenceBinding:
 
 
 class AllocationBinding:
-    """Resolved ``allocate`` edge from a requirement to a target element.
+    """Resolved ``allocate`` edge from a requirement package to a target element.
 
     Parameters
     ----------
-    input_bindings : dict[str, ValueSlot], optional
-        Maps :meth:`tg_model.model.definition_context.ModelDefinitionContext.requirement_input`
-        names to concrete value slots on the allocated subtree.
+    parameter_overrides : dict[str, ValueSlot], optional
+        Maps requirement package :meth:`~tg_model.model.definition_context.ModelDefinitionContext.parameter`
+        names to concrete source value slots.  When present, the graph compiler wires the
+        corresponding requirement package parameter slots as computed values (sourced from the
+        mapped slots) rather than as free ``INPUT_PARAMETER`` nodes.
     """
 
-    __slots__ = ("input_bindings", "requirement", "stable_id", "target")
+    __slots__ = ("parameter_overrides", "requirement", "stable_id", "target")
 
     def __init__(
         self,
@@ -76,12 +78,12 @@ class AllocationBinding:
         stable_id: str,
         requirement: ElementInstance,
         target: ElementInstance,
-        input_bindings: dict[str, ValueSlot] | None = None,
+        parameter_overrides: dict[str, ValueSlot] | None = None,
     ) -> None:
         self.stable_id = stable_id
         self.requirement = requirement
         self.target = target
-        self.input_bindings = input_bindings or {}
+        self.parameter_overrides = parameter_overrides or {}
 
     def __repr__(self) -> str:
         return f"<AllocationBinding: {self.requirement.path_string} -> {self.target.path_string}>"

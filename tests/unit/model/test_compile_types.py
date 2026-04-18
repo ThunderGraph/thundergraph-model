@@ -11,6 +11,7 @@ from tg_model.model.elements import Part, System
 class Battery(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("battery")
         model.attribute("charge", unit="%")
         model.port("power_out", direction="out")
 
@@ -18,6 +19,7 @@ class Battery(Part):
 class Motor(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("motor")
         model.port("power_in", direction="in")
         model.attribute("torque", unit="N*m")
 
@@ -25,8 +27,9 @@ class Motor(Part):
 class DriveSystem(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        battery = model.part("battery", Battery)
-        motor = model.part("motor", Motor)
+        model.name("drive_system")
+        battery = model.composed_of("battery", Battery)
+        motor = model.composed_of("motor", Motor)
         model.connect(source=battery.power_out, target=motor.power_in, carrying="electrical_power")
 
 
@@ -100,17 +103,20 @@ class TestDeepNestedValidation:
         class InnerPart(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
+                model.name("inner_part")
                 model.port("deep_port", direction="out")
 
         class MiddlePart(Part):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                model.part("inner", InnerPart)
+                model.name("middle_part")
+                model.composed_of("inner", InnerPart)
 
         class OuterSystem(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                middle = model.part("middle", MiddlePart)
+                model.name("outer_system")
+                middle = model.composed_of("middle", MiddlePart)
                 local_in = model.port("local_in", direction="in")
                 model.connect(source=middle.inner.deep_port, target=local_in)
 
@@ -128,7 +134,8 @@ class TestInvalidConnections:
         class BadSystem(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                model.part("battery", Battery)
+                model.name("bad_system")
+                model.composed_of("battery", Battery)
                 from tg_model.model.refs import PortRef
 
                 fake_ref = PortRef(
@@ -147,7 +154,8 @@ class TestInvalidConnections:
         class BadSystem2(System):
             @classmethod
             def define(cls, model):  # type: ignore[override]
-                model.part("battery", Battery)
+                model.name("bad_system2")
+                model.composed_of("battery", Battery)
                 from tg_model.model.refs import PortRef
 
                 fake_ref = PortRef(

@@ -17,13 +17,15 @@ from tg_model.model.elements import Part, System
 class _Leaf(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("__leaf")
         model.parameter("mass_kg", unit=kg)
 
 
 class _Root(System):
     @classmethod
     def define(cls, model):  # type: ignore[override]
-        model.part("leaf", _Leaf)
+        model.name("__root")
+        model.composed_of("leaf", _Leaf)
 
 
 def setup_function() -> None:

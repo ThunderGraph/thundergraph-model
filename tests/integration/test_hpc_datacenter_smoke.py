@@ -29,8 +29,8 @@ def test_hpc_datacenter_compiles_requirement_package_subtree() -> None:
     assert l1_nodes["hpc"]["kind"] == "requirement_block"
     hpc_key = next(k for k in art["child_types"][l1_key]["child_types"] if k.endswith("L1HpcRequirements"))
     hpc_nodes = art["child_types"][l1_key]["child_types"][hpc_key]["nodes"]
-    assert "req_grid_import_capacity" in hpc_nodes
-    assert hpc_nodes["req_grid_import_capacity"]["kind"] == "requirement"
+    assert "grid_capacity" in hpc_nodes
+    assert hpc_nodes["grid_capacity"]["kind"] == "requirement_block"
 
 
 def test_hpc_datacenter_instantiate_and_evaluate() -> None:

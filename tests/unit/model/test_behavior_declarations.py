@@ -11,6 +11,7 @@ from tg_model.model.elements import Part
 class GoodMachine(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("good_machine")
         off = model.state("off", initial=True)
         on = model.state("on")
         ev = model.event("go")
@@ -21,6 +22,7 @@ class GoodMachine(Part):
 class DupTransition(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("dup_transition")
         a = model.state("a", initial=True)
         b = model.state("b")
         e = model.event("x")
@@ -31,6 +33,7 @@ class DupTransition(Part):
 class TwoInitial(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("two_initial")
         model.state("s1", initial=True)
         model.state("s2", initial=True)
 
@@ -38,12 +41,14 @@ class TwoInitial(Part):
 class StatesNoInitial(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("states_no_initial")
         model.state("only", initial=False)
 
 
 class BadEffect(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("bad_effect")
         s = model.state("s", initial=True)
         s2 = model.state("s2")
         e = model.event("e")

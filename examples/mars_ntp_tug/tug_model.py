@@ -36,11 +36,17 @@ def _root_napkin_binding(root_block_type: type, *output_names: str) -> Any:
     )
 
 
+# ---------------------------------------------------------------------------
+# Part definitions
+# ---------------------------------------------------------------------------
+
+
 class NtpCorePart(Part):
     """TRISO-in-matrix region: thermal power, hydrogen flow, enrichment, temperature ratio."""
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("ntp_core")
         rated_thermal_power = model.parameter("rated_thermal_power", unit=MW)
         mdot = model.parameter("hydrogen_mass_flow", unit=kg_per_s)
         enrich = model.parameter("u235_mass_fraction", unit=DIMLESS)
@@ -90,6 +96,7 @@ class PropellantFeedPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("propellant_feed")
         tank = model.parameter("tank_propellant_mass", unit=kg)
         ull = model.parameter("ullage_fraction", unit=DIMLESS)
         p = model.parameter("feed_pressure_margin", unit=DIMLESS)
@@ -103,6 +110,7 @@ class NozzleAssemblyPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("nozzle_assembly")
         f = model.parameter("vacuum_thrust", unit=kN)
         model.parameter("nozzle_area_ratio", unit=DIMLESS)
         napkin_b = _root_napkin_binding(MarsNuclearTug, "vacuum_thrust_kn")
@@ -124,6 +132,7 @@ class ShadowShieldPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("shadow_shield")
         d = model.parameter("dose_proxy_at_cargo", unit=DIMLESS)
         lim = model.parameter("dose_limit_proxy", unit=DIMLESS)
         model.constraint("dose_below_limit", expr=d <= lim)
@@ -134,6 +143,7 @@ class AvionicsGncPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("avionics_gnc")
         n = model.parameter("guidance_string_count", unit=DIMLESS)
         model.constraint("dual_string_gnc", expr=n >= Quantity(2.0, DIMLESS))
 
@@ -143,6 +153,7 @@ class CargoBerthingPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("cargo_berthing")
         f = model.parameter("max_berthing_load", unit=kN)
         model.constraint("berthing_load_positive", expr=f > 0 * kN)
 
@@ -152,6 +163,7 @@ class TugDesignEnvelopePart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("tug_design_envelope")
         dv = model.parameter("design_delta_v_capability", unit=m_per_s)
         model.parameter("design_propellant_capacity", unit=kg)
         model.constraint("delta_v_cap_positive", expr=dv > 0 * m_per_s)
@@ -162,6 +174,7 @@ class MissionSizingPart(Part):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("mission_sizing")
         p_dv = model.parameter("mission_delta_v_required", unit=m_per_s)
         p_eta = model.parameter("thermal_to_jet_efficiency", unit=DIMLESS)
         p_loadout = model.parameter("propellant_loadout_margin", unit=DIMLESS)
@@ -190,40 +203,53 @@ class MissionSizingPart(Part):
         model.constraint("napkin_thermal_efficiency_lt_ceiling", expr=p_eta < Quantity(0.99, DIMLESS))
 
 
+# ---------------------------------------------------------------------------
+# Requirement definitions
+# ---------------------------------------------------------------------------
+
+
+class HeuFuelSpecificationRequirement(Requirement):
+    """HEU mass-fraction floor for the loaded fuel."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        model.name("heu_fuel_specification")
+        model.doc(
+            "The loaded fuel shall meet the program HEU mass-fraction floor for this notional tug "
+            "(verification by analysis / assay records)."
+        )
+
+
+class TrisoBarrierFunctionRequirement(Requirement):
+    """TRISO particle coating integrity under declared thermal cycling."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        model.name("triso_barrier_function")
+        model.doc(
+            "TRISO particle coatings shall preserve a bounded fraction of intact particles under "
+            "declared thermal cycling for this concept (verification by qualification test data)."
+        )
+
+
 class ReqReactorFuelTRISO(Requirement):
     """HEU fraction, TRISO integrity, matrix temperature ratio (package + leaf text)."""
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("reactor_fuel_triso")
+        model.doc(
+            "The reactor fuel assembly shall meet enrichment, TRISO integrity, and thermal "
+            "operating constraints for the declared mission scenario."
+        )
         enrich = model.parameter("u235_mass_fraction", unit=DIMLESS)
         triso_ok = model.parameter("triso_intact_fraction", unit=DIMLESS)
         temp_ratio = model.parameter("peak_fuel_matrix_temp_ratio", unit=DIMLESS)
         model.constraint("pkg_enrichment_ge_95pct", expr=enrich >= Quantity(0.95, DIMLESS))
         model.constraint("pkg_triso_intact_ge_999", expr=triso_ok >= Quantity(0.999, DIMLESS))
         model.constraint("pkg_matrix_temp_ratio_le_one", expr=temp_ratio <= Quantity(1.0, DIMLESS))
-
-        model.requirement(
-            "req_heu_fuel_specification",
-            (
-                "The loaded fuel shall meet the program HEU mass-fraction floor for this notional tug "
-                "(verification by analysis / assay records)."
-            ),
-            rationale="Separates policy text from the package-level executable constraints.",
-        )
-        r_triso = model.requirement(
-            "req_triso_barrier_function",
-            (
-                "TRISO particle coatings shall preserve a bounded fraction of intact particles under "
-                "declared thermal cycling for this concept (verification by qualification test data)."
-            ),
-            rationale="Ties formal requirement language to the TRISO integrity parameter.",
-        )
-        cite = model.citation(
-            "cite_triso_illustrative",
-            title="Illustrative TRISO fuel description (notional)",
-            standard_id="DEMO-TRISO-NTP-001",
-        )
-        model.references(r_triso, cite)
+        model.composed_of("heu_fuel_spec", HeuFuelSpecificationRequirement)
+        model.composed_of("triso_barrier", TrisoBarrierFunctionRequirement)
 
 
 class ReqThermalHydraulic(Requirement):
@@ -231,19 +257,17 @@ class ReqThermalHydraulic(Requirement):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("thermal_hydraulic")
+        model.doc(
+            "Core thermal-hydraulic operation shall remain within the declared hot-side temperature ratio "
+            "and positive-flow envelope for the operating scenario (verification by analysis)."
+        )
         p_th = model.parameter("thermal_power", unit=MW)
         mdot = model.parameter("hydrogen_mass_flow", unit=kg_per_s)
         t_ratio = model.parameter("hot_side_temp_ratio", unit=DIMLESS)
         model.constraint("pkg_thermal_power_positive", expr=p_th > 0 * MW)
         model.constraint("pkg_mass_flow_positive", expr=mdot > 0 * kg_per_s)
         model.constraint("pkg_temp_ratio_le_one", expr=t_ratio <= Quantity(1.0, DIMLESS))
-        model.requirement(
-            "req_channel_cooling_envelope",
-            (
-                "Core thermal-hydraulic operation shall remain within the declared hot-side temperature ratio "
-                "and positive-flow envelope for the operating scenario (verification by analysis)."
-            ),
-        )
 
 
 class ReqPropulsionNtp(Requirement):
@@ -251,17 +275,15 @@ class ReqPropulsionNtp(Requirement):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("propulsion_ntp")
+        model.doc(
+            "The propulsion subsystem shall deliver vacuum thrust no less than the declared mission floor "
+            "for Earth-Mars cargo transfer burns (verification by test / analysis)."
+        )
         f_req = model.parameter("required_vacuum_thrust", unit=kN)
         f_des = model.parameter("declared_vacuum_thrust", unit=kN)
         margin = model.attribute("vacuum_thrust_margin", unit=kN, expr=f_des - f_req)
         model.constraint("pkg_thrust_margin_non_negative", expr=margin >= 0 * kN)
-        model.requirement(
-            "req_ntp_vacuum_thrust_capability",
-            (
-                "The propulsion subsystem shall deliver vacuum thrust no less than the declared mission floor "
-                "for Earth-Mars cargo transfer burns (verification by test / analysis)."
-            ),
-        )
 
 
 class ReqShielding(Requirement):
@@ -269,17 +291,47 @@ class ReqShielding(Requirement):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("shielding")
+        model.doc(
+            "Ionizing dose at the cargo interface shall not exceed the declared limit proxy "
+            "(verification by analysis)."
+        )
         d = model.parameter("dose_proxy_at_cargo", unit=DIMLESS)
         lim = model.parameter("dose_limit_proxy", unit=DIMLESS)
         headroom = model.attribute("dose_headroom", unit=DIMLESS, expr=lim - d)
         model.constraint("pkg_dose_headroom_non_negative", expr=headroom >= 0 * DIMLESS)
-        model.requirement(
-            "req_payload_dose_bound",
-            (
-                "Ionizing dose at the cargo interface shall not exceed the declared limit proxy "
-                "(verification by analysis)."
-            ),
+
+
+class DeltaVClosureRequirement(Requirement):
+    """Executable closure: scenario Δv vs declared capability envelope."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        model.name("delta_v_closure")
+        model.doc(
+            "The design shall close the scenario Earth-Mars transfer delta-v within the declared "
+            "capability envelope (verification by mission analysis)."
         )
+        scenario_dv = model.parameter("scenario_delta_v", unit=m_per_s)
+        envelope_dv = model.parameter("envelope_delta_v", unit=m_per_s)
+        dv_margin = model.attribute("delta_v_margin", unit=m_per_s, expr=envelope_dv - scenario_dv)
+        model.constraint("dv_margin_non_negative", expr=dv_margin >= 0 * m_per_s)
+
+
+class PropellantMassClosureRequirement(Requirement):
+    """Executable closure: loaded propellant mass vs scenario-required hydrogen mass."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        model.name("propellant_mass_closure")
+        model.doc(
+            "Loaded propellant mass shall meet or exceed the scenario-required hydrogen mass for the reference "
+            "transfer (verification by mass accounting)."
+        )
+        scenario_mp = model.parameter("scenario_propellant_kg", unit=kg)
+        available_mp = model.parameter("available_propellant_kg", unit=kg)
+        mp_margin = model.attribute("propellant_margin_kg", unit=kg, expr=available_mp - scenario_mp)
+        model.constraint("propellant_margin_non_negative", expr=mp_margin >= 0 * kg)
 
 
 class ReqMissionMarsTransfer(Requirement):
@@ -287,59 +339,38 @@ class ReqMissionMarsTransfer(Requirement):
 
     @classmethod
     def define(cls, model: Any) -> None:
-        r_dv = model.requirement(
-            "req_delta_v_closure",
-            (
-                "The design shall close the scenario Earth-Mars transfer delta-v within the declared "
-                "capability envelope (verification by mission analysis)."
-            ),
+        model.name("mission_mars_transfer")
+        model.doc(
+            "The tug design shall close both the Earth-Mars transfer delta-v and propellant mass "
+            "obligations against the declared capability envelope."
         )
-        scenario_dv = model.requirement_input(r_dv, "scenario_delta_v", unit=m_per_s)
-        envelope_dv = model.requirement_input(r_dv, "envelope_delta_v", unit=m_per_s)
-        dv_margin = model.requirement_attribute(
-            r_dv,
-            "delta_v_margin",
-            expr=envelope_dv - scenario_dv,
-            unit=m_per_s,
-        )
-        model.requirement_accept_expr(r_dv, expr=dv_margin >= 0 * m_per_s)
-
-        r_mp = model.requirement(
-            "req_propellant_mass_closure",
-            (
-                "Loaded propellant mass shall meet or exceed the scenario-required hydrogen mass for the reference "
-                "transfer (verification by mass accounting)."
-            ),
-        )
-        scenario_mp = model.requirement_input(r_mp, "scenario_propellant_kg", unit=kg)
-        available_mp = model.requirement_input(r_mp, "available_propellant_kg", unit=kg)
-        mp_margin = model.requirement_attribute(
-            r_mp,
-            "propellant_margin_kg",
-            expr=available_mp - scenario_mp,
-            unit=kg,
-        )
-        model.requirement_accept_expr(r_mp, expr=mp_margin >= 0 * kg)
+        model.composed_of("delta_v_closure", DeltaVClosureRequirement)
+        model.composed_of("propellant_closure", PropellantMassClosureRequirement)
 
 
-class ReqSafetyPolicy(Requirement):
-    """Handling / subcritical assembly policy (text + citation only in this slice)."""
+class SubcriticalAssemblyRulesRequirement(Requirement):
+    """Ground and launch-site handling subcritical configuration policy."""
 
     @classmethod
     def define(cls, model: Any) -> None:
-        r = model.requirement(
-            "req_subcritical_assembly_rules",
-            (
-                "Ground and launch-site handling shall maintain subcritical configurations per the program safety "
-                "basis (verification by procedure / criticality safety analysis)."
-            ),
+        model.name("subcritical_assembly_rules")
+        model.doc(
+            "Ground and launch-site handling shall maintain subcritical configurations per the program safety "
+            "basis (verification by procedure / criticality safety analysis)."
         )
-        cite = model.citation(
-            "cite_handling_illustrative",
-            title="Illustrative criticality safety basis (notional)",
-            standard_id="DEMO-CRIT-SAFE-001",
+
+
+class ReqSafetyPolicy(Requirement):
+    """Handling / subcritical assembly policy."""
+
+    @classmethod
+    def define(cls, model: Any) -> None:
+        model.name("safety_policy")
+        model.doc(
+            "The program shall maintain approved subcritical handling configurations throughout ground "
+            "operations and launch-site activities."
         )
-        model.references(r, cite)
+        model.composed_of("subcritical_rules", SubcriticalAssemblyRulesRequirement)
 
 
 class NtpRequirementsRoot(Requirement):
@@ -347,12 +378,19 @@ class NtpRequirementsRoot(Requirement):
 
     @classmethod
     def define(cls, model: Any) -> None:
-        model.requirement_package("reactor_fuel", ReqReactorFuelTRISO)
-        model.requirement_package("thermal_hydraulic", ReqThermalHydraulic)
-        model.requirement_package("propulsion", ReqPropulsionNtp)
-        model.requirement_package("shielding", ReqShielding)
-        model.requirement_package("mission", ReqMissionMarsTransfer)
-        model.requirement_package("safety_policy", ReqSafetyPolicy)
+        model.name("ntp_requirements_root")
+        model.doc("Top-level Level-1 requirement tree for the Mars NTP tug.")
+        model.composed_of("reactor_fuel", ReqReactorFuelTRISO)
+        model.composed_of("thermal_hydraulic", ReqThermalHydraulic)
+        model.composed_of("propulsion", ReqPropulsionNtp)
+        model.composed_of("shielding", ReqShielding)
+        model.composed_of("mission", ReqMissionMarsTransfer)
+        model.composed_of("safety_policy", ReqSafetyPolicy)
+
+
+# ---------------------------------------------------------------------------
+# System root
+# ---------------------------------------------------------------------------
 
 
 class MarsNuclearTug(System):
@@ -360,6 +398,7 @@ class MarsNuclearTug(System):
 
     @classmethod
     def define(cls, model: Any) -> None:
+        model.name("mars_nuclear_tug")
         model.parameter("napkin_dry_mass_incl_payload_kg", unit=kg)
         p_dv = model.parameter("napkin_transfer_delta_v", unit=m_per_s)
         model.parameter("napkin_specific_impulse_vacuum_s", unit=s)
@@ -369,28 +408,28 @@ class MarsNuclearTug(System):
         model.parameter("napkin_propellant_loadout_margin", unit=DIMLESS)
         model.parameter("napkin_jet_kinetic_fraction", unit=DIMLESS)
 
-        reactor_core = model.part("reactor_core", NtpCorePart)
-        propellant_feed = model.part("propellant_feed", PropellantFeedPart)
-        nozzle = model.part("nozzle", NozzleAssemblyPart)
-        shadow_shield = model.part("shadow_shield", ShadowShieldPart)
-        model.part("avionics_gnc", AvionicsGncPart)
-        model.part("cargo_berthing", CargoBerthingPart)
-        design_envelope = model.part("design_envelope", TugDesignEnvelopePart)
-        mission_sizing = model.part("mission_sizing", MissionSizingPart)
+        reactor_core = model.composed_of("reactor_core", NtpCorePart)
+        propellant_feed = model.composed_of("propellant_feed", PropellantFeedPart)
+        nozzle = model.composed_of("nozzle", NozzleAssemblyPart)
+        shadow_shield = model.composed_of("shadow_shield", ShadowShieldPart)
+        model.composed_of("avionics_gnc", AvionicsGncPart)
+        model.composed_of("cargo_berthing", CargoBerthingPart)
+        design_envelope = model.composed_of("design_envelope", TugDesignEnvelopePart)
+        mission_sizing = model.composed_of("mission_sizing", MissionSizingPart)
 
-        rq = model.requirement_package("requirements", NtpRequirementsRoot)
+        rq = model.composed_of("requirements", NtpRequirementsRoot)
 
-        model.allocate(rq.reactor_fuel.req_heu_fuel_specification, reactor_core)
-        model.allocate(rq.reactor_fuel.req_triso_barrier_function, reactor_core)
+        model.allocate(rq.reactor_fuel.heu_fuel_spec, reactor_core)
+        model.allocate(rq.reactor_fuel.triso_barrier, reactor_core)
 
-        model.allocate(rq.thermal_hydraulic.req_channel_cooling_envelope, reactor_core)
+        model.allocate(rq.thermal_hydraulic, reactor_core)
 
-        model.allocate(rq.propulsion.req_ntp_vacuum_thrust_capability, nozzle)
+        model.allocate(rq.propulsion, nozzle)
 
-        model.allocate(rq.shielding.req_payload_dose_bound, shadow_shield)
+        model.allocate(rq.shielding, shadow_shield)
 
         model.allocate(
-            rq.mission.req_delta_v_closure,
+            rq.mission.delta_v_closure,
             design_envelope,
             inputs={
                 "scenario_delta_v": p_dv,
@@ -398,7 +437,7 @@ class MarsNuclearTug(System):
             },
         )
         model.allocate(
-            rq.mission.req_propellant_mass_closure,
+            rq.mission.propellant_closure,
             design_envelope,
             inputs={
                 "scenario_propellant_kg": mission_sizing.mission_propellant_required,
@@ -406,15 +445,29 @@ class MarsNuclearTug(System):
             },
         )
 
-        model.allocate(rq.safety_policy.req_subcritical_assembly_rules, reactor_core)
+        model.allocate(rq.safety_policy.subcritical_rules, reactor_core)
+
+        cite_triso = model.citation(
+            "cite_triso_illustrative",
+            title="Illustrative TRISO fuel description (notional)",
+            standard_id="DEMO-TRISO-NTP-001",
+        )
+        model.references(rq.reactor_fuel.triso_barrier, cite_triso)
+
+        cite_handling = model.citation(
+            "cite_handling_illustrative",
+            title="Illustrative criticality safety basis (notional)",
+            standard_id="DEMO-CRIT-SAFE-001",
+        )
+        model.references(rq.safety_policy.subcritical_rules, cite_handling)
 
         cite_mission = model.citation(
             "cite_mars_transfer_illustrative",
             title="Illustrative Mars cargo transfer Δv accounting (notional)",
             standard_id="DEMO-MARS-TUG-001",
         )
-        model.references(rq.mission.req_delta_v_closure, cite_mission)
-        model.references(rq.mission.req_propellant_mass_closure, cite_mission)
+        model.references(rq.mission.delta_v_closure, cite_mission)
+        model.references(rq.mission.propellant_closure, cite_mission)
 
 
 def reset_ntp_types() -> None:
@@ -427,11 +480,16 @@ def reset_ntp_types() -> None:
         CargoBerthingPart,
         TugDesignEnvelopePart,
         MissionSizingPart,
+        HeuFuelSpecificationRequirement,
+        TrisoBarrierFunctionRequirement,
         ReqReactorFuelTRISO,
         ReqThermalHydraulic,
         ReqPropulsionNtp,
         ReqShielding,
+        DeltaVClosureRequirement,
+        PropellantMassClosureRequirement,
         ReqMissionMarsTransfer,
+        SubcriticalAssemblyRulesRequirement,
         ReqSafetyPolicy,
         NtpRequirementsRoot,
         MarsNuclearTug,

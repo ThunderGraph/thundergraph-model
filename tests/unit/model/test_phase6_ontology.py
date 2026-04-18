@@ -11,6 +11,7 @@ from tg_model.model.elements import Part
 class GuardTransition(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("guard_transition")
         g = model.guard("ok", predicate=lambda c, p: True)
         off = model.state("off", initial=True)
         on = model.state("on")
@@ -21,6 +22,7 @@ class GuardTransition(Part):
 class BadDecisionAction(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("bad_decision_action")
         g = model.guard("g", predicate=lambda c, p: True)
         model.decision("d", branches=[(g, "missing_action")])
 
@@ -28,6 +30,7 @@ class BadDecisionAction(Part):
 class BadMergeAction(Part):
     @classmethod
     def define(cls, model):  # type: ignore[override]
+        model.name("bad_merge_action")
         model.merge("m", then_action="nope")
 
 
@@ -58,6 +61,7 @@ def test_decision_merge_point_must_be_merge() -> None:
     class Bad(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("bad")
             g = model.guard("g", predicate=lambda c, p: True)
             model.action("a")
             model.decision("d", branches=[(None, "a")], merge_point=g)
@@ -71,6 +75,7 @@ def test_transition_guard_and_when_mutually_exclusive() -> None:
     class Both(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("both")
             g = model.guard("g", predicate=lambda c, p: True)
             off = model.state("off", initial=True)
             on = model.state("on")
@@ -86,6 +91,7 @@ def test_scenario_final_state_metadata_preserved() -> None:
     class S(Part):
         @classmethod
         def define(cls, model):  # type: ignore[override]
+            model.name("s")
             a = model.state("a", initial=True)
             b = model.state("b")
             e = model.event("e")

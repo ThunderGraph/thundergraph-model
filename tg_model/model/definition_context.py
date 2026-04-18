@@ -15,7 +15,7 @@ raise :class:`ModelDefinitionError`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, overload
+from typing import Any
 
 from tg_model.model.refs import AttributeRef, PartRef, PortRef, Ref, RequirementRef
 
@@ -185,7 +185,7 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
     Resolution matches :func:`parameter_ref`: prefer the compiled root artifact; while
     compiling, the first segment comes from the active context and nested segments
     from **compiled** composable-requirement artifacts (eager compile when registering
-    via :meth:`ModelDefinitionContext.requirement_package`).
+    via :meth:`ModelDefinitionContext.composed_of`).
 
     See Also
     --------
@@ -215,15 +215,15 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
             meta = dict(node.get("metadata", {}))
             is_last = i == len(suffix_path) - 1
             if is_last:
-                if kind != "requirement":
+                if kind not in ("requirement", "requirement_block"):
                     raise ModelDefinitionError(
                         f"requirement_ref({owner.__name__}, {original_path!r}): terminal kind must "
-                        f"be 'requirement', got {kind!r}"
+                        f"be 'requirement' or 'requirement_block', got {kind!r}"
                     )
                 return Ref(
                     owner_type=owner,
                     path=original_path,
-                    kind="requirement",
+                    kind=kind,
                     metadata=meta,
                 )
             if kind != "requirement_block":
@@ -260,14 +260,15 @@ def requirement_ref(root_block_type: type, path: tuple[str, ...]) -> Ref:
             f"on the root (declare requirement_package entries before parts that use requirement_ref)."
         )
     if len(path) == 1:
-        if decl.kind != "requirement":
+        if decl.kind not in ("requirement", "requirement_block"):
             raise ModelDefinitionError(
-                f"requirement_ref({root_block_type.__name__}, {path!r}): expected kind 'requirement', got {decl.kind!r}"
+                f"requirement_ref({root_block_type.__name__}, {path!r}): expected kind 'requirement' or "
+                f"'requirement_block', got {decl.kind!r}"
             )
         return Ref(
             owner_type=root_block_type,
             path=path,
-            kind="requirement",
+            kind=decl.kind,
             metadata=dict(decl.metadata),
         )
     if decl.kind != "requirement_block" or decl.target_type is None:
@@ -313,8 +314,8 @@ class ModelDefinitionContext:
 
     For :class:`~tg_model.model.elements.Requirement`, ``symbol_owner`` and
     ``symbol_path_prefix`` thread the configured root type and path prefix so
-    :meth:`requirement_input` builds :class:`~tg_model.model.refs.AttributeRef`
-    paths the graph compiler resolves after :meth:`allocate` ``inputs=`` bindings.
+    :meth:`parameter` and :meth:`attribute` build :class:`~tg_model.model.refs.AttributeRef`
+    paths the graph compiler resolves when wiring :meth:`allocate` ``inputs=`` bindings.
 
     Attributes
     ----------
@@ -357,6 +358,8 @@ class ModelDefinitionContext:
         self.edges: list[dict[str, Any]] = []
         self.behavior_transitions: list[dict[str, Any]] = []
         self._frozen = False
+        self._declared_name: str | None = None
+        self._declared_doc: str | None = None
 
     def _check_frozen(self) -> None:
         """Raise :class:`ModelDefinitionError` if :meth:`freeze` already ran."""
@@ -395,59 +398,109 @@ class ModelDefinitionContext:
             )
         raise ModelDefinitionError(f"Unsupported System declaration restriction for kind {kind!r}")
 
-    @overload
-    def part(self) -> PartRef: ...
-
-    @overload
-    def part(self, name: str, part_type: type) -> PartRef: ...
-
-    def part(self, name: str | None = None, part_type: type | None = None) -> PartRef:
-        """Declare a child part, or return a ref to **this** block as the configured root.
-
-        **No arguments** — does **not** register a child. Returns a :class:`~tg_model.model.refs.PartRef` to
-        **this** block: the **parent** you are defining in ``define()``. All other ``model.part(name, Type)``
-        calls in the same ``define()`` become **children** of that parent at
-        :func:`~tg_model.execution.configured_model.instantiate` time (same root ``PartInstance`` owns them).
-        **Two arguments** — register a composed **child** part and return its ref.
+    def name(self, human_name: str) -> None:
+        """Declare the canonical name for this element (required in every ``define()``).
 
         Parameters
         ----------
-        name : str, optional
-            Child part declaration name (required with ``part_type``).
-        part_type : type, optional
-            Subclass of :class:`~tg_model.model.elements.Part` / :class:`~tg_model.model.elements.System`.
-
-        Returns
-        -------
-        PartRef
-            Root ref (empty path) or child ref.
+        human_name : str
+            Short, snake_case identifier for this element.
 
         Raises
         ------
         ModelDefinitionError
-            On wrong arity (only one of ``name`` / ``part_type``), duplicate name, or frozen context.
-
-        Examples
-        --------
-        Typical root + child pattern::
-
-            rocket = model.part()
-            tank = model.part("tank", TankType)
-            model.allocate(req, rocket)
+            On second call or frozen context.
         """
-        if name is None and part_type is None:
-            return self.root_block()
-        if name is None or part_type is None:
+        self._check_frozen()
+        if self._declared_name is not None:
             raise ModelDefinitionError(
-                "part() takes no arguments (ref to this root block) or both name and part_type (child part)."
+                f"{self.owner_type.__name__}: model.name() called more than once"
             )
-        self._register_node(name=name, kind="part", target_type=part_type)
-        return PartRef(
-            owner_type=self.owner_type,
-            path=(name,),
-            kind="part",
-            target_type=part_type,
-        )
+        self._declared_name = human_name
+
+    def doc(self, text: str) -> None:
+        """Declare the requirement statement text (required on every ``Requirement.define()``).
+
+        Parameters
+        ----------
+        text : str
+            Human-readable "shall" statement for this requirement package.
+
+        Raises
+        ------
+        ModelDefinitionError
+            On second call, frozen context, or when called from a non-Requirement ``define()``.
+        """
+        from tg_model.model.elements import Requirement
+
+        self._check_frozen()
+        if not issubclass(self.owner_type, Requirement):
+            raise ModelDefinitionError(
+                f"{self.owner_type.__name__}: model.doc() is only valid inside Requirement.define()"
+            )
+        if self._declared_doc is not None:
+            raise ModelDefinitionError(
+                f"{self.owner_type.__name__}: model.doc() called more than once"
+            )
+        self._declared_doc = text
+
+    def composed_of(self, name: str, child_type: type) -> PartRef | RequirementRef:
+        """Declare a composed child (Part subtree or Requirement package).
+
+        This is the single entry point for all composition — it replaces both the
+        old ``model.part(name, Type)`` and ``model.requirement_package(name, Type)``
+        calls.  Dispatch is automatic: :class:`~tg_model.model.elements.Requirement`
+        subclasses become requirement packages; :class:`~tg_model.model.elements.Part`
+        subclasses become structural children.
+
+        Parameters
+        ----------
+        name : str
+            Local child name in this element's namespace.
+        child_type : type
+            Subclass of :class:`~tg_model.model.elements.Part` or
+            :class:`~tg_model.model.elements.Requirement`.
+
+        Returns
+        -------
+        PartRef or RequirementRef
+            Reference for wiring constraints, allocations, and nested dot-access.
+
+        Raises
+        ------
+        ModelDefinitionError
+            If ``child_type`` is neither a Part nor a Requirement subclass, on
+            duplicate name, or frozen context.
+        """
+        from tg_model.model.compile_types import compile_type
+        from tg_model.model.elements import Part, Requirement
+
+        if issubclass(child_type, Requirement):
+            self._register_node(name=name, kind="requirement_block", target_type=child_type)
+            compile_type(
+                child_type,
+                symbol_anchor_type=self.symbol_owner,
+                symbol_path_prefix=(*self.symbol_path_prefix, name),
+            )
+            return RequirementRef(
+                owner_type=self.owner_type,
+                path=(name,),
+                kind="requirement_block",
+                target_type=child_type,
+            )
+        elif issubclass(child_type, Part):
+            self._register_node(name=name, kind="part", target_type=child_type)
+            return PartRef(
+                owner_type=self.owner_type,
+                path=(name,),
+                kind="part",
+                target_type=child_type,
+            )
+        else:
+            raise ModelDefinitionError(
+                f"composed_of({name!r}, {child_type.__name__}): child_type must be a "
+                f"Part or Requirement subclass, got {child_type!r}"
+            )
 
     def root_block(self) -> PartRef:
         """Return a ref to this type as the configured structural root (empty path).
@@ -557,12 +610,12 @@ class ModelDefinitionContext:
         **Chaining** ``a + b + c`` is left-associative; use ``a + (b + c)``, ``.sym``, or
         :func:`~tg_model.model.expr.sum_attributes` to avoid mixed ``Expr`` / ``AttributeRef`` errors.
         """
-        self._reject_system_value_declaration("attribute")
         meta = {**metadata}
         if expr is not None:
             meta["_expr"] = expr
         if computed_by is not None:
             meta["_computed_by"] = computed_by
+        self._reject_system_value_declaration("attribute")
         self._register_node(name=name, kind="attribute", metadata=meta)
         return self._value_ref_for_current_owner(name, "attribute", meta)
 
@@ -657,316 +710,6 @@ class ModelDefinitionContext:
             metadata=dict(metadata),
         )
 
-    def requirement(self, name: str, text: str, *, expr: Any | None = None, **metadata: Any) -> Ref:
-        """Declare a requirement (human ``text`` plus optional executable acceptance).
-
-        Parameters
-        ----------
-        name : str
-            Requirement node name.
-        text : str
-            Human-readable statement (not evaluated).
-        expr
-            Optional boolean acceptance expression (same family as :meth:`constraint`).
-        **metadata
-            Additional requirement metadata.
-
-        Returns
-        -------
-        Ref
-            ``kind='requirement'``.
-
-        Raises
-        ------
-        ModelDefinitionError
-            On duplicate name or frozen context.
-
-        Notes
-        -----
-        With ``expr=``, symbols must resolve against the :meth:`allocate` target subtree at compile
-        time, and an ``allocate`` edge must exist. Prefer :meth:`requirement_input` and
-        :meth:`requirement_accept_expr` inside :class:`~tg_model.model.elements.Requirement`
-        when acceptance should use only requirement-local inputs bound via ``allocate(..., inputs=)``.
-        """
-        meta = {"text": text, **metadata}
-        if expr is not None:
-            meta["_accept_expr"] = expr
-        self._register_node(name=name, kind="requirement", metadata=meta)
-        return Ref(
-            owner_type=self.owner_type,
-            path=(name,),
-            kind="requirement",
-            metadata=meta,
-        )
-
-    def requirement_input(self, requirement: Ref, name: str, **metadata: Any) -> AttributeRef:
-        """**Advanced / rare** — leaf reqcheck input slot on ``requirement``.
-
-        .. warning::
-
-           For **new requirement packages**, use **``model.parameter``** at package scope
-           instead.  ``requirement_input`` is a low-level helper for INCOSE-style leaf
-           acceptance rows wired via ``allocate(..., inputs=...)``.  See the
-           ``Requirement`` class docstring.
-
-        Registers a value-bearing symbol under the configured root (threaded
-        ``symbol_owner`` / ``symbol_path_prefix``). Bind each input with
-        :meth:`allocate` ``inputs={name: part_ref.…}``.
-
-        Parameters
-        ----------
-        requirement : Ref
-            ``kind='requirement'`` ref declared in this block.
-        name : str
-            Input slot name (referenced in acceptance expressions).
-        **metadata
-            Forwarded to the internal parameter declaration (e.g. ``unit=``).
-
-        Returns
-        -------
-        AttributeRef
-            Symbol for use in :meth:`requirement_accept_expr` (``kind='parameter'`` on ``symbol_owner``).
-
-        Raises
-        ------
-        ModelDefinitionError
-            If not inside a requirement block, ``requirement`` is wrong, inputs conflict with
-            ``requirement(..., expr=)``, or names duplicate.
-        """
-        from tg_model.model.elements import Requirement
-
-        if not issubclass(self.owner_type, Requirement):
-            raise ModelDefinitionError("requirement_input(...) is only valid inside Requirement.define()")
-        if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
-            raise ModelDefinitionError("requirement_input: first argument must be a requirement Ref from this package")
-        req_key = requirement.path[-1]
-        req_decl = self.nodes.get(req_key)
-        if req_decl is None or req_decl.kind != "requirement":
-            raise ModelDefinitionError(
-                f"requirement_input: no requirement {req_key!r} in this block (declare it first)"
-            )
-        if req_decl.metadata.get("_accept_expr") is not None:
-            raise ModelDefinitionError(
-                f"requirement_input({name!r}): requirement {req_key!r} already has acceptance expr"
-            )
-        internal = f"{req_key}__in__{name}"
-        if internal in self.nodes:
-            raise ModelDefinitionError(f"Duplicate requirement_input {name!r} for {req_key!r}")
-        self._register_node(
-            name=internal,
-            kind="requirement_input",
-            metadata={**metadata, "_requirement_key": req_key, "_input_name": name},
-        )
-        names = req_decl.metadata.setdefault("_requirement_input_names", [])
-        if name in names:
-            raise ModelDefinitionError(f"Duplicate requirement_input {name!r} on {req_key!r}")
-        attr_names = req_decl.metadata.get("_requirement_attribute_names") or []
-        if name in attr_names:
-            raise ModelDefinitionError(
-                f"requirement_input({name!r}): name clashes with requirement_attribute on {req_key!r}"
-            )
-        names.append(name)
-        sym_path = self.symbol_path_prefix + requirement.path + (name,)
-        return AttributeRef(
-            owner_type=self.symbol_owner,
-            path=sym_path,
-            kind="parameter",
-            metadata=dict(metadata),
-        )
-
-    def requirement_attribute(
-        self,
-        requirement: Ref,
-        name: str,
-        *,
-        expr: Any,
-        **metadata: Any,
-    ) -> AttributeRef:
-        """**Advanced / rare** — derived value on a leaf ``requirement``.
-
-        .. warning::
-
-           For **new requirement packages**, use **``model.attribute``** at package scope
-           instead.  ``requirement_attribute`` is a low-level helper for INCOSE-style leaf
-           acceptance rows.  See the ``Requirement`` class docstring.
-
-        Registers a requirement-local **attribute** whose value is computed from an
-        expression (typically over :meth:`requirement_input` symbols, other
-        ``requirement_attribute`` symbols declared earlier in the same ``define()``,
-        and root parameters). Use ``unit=`` in ``metadata`` so :attr:`AttributeRef.sym`
-        can be built.
-
-        Unlike :meth:`requirement_input`, attributes are **not** wired via
-        :meth:`allocate` ``inputs=``; they are evaluated from their ``expr=`` and
-        materialized as value slots on the configured root for graph compilation.
-
-        Parameters
-        ----------
-        requirement : Ref
-            ``kind='requirement'`` ref declared in this block.
-        name : str
-            Attribute name (must not collide with a ``requirement_input`` name on the
-            same requirement).
-        expr
-            Scalar expression (same family as :meth:`attribute` ``expr=``).
-        **metadata
-            Must include ``unit=`` (and any other declaration metadata).
-
-        Returns
-        -------
-        AttributeRef
-            ``kind='attribute'`` symbol for use in :meth:`requirement_accept_expr` or
-            in later ``requirement_attribute`` calls.
-
-        Raises
-        ------
-        ModelDefinitionError
-            If not in a block, ``requirement`` is wrong, names collide, ``expr`` is
-            missing, or acceptance was already set via ``requirement_accept_expr``.
-        """
-        from tg_model.model.elements import Requirement
-
-        if not issubclass(self.owner_type, Requirement):
-            raise ModelDefinitionError("requirement_attribute(...) is only valid inside Requirement.define()")
-        if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
-            raise ModelDefinitionError(
-                "requirement_attribute: first argument must be a requirement Ref from this package"
-            )
-        req_key = requirement.path[-1]
-        req_decl = self.nodes.get(req_key)
-        if req_decl is None or req_decl.kind != "requirement":
-            raise ModelDefinitionError(
-                f"requirement_attribute: no requirement {req_key!r} in this block (declare it first)"
-            )
-        if req_decl.metadata.get("_accept_expr") is not None:
-            raise ModelDefinitionError(
-                f"requirement_attribute({name!r}): requirement {req_key!r} already has acceptance expr"
-            )
-        inames = req_decl.metadata.get("_requirement_input_names") or []
-        if name in inames:
-            raise ModelDefinitionError(
-                f"requirement_attribute({name!r}): name clashes with requirement_input on {req_key!r}"
-            )
-        internal = f"{req_key}__attr__{name}"
-        if internal in self.nodes:
-            raise ModelDefinitionError(f"Duplicate requirement_attribute {name!r} for {req_key!r}")
-        meta = dict(metadata)
-        meta["_expr"] = expr
-        meta["_requirement_key"] = req_key
-        meta["_attr_name"] = name
-        self._register_node(
-            name=internal,
-            kind="requirement_attribute",
-            metadata=meta,
-        )
-        anames = req_decl.metadata.setdefault("_requirement_attribute_names", [])
-        if name in anames:
-            raise ModelDefinitionError(f"Duplicate requirement_attribute {name!r} on {req_key!r}")
-        anames.append(name)
-        decls = req_decl.metadata.setdefault("_requirement_attributes", [])
-        decls.append((name, expr))
-        sym_path = self.symbol_path_prefix + requirement.path + (name,)
-        return AttributeRef(
-            owner_type=self.symbol_owner,
-            path=sym_path,
-            kind="attribute",
-            metadata=dict(metadata),
-        )
-
-    def requirement_accept_expr(self, requirement: Ref, *, expr: Any) -> None:
-        """**Advanced / rare** — set executable acceptance for a leaf ``requirement``.
-
-        .. warning::
-
-           For **new requirement packages**, use **``model.constraint``** at package scope
-           instead.  ``requirement_accept_expr`` is a low-level helper for INCOSE-style leaf
-           acceptance rows.  See the ``Requirement`` class docstring.
-
-        Parameters
-        ----------
-        requirement : Ref
-            Requirement ref from this block (single-segment path only).
-        expr
-            Boolean expression over requirement input symbols (and unitflow quantities).
-
-        Raises
-        ------
-        ModelDefinitionError
-            If not in a block, ref is invalid, path is not a single segment, or acceptance
-            was already set via ``requirement(..., expr=)`` or a prior call.
-        """
-        from tg_model.model.elements import Requirement
-
-        if not issubclass(self.owner_type, Requirement):
-            raise ModelDefinitionError("requirement_accept_expr(...) is only valid inside Requirement.define()")
-        if requirement.kind != "requirement" or requirement.owner_type is not self.owner_type:
-            raise ModelDefinitionError(
-                "requirement_accept_expr: first argument must be a requirement Ref from this package"
-            )
-        if len(requirement.path) != 1:
-            raise ModelDefinitionError(
-                "requirement_accept_expr: only single-segment requirement paths are supported here"
-            )
-        key = requirement.path[0]
-        decl = self.nodes.get(key)
-        if decl is None or decl.kind != "requirement":
-            raise ModelDefinitionError(f"requirement_accept_expr: no requirement {key!r}")
-        if decl.metadata.get("_accept_expr") is not None:
-            raise ModelDefinitionError(
-                f"requirement_accept_expr: requirement {key!r} already has acceptance (use one of "
-                f"requirement(..., expr=) or requirement_accept_expr)"
-            )
-        decl.metadata["_accept_expr"] = expr
-
-    def requirement_package(self, name: str, package_type: type) -> RequirementRef:
-        """Declare a nested composable requirements package (:class:`~tg_model.model.elements.Requirement`).
-
-        Parameters
-        ----------
-        name : str
-            Package name in this owner's namespace.
-        package_type : type
-            Subclass of :class:`~tg_model.model.elements.Requirement`.
-
-        Returns
-        -------
-        RequirementRef
-            Dot-access ref to nested requirements.
-
-        Raises
-        ------
-        ModelDefinitionError
-            If ``package_type`` is not a composable requirement, on duplicate name, or frozen context.
-
-        Notes
-        -----
-        Compiles ``package_type`` eagerly so :func:`requirement_ref` and sibling dot access work
-        within the same ``define()`` call. The internal node kind remains ``requirement_block`` for
-        artifact compatibility.
-
-        Inside ``package_type.define()``, package-level :meth:`parameter`, :meth:`attribute`, and
-        :meth:`constraint` are allowed when :class:`~tg_model.model.elements.Requirement` compile
-        policy permits them.
-        """
-        from tg_model.model.compile_types import compile_type
-        from tg_model.model.elements import Requirement
-
-        if not issubclass(package_type, Requirement):
-            raise ModelDefinitionError(
-                f"requirement_package({name!r}, ...): {package_type!r} must be a subclass of Requirement"
-            )
-        self._register_node(name=name, kind="requirement_block", target_type=package_type)
-        compile_type(
-            package_type,
-            symbol_anchor_type=self.symbol_owner,
-            symbol_path_prefix=(*self.symbol_path_prefix, name),
-        )
-        return RequirementRef(
-            owner_type=self.owner_type,
-            path=(name,),
-            kind="requirement_block",
-            target_type=package_type,
-        )
 
     def constraint(self, name: str, *, expr: Any, **metadata: Any) -> Ref:
         """Declare a constraint (boolean check over realized slot values).
@@ -992,10 +735,10 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            On duplicate name, frozen context, or when called from ``System.define()``.
+            On duplicate name, frozen context.
         """
-        self._reject_system_value_declaration("constraint")
         meta = {"_expr": expr, **metadata}
+        self._reject_system_value_declaration("constraint")
         self._register_node(name=name, kind="constraint", metadata=meta)
         return Ref(
             owner_type=self.owner_type,
@@ -1581,19 +1324,23 @@ class ModelDefinitionContext:
         *,
         inputs: dict[str, AttributeRef] | None = None,
     ) -> None:
-        """Declare an allocation from a requirement to a model element.
+        """Declare an allocation from a requirement package to a model element.
 
-        Optional ``inputs`` maps :meth:`requirement_input` names to part parameter/attribute refs.
-        Required when acceptance uses only requirement-local symbols.
+        Optional ``inputs`` maps :meth:`parameter` names on the requirement package to
+        part parameter/attribute refs that supply the values for that run.  When provided,
+        the requirement package's ``parameter`` slots are wired as computed values sourced
+        from the mapped slots rather than as free :class:`~tg_model.execution.dependency_graph.NodeKind.INPUT_PARAMETER`
+        nodes.
 
         Parameters
         ----------
         requirement_ref : Ref
-            ``kind='requirement'`` ref being allocated.
+            Ref to a requirement package (``kind='requirement_block'``) being allocated.
         target_ref : Ref
-            Part or root ref that supplies values for acceptance (per compiler rules).
+            Part or root ref that provides values for the requirement's parameters.
         inputs : dict[str, AttributeRef], optional
-            Maps input name → :class:`~tg_model.model.refs.AttributeRef` on the allocated subtree.
+            Maps requirement parameter name → :class:`~tg_model.model.refs.AttributeRef` on the
+            allocated subtree (or any resolvable slot in the configured root).
 
         Raises
         ------
