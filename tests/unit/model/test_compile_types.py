@@ -169,3 +169,44 @@ class TestInvalidConnections:
         with pytest.raises(ModelDefinitionError, match="not a port"):
             BadSystem2.compile()
         BadSystem2._reset_compilation()
+
+
+class TestDeclaredNameAndDocInArtifact:
+    """declared_name and declared_doc are preserved in the compiled artifact (v1.2.1)."""
+
+    def test_part_declared_name_in_artifact(self) -> None:
+        result = Battery.compile()
+        assert result["declared_name"] == "battery"
+
+    def test_system_declared_name_in_artifact(self) -> None:
+        result = DriveSystem.compile()
+        assert result["declared_name"] == "drive_system"
+
+    def test_part_declared_doc_is_none(self) -> None:
+        # Parts and Systems have no doc requirement; field is present but None.
+        result = Battery.compile()
+        assert "declared_doc" in result
+        assert result["declared_doc"] is None
+
+    def test_requirement_declared_name_and_doc_in_artifact(self) -> None:
+        from tg_model.model.elements import Requirement
+
+        class LoadRequirement(Requirement):
+            @classmethod
+            def define(cls, model):  # type: ignore[override]
+                model.name("load_requirement")
+                model.doc("The system shall not exceed the declared load limit.")
+
+        result = LoadRequirement.compile()
+        assert result["declared_name"] == "load_requirement"
+        assert result["declared_doc"] == "The system shall not exceed the declared load limit."
+        LoadRequirement._reset_compilation()
+
+    def test_declared_name_present_after_reset_and_recompile(self) -> None:
+        Battery._reset_compilation()
+        result = Battery.compile()
+        assert result["declared_name"] == "battery"
+
+    def test_declared_name_accessible_via_class_attribute(self) -> None:
+        Battery.compile()
+        assert Battery._compiled_definition["declared_name"] == "battery"  # type: ignore[attr-defined]

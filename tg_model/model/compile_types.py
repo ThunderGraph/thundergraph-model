@@ -151,6 +151,8 @@ def compile_type(
 
         artifact: dict[str, Any] = {
             "owner": qualified_name(element_cls),
+            "declared_name": ctx._declared_name,
+            "declared_doc": ctx._declared_doc,
             "nodes": {
                 name: {
                     "kind": decl.kind,
