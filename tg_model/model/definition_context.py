@@ -1295,7 +1295,12 @@ class ModelDefinitionContext:
         Parameters
         ----------
         source : Ref
-            Any declared node on this type (part, port, parameter, requirement, …).
+            Any declared node on this type (part, port, parameter, attribute,
+            requirement, …). For ``Requirement`` blocks, parameters and
+            attributes are threaded under ``symbol_owner`` so allocations can
+            wire them across boundaries; refs whose ``owner_type`` is either
+            the local ``owner_type`` or the configured ``symbol_owner`` are
+            both accepted as sources.
         citation : Ref
             Must be ``kind='citation'`` on this type.
 
@@ -1307,8 +1312,23 @@ class ModelDefinitionContext:
         self._check_frozen()
         if citation.kind != "citation":
             raise ModelDefinitionError(f"references(): citation must be a citation ref, got kind={citation.kind!r}")
-        if source.owner_type is not self.owner_type or citation.owner_type is not self.owner_type:
-            raise ModelDefinitionError("references(): source and citation must belong to this type")
+        # Accept refs from either the local owner_type or the threaded
+        # symbol_owner. For Parts, both are the same. For Requirements,
+        # parameter()/attribute() return refs with owner_type=symbol_owner so
+        # they can flow through allocations; those must be valid sources here.
+        valid_owners = (self.owner_type, self.symbol_owner)
+        if source.owner_type not in valid_owners or citation.owner_type not in valid_owners:
+            raise ModelDefinitionError(
+                f"references(): source and citation must belong to this type "
+                f"({self.owner_type.__name__})"
+                + (
+                    f" or its symbol owner ({self.symbol_owner.__name__})"
+                    if self.symbol_owner is not self.owner_type
+                    else ""
+                )
+                + f". Got source.owner_type={source.owner_type.__name__}, "
+                f"citation.owner_type={citation.owner_type.__name__}."
+            )
         self.edges.append(
             {
                 "kind": "references",

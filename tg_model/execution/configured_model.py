@@ -535,12 +535,29 @@ def _wire_requirement_block_references(
     path_registry: dict[str, ElementInstance | ValueSlot],
     out: list[ReferenceBinding],
 ) -> None:
-    """Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.Requirement` package."""
+    """Bind ``references`` edges authored inside a :class:`~tg_model.model.elements.Requirement` package.
+
+    Source refs from ``parameter()`` / ``attribute()`` inside a Requirement carry
+    the block's ``symbol_path_prefix`` baked into ``ref.path`` (so they can flow
+    through ``allocate(inputs=...)``). Citation refs do not (they keep
+    ``self.owner_type`` so they're locally scoped). Strip ``_symbol_path_prefix``
+    from each edge endpoint so the result is a clean local-relative path before
+    prepending the runtime ``block_instance_path``.
+    """
+    symbol_prefix: tuple[str, ...] = tuple(compiled.get("_symbol_path_prefix") or ())
+
+    def _instance_path(raw_path: tuple[str, ...]) -> tuple[str, ...]:
+        if symbol_prefix and raw_path[: len(symbol_prefix)] == symbol_prefix:
+            local = raw_path[len(symbol_prefix):]
+        else:
+            local = raw_path
+        return block_instance_path + local
+
     for edge in compiled.get("edges", []):
         if edge.get("kind") != "references":
             continue
-        src_path = block_instance_path + tuple(edge["source"]["path"])
-        tgt_path = block_instance_path + tuple(edge["target"]["path"])
+        src_path = _instance_path(tuple(edge["source"]["path"]))
+        tgt_path = _instance_path(tuple(edge["target"]["path"]))
         src_key = ".".join(src_path)
         tgt_key = ".".join(tgt_path)
         src = path_registry.get(src_key)

@@ -164,6 +164,11 @@ def compile_type(
             "edges": [_serialize_edge(edge) for edge in ctx.edges],
             "child_types": child_types,
             "_type_registry": type_registry,
+            # Threaded path prefix used by Requirement parameter()/attribute() refs.
+            # Runtime needs this to translate refs that carry the threaded path
+            # back to a local-relative path before prepending the instance path
+            # of a composed Requirement block.
+            "_symbol_path_prefix": tuple(ctx.symbol_path_prefix),
             "behavior_transitions": _serialize_behavior_transitions(ctx.behavior_transitions),
         }
         cls_mut._compiled_definition = artifact
@@ -543,13 +548,26 @@ def _validate_references_edges(ctx: Any) -> None:
 
 
 def _lookup_node_decl_for_ref(ctx: Any, ref: Any) -> NodeDecl | None:
-    """Resolve a definition-time ref using the owning type's definition context (no recursive ``compile()``)."""
+    """Resolve a definition-time ref using the owning type's definition context (no recursive ``compile()``).
+
+    Refs from ``Requirement`` ``parameter()`` / ``attribute()`` calls are threaded
+    under ``ctx.symbol_owner`` (typically the configured root type) with a path
+    prefixed by ``ctx.symbol_path_prefix``. Strip that prefix before walking the
+    local context so refs and locally-declared nodes line up.
+    """
     path = getattr(ref, "path", ())
     if not path:
         return None
-    if getattr(ref, "owner_type", None) is not ctx.owner_type:
-        return None
-    return _walk_path_in_definition_ctx(ctx, path)
+    ref_owner = getattr(ref, "owner_type", None)
+    if ref_owner is ctx.owner_type:
+        return _walk_path_in_definition_ctx(ctx, path)
+    symbol_owner = getattr(ctx, "symbol_owner", None)
+    symbol_prefix = tuple(getattr(ctx, "symbol_path_prefix", ()) or ())
+    if ref_owner is symbol_owner and (not symbol_prefix or path[: len(symbol_prefix)] == symbol_prefix):
+        local_path = path[len(symbol_prefix):]
+        if local_path:
+            return _walk_path_in_definition_ctx(ctx, local_path)
+    return None
 
 
 def _walk_path_in_definition_ctx(ctx: Any, path: tuple[str, ...]) -> NodeDecl | None:
