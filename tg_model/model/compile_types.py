@@ -522,7 +522,13 @@ def _validate_requirement_package_value_exprs(ctx: Any) -> None:
 
 
 def _validate_references_edges(ctx: Any) -> None:
-    """``references`` edges must resolve to declared nodes; target must be a citation."""
+    """``references`` edges must resolve to declared nodes; target must be a citation.
+
+    Source refs may also point at the root_block (``path=()``, ``kind='part'``,
+    ``owner_type is ctx.owner_type``), which represents a citation on the class
+    itself rather than on one of its declared members. We treat that as valid
+    without requiring a node lookup.
+    """
     for edge in ctx.edges:
         if edge.get("kind") != "references":
             continue
@@ -535,11 +541,20 @@ def _validate_references_edges(ctx: Any) -> None:
                 f"{ctx.owner_type.__name__}: references target must be a citation ref, "
                 f"got {getattr(tgt, 'kind', None)!r}"
             )
-        sdecl = _lookup_node_decl_for_ref(ctx, src)
-        if sdecl is None:
-            raise ModelDefinitionError(
-                f"{ctx.owner_type.__name__}: references source path {getattr(src, 'path', ())!r} does not resolve"
-            )
+        # Self-reference (root_block): empty path, kind=part, owner_type matches.
+        # No node decl exists for the class itself — accept without lookup.
+        if (
+            getattr(src, "path", None) == ()
+            and getattr(src, "kind", None) == "part"
+            and getattr(src, "owner_type", None) is ctx.owner_type
+        ):
+            pass
+        else:
+            sdecl = _lookup_node_decl_for_ref(ctx, src)
+            if sdecl is None:
+                raise ModelDefinitionError(
+                    f"{ctx.owner_type.__name__}: references source path {getattr(src, 'path', ())!r} does not resolve"
+                )
         tdecl = _lookup_node_decl_for_ref(ctx, tgt)
         if tdecl is None or tdecl.kind != "citation":
             raise ModelDefinitionError(
