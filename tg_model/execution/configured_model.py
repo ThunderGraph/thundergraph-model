@@ -262,7 +262,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
         requirement_value_slots,
     )
 
-    connections = _instantiate_connections(compiled, root_instance, path_registry, root_type)
+    connections = _instantiate_all_connections(root_instance, path_registry, root_type)
     allocations = _instantiate_allocations(compiled, root_instance, path_registry, root_type)
     references = _instantiate_all_references(root_instance, path_registry, root_type) + ref_accumulator
 
@@ -583,43 +583,63 @@ def _wire_requirement_block_references(
         )
 
 
-def _instantiate_connections(
-    compiled: dict[str, Any],
+def _instantiate_all_connections(
     root: PartInstance,
     path_registry: dict[str, ElementInstance | ValueSlot],
     root_type: type,
 ) -> list[ConnectionBinding]:
-    """Resolve compiled connection edges into ConnectionBindings."""
-    connections: list[ConnectionBinding] = []
+    """Resolve ``connect`` edges from every part type in the instance tree.
 
-    for edge in compiled.get("edges", []):
-        if edge["kind"] != "connect":
-            continue
+    Mirrors :func:`_instantiate_all_references`. Connections are no longer required
+    to be authored on the configured root — composed sub-Parts may declare their own
+    internal port wiring via ``model.connect(...)``. Each part contributes the
+    connect edges from its own ``definition_type.compile()`` artifact, and the
+    source/target port paths are resolved against that part's ``instance_path``.
+    """
+    out: list[ConnectionBinding] = []
+    stack: list[PartInstance] = [root]
+    while stack:
+        part = stack.pop()
+        compiled = part.definition_type.compile()
+        for edge in compiled.get("edges", []):
+            if edge["kind"] != "connect":
+                continue
 
-        src_path = root.instance_path + tuple(edge["source"]["path"])
-        tgt_path = root.instance_path + tuple(edge["target"]["path"])
-        src_key = ".".join(src_path)
-        tgt_key = ".".join(tgt_path)
+            src_path = part.instance_path + tuple(edge["source"]["path"])
+            tgt_path = part.instance_path + tuple(edge["target"]["path"])
+            src_key = ".".join(src_path)
+            tgt_key = ".".join(tgt_path)
 
-        src = path_registry.get(src_key)
-        tgt = path_registry.get(tgt_key)
+            src = path_registry.get(src_key)
+            tgt = path_registry.get(tgt_key)
 
-        if not isinstance(src, PortInstance):
-            raise ValueError(f"Connection source '{src_key}' is not a PortInstance")
-        if not isinstance(tgt, PortInstance):
-            raise ValueError(f"Connection target '{tgt_key}' is not a PortInstance")
+            if not isinstance(src, PortInstance):
+                raise ValueError(f"Connection source '{src_key}' is not a PortInstance")
+            if not isinstance(tgt, PortInstance):
+                raise ValueError(f"Connection target '{tgt_key}' is not a PortInstance")
 
-        conn_id = derive_declaration_id(root_type, "connect", *edge["source"]["path"], *edge["target"]["path"])
-        connections.append(
-            ConnectionBinding(
-                stable_id=conn_id,
-                source=src,
-                target=tgt,
-                carrying=edge.get("carrying"),
+            # Include the part's own instance path in the id so connects authored
+            # inside different sub-parts of the same root remain unique.
+            owner_segments = part.instance_path[1:]  # skip the root_type name itself
+            conn_id = derive_declaration_id(
+                root_type,
+                "connect",
+                *owner_segments,
+                *edge["source"]["path"],
+                *edge["target"]["path"],
             )
-        )
+            out.append(
+                ConnectionBinding(
+                    stable_id=conn_id,
+                    source=src,
+                    target=tgt,
+                    carrying=edge.get("carrying"),
+                )
+            )
+        # Recurse into composed child Parts (NOT ports / value slots / requirement packages).
+        stack.extend(part.children)
 
-    return connections
+    return out
 
 
 def _instantiate_allocations(
