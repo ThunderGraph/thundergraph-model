@@ -806,7 +806,14 @@ class ModelDefinitionContext:
             metadata=metadata,
         )
 
-    def action(self, name: str, *, effect: Any | None = None, **metadata: Any) -> Ref:
+    def action(
+        self,
+        name: str,
+        *,
+        effect: Any | None = None,
+        then: str | None = None,
+        **metadata: Any,
+    ) -> Ref:
         """Declare a named action (callable side effect on a part instance).
 
         Parameters
@@ -815,6 +822,12 @@ class ModelDefinitionContext:
             Action name referenced by transitions, sequences, decisions, etc.
         effect : callable, optional
             ``(RunContext, PartInstance) -> None`` executed under behavior subtree scope.
+        then : str, optional
+            Name of the action that follows this one in the activity flow.  Declaring
+            ``then=`` creates a succession edge in the activity diagram without requiring
+            a separate ``model.sequence()`` call.  Actions with no succession edges
+            (neither ``then=`` source nor target) are treated as **effect-only** — they
+            appear on state-machine transitions but are excluded from the activity diagram.
         **metadata
             Stored on the compiled action node if ``effect`` is omitted (legacy inline hook).
 
@@ -826,11 +839,13 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            On duplicate name or frozen context.
+            On duplicate name, unknown ``then=`` target, or frozen context.
         """
         meta = {**metadata}
         if effect is not None:
             meta["_effect"] = effect
+        if then is not None:
+            meta["_then"] = then
         self._register_node(name=name, kind="action", metadata=meta)
         return Ref(
             owner_type=self.owner_type,

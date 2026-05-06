@@ -14,6 +14,7 @@ user/concepts_parts
 user/concepts_system
 user/concepts_requirements
 user/concepts_evaluation
+user/concepts_behavior
 user/concepts_external_compute
 user/faq
 ```

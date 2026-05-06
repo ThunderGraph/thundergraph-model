@@ -281,6 +281,10 @@ def _validate_behavior_control_flow(ctx: Any) -> None:
         if decl.kind == "sequence":
             for aname in decl.metadata.get("_sequence_steps", ()):
                 _validate_action_name(ctx, aname)
+        if decl.kind == "action":
+            then_name = decl.metadata.get("_then")
+            if then_name is not None:
+                _validate_action_name(ctx, then_name)
 
 
 def _cache_behavior_runtime_facets(element_cls: type, ctx: Any) -> None:
