@@ -445,21 +445,26 @@ class ModelDefinitionContext:
         self._declared_doc = text
 
     def composed_of(self, name: str, child_type: type) -> PartRef | RequirementRef:
-        """Declare a composed child (Part subtree or Requirement package).
+        """Declare a composed child (Part subtree, System sub-program, or Requirement package).
 
         This is the single entry point for all composition — it replaces both the
         old ``model.part(name, Type)`` and ``model.requirement_package(name, Type)``
-        calls.  Dispatch is automatic: :class:`~tg_model.model.elements.Requirement`
-        subclasses become requirement packages; :class:`~tg_model.model.elements.Part`
-        subclasses become structural children.
+        calls.  Dispatch is automatic:
+
+        - :class:`~tg_model.model.elements.Requirement` subclasses become requirement packages.
+        - :class:`~tg_model.model.elements.Part` subclasses become structural children.
+        - :class:`~tg_model.model.elements.System` subclasses become structural sub-programs —
+          their child parts, ports, value slots, and connections all become part of the parent
+          topology and are reachable via dot-access on the returned :class:`PartRef`.
 
         Parameters
         ----------
         name : str
             Local child name in this element's namespace.
         child_type : type
-            Subclass of :class:`~tg_model.model.elements.Part` or
-            :class:`~tg_model.model.elements.Requirement`.
+            Subclass of :class:`~tg_model.model.elements.Part`,
+            :class:`~tg_model.model.elements.System`,
+            or :class:`~tg_model.model.elements.Requirement`.
 
         Returns
         -------
@@ -469,11 +474,19 @@ class ModelDefinitionContext:
         Raises
         ------
         ModelDefinitionError
-            If ``child_type`` is neither a Part nor a Requirement subclass, on
+            If ``child_type`` is not a Part, System, or Requirement subclass, on
             duplicate name, or frozen context.
+
+        Notes
+        -----
+        **Known limitation (v1):** When a ``System`` is composed as a child, its
+        internal ``model.allocate(...)`` bindings are **not** instantiated in the
+        parent topology — only the structural tree (parts, ports, value slots) is
+        visible.  The composed System's requirement closures can still be verified by
+        instantiating it standalone via ``ChildSystemType.instantiate()``.
         """
         from tg_model.model.compile_types import compile_type
-        from tg_model.model.elements import Part, Requirement
+        from tg_model.model.elements import Part, Requirement, System
 
         if issubclass(child_type, Requirement):
             self._register_node(name=name, kind="requirement_block", target_type=child_type)
@@ -488,7 +501,7 @@ class ModelDefinitionContext:
                 kind="requirement_block",
                 target_type=child_type,
             )
-        elif issubclass(child_type, Part):
+        elif issubclass(child_type, (Part, System)):
             self._register_node(name=name, kind="part", target_type=child_type)
             return PartRef(
                 owner_type=self.owner_type,
@@ -499,7 +512,7 @@ class ModelDefinitionContext:
         else:
             raise ModelDefinitionError(
                 f"composed_of({name!r}, {child_type.__name__}): child_type must be a "
-                f"Part or Requirement subclass, got {child_type!r}"
+                f"Part, System, or Requirement subclass, got {child_type!r}"
             )
 
     def root_block(self) -> PartRef:

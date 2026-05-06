@@ -52,6 +52,49 @@ def setup_function() -> None:
     ShallPropelRequirement._reset_compilation()
 
 
+# ---------------------------------------------------------------------------
+# System-in-System composition fixtures
+# ---------------------------------------------------------------------------
+
+from unitflow.catalogs.si import W, m  # noqa: E402 — after setup_function to keep layout
+
+
+class Sensor(Part):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("sensor")
+        model.parameter("range_m", unit=m)
+        model.port("data_out", direction="out")
+
+
+class SensorSubsystem(System):
+    """An inner System with its own Part, ports, and parameter."""
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("sensor_subsystem")
+        model.parameter("power_budget_w", unit=W)
+        model.composed_of("sensor", Sensor)
+        model.port("data_link", direction="out")
+
+
+class Actuator(Part):
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("actuator")
+        model.port("cmd_in", direction="in")
+
+
+class FleetSystem(System):
+    """Outer System composing an inner System alongside a plain Part."""
+    @classmethod
+    def define(cls, model):  # type: ignore[override]
+        model.name("fleet_system")
+        sensors = model.composed_of("sensors", SensorSubsystem)
+        actuator = model.composed_of("actuator", Actuator)
+        # Cross-boundary port connection: inner System port → plain Part port
+        model.connect(sensors.data_link, actuator.cmd_in)
+
+
 class TestFullInstantiationWorkflow:
     def test_ergonomic_navigation(self) -> None:
         cm = instantiate(DriveSystem)
@@ -129,3 +172,69 @@ class TestFullInstantiationWorkflow:
                     instance_path=("x",),
                 ),
             )
+
+
+# ---------------------------------------------------------------------------
+# System-in-System integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestSystemInSystemComposition:
+    def setup_method(self) -> None:
+        Sensor._reset_compilation()
+        SensorSubsystem._reset_compilation()
+        Actuator._reset_compilation()
+        FleetSystem._reset_compilation()
+
+    def test_outer_system_compiles(self) -> None:
+        """FleetSystem composes SensorSubsystem (a System) without error."""
+        art = FleetSystem.compile()
+        assert art is not None
+        assert "sensors" in art["nodes"]
+        assert art["nodes"]["sensors"]["kind"] == "part"
+
+    def test_inner_system_child_is_reachable(self) -> None:
+        """The composed System's part instance is navigable via dot-access."""
+        cm = instantiate(FleetSystem)
+        assert isinstance(cm.sensors, PartInstance)
+
+    def test_inner_system_nested_part_is_reachable(self) -> None:
+        """Parts nested inside the composed System are reachable at full depth."""
+        cm = instantiate(FleetSystem)
+        assert isinstance(cm.sensors.sensor, PartInstance)
+
+    def test_inner_system_value_slot_is_reachable(self) -> None:
+        """Value slots declared on the composed System are in the topology."""
+        cm = instantiate(FleetSystem)
+        assert isinstance(cm.sensors.power_budget_w, ValueSlot)
+        assert cm.sensors.power_budget_w.is_parameter
+
+    def test_inner_system_nested_value_slot_is_reachable(self) -> None:
+        """Value slots on Parts inside the composed System are reachable."""
+        cm = instantiate(FleetSystem)
+        assert isinstance(cm.sensors.sensor.range_m, ValueSlot)
+
+    def test_cross_boundary_port_connection(self) -> None:
+        """model.connect() between a composed System's port and a sibling Part's port works."""
+        cm = instantiate(FleetSystem)
+        assert len(cm.connections) == 1
+        conn = cm.connections[0]
+        assert isinstance(conn.source, PortInstance)
+        assert isinstance(conn.target, PortInstance)
+        assert "data_link" in conn.source.path_string
+        assert "cmd_in" in conn.target.path_string
+
+    def test_path_registry_contains_inner_system_paths(self) -> None:
+        """All instances inside the composed System appear in the path registry."""
+        cm = instantiate(FleetSystem)
+        paths = set(cm.path_registry.keys())
+        assert "FleetSystem.sensors" in paths
+        assert "FleetSystem.sensors.sensor" in paths
+        assert "FleetSystem.sensors.power_budget_w" in paths
+        assert "FleetSystem.sensors.sensor.range_m" in paths
+
+    def test_sibling_part_still_works(self) -> None:
+        """Composing a System alongside a plain Part does not break the Part."""
+        cm = instantiate(FleetSystem)
+        assert isinstance(cm.actuator, PartInstance)
+        assert isinstance(cm.actuator.cmd_in, PortInstance)

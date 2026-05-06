@@ -162,8 +162,20 @@ class TestComposedOfDispatch:
 
     def test_non_element_type_raises(self) -> None:
         ctx = ModelDefinitionContext(System)
-        with pytest.raises(ModelDefinitionError, match="Part or Requirement"):
+        with pytest.raises(ModelDefinitionError, match="Part, System, or Requirement"):
             ctx.composed_of("bad", str)  # type: ignore[arg-type]
+
+    def test_system_child_returns_part_ref(self) -> None:
+        class _ChildSys(System):
+            @classmethod
+            def define(cls, model):  # type: ignore[override]
+                model.name("child_sys")
+
+        ctx = ModelDefinitionContext(System)
+        ref = ctx.composed_of("subsystem", _ChildSys)
+        assert isinstance(ref, PartRef)
+        assert ref.kind == "part"
+        assert ref.target_type is _ChildSys
 
     def test_part_node_recorded_with_correct_kind(self) -> None:
         ctx = ModelDefinitionContext(System)
