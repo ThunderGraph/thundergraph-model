@@ -47,13 +47,13 @@ def test_guard_on_transition_compiles() -> None:
 
 def test_decision_unknown_action_rejected() -> None:
     BadDecisionAction._reset_compilation()
-    with pytest.raises(ModelDefinitionError, match="unknown action"):
+    with pytest.raises(ModelDefinitionError, match="unknown flow node"):
         BadDecisionAction.compile()
 
 
 def test_merge_unknown_then_action_rejected() -> None:
     BadMergeAction._reset_compilation()
-    with pytest.raises(ModelDefinitionError, match="unknown action"):
+    with pytest.raises(ModelDefinitionError, match="unknown flow node"):
         BadMergeAction.compile()
 
 

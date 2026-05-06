@@ -242,24 +242,46 @@ def _runtime_behavior_transitions(ctx: Any) -> list[dict[str, Any]]:
     return out
 
 
-def _validate_action_name(ctx: Any, action_name: str) -> None:
+# Kinds that are valid targets for flow-routing declarations (then=, branch targets, etc.)
+_FLOW_NODE_KINDS = frozenset({"action", "decision", "merge", "fork_join"})
+
+
+def _validate_action_name(ctx: Any, action_name: str, *, allow_control_nodes: bool = False) -> None:
+    """Validate that *action_name* refers to a declared behavioral node.
+
+    When *allow_control_nodes* is True the target may be any flow node
+    (action, decision, merge, or fork_join) — used for then= on actions and for
+    then_action= / branch targets on control nodes.
+
+    When False (the default) only plain ``model.action()`` declarations are
+    accepted — used for fork_join branch steps and sequence steps where each
+    element must be a concrete executable action.
+    """
     decl = ctx.nodes.get(action_name)
-    if decl is None or decl.kind != "action":
-        raise ModelDefinitionError(
-            f"behavior references unknown action {action_name!r}; declare with model.action(...)"
-        )
+    if allow_control_nodes:
+        if decl is None or decl.kind not in _FLOW_NODE_KINDS:
+            raise ModelDefinitionError(
+                f"behavior references unknown flow node {action_name!r}; "
+                "declare with model.action(), model.decision(), model.merge(), or model.fork_join(...)"
+            )
+    else:
+        if decl is None or decl.kind != "action":
+            raise ModelDefinitionError(
+                f"behavior references unknown action {action_name!r}; declare with model.action(...)"
+            )
 
 
 def _validate_behavior_control_flow(ctx: Any) -> None:
     for name, decl in ctx.nodes.items():
         if decl.kind == "decision":
             for gref, aname in decl.metadata.get("_decision_branches", ()):
-                _validate_action_name(ctx, aname)
+                # Branch targets can be any flow node (action, decision, merge, fork_join)
+                _validate_action_name(ctx, aname, allow_control_nodes=True)
                 if gref is not None and ctx.nodes.get(gref.path[-1], None) is None:
                     raise ModelDefinitionError(f"decision {name!r} references unknown guard")
             default_a = decl.metadata.get("_default_action")
             if default_a:
-                _validate_action_name(ctx, default_a)
+                _validate_action_name(ctx, default_a, allow_control_nodes=True)
             dm = decl.metadata.get("_decision_merge")
             if dm:
                 mdecl = ctx.nodes.get(dm)
@@ -269,22 +291,27 @@ def _validate_behavior_control_flow(ctx: Any) -> None:
                     )
         if decl.kind == "fork_join":
             for seq in decl.metadata.get("_fj_branches", ()):
+                # Branch steps must be plain actions — they are executed sequentially
                 for aname in seq:
                     _validate_action_name(ctx, aname)
             then_a = decl.metadata.get("_fj_then")
             if then_a:
-                _validate_action_name(ctx, then_a)
+                # Post-join rendezvous can be any flow node
+                _validate_action_name(ctx, then_a, allow_control_nodes=True)
         if decl.kind == "merge":
             then_m = decl.metadata.get("_merge_then")
             if then_m:
-                _validate_action_name(ctx, then_m)
+                # Merge output can be any flow node
+                _validate_action_name(ctx, then_m, allow_control_nodes=True)
         if decl.kind == "sequence":
             for aname in decl.metadata.get("_sequence_steps", ()):
+                # Sequence steps must be plain actions
                 _validate_action_name(ctx, aname)
         if decl.kind == "action":
             then_name = decl.metadata.get("_then")
             if then_name is not None:
-                _validate_action_name(ctx, then_name)
+                # then= can point at any flow node: action, decision, merge, or fork_join
+                _validate_action_name(ctx, then_name, allow_control_nodes=True)
 
 
 def _cache_behavior_runtime_facets(element_cls: type, ctx: Any) -> None:
