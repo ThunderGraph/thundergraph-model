@@ -513,7 +513,8 @@ def _compile_requirement_packages_from_parts(
         sub = getattr(part, name, None)
         if isinstance(sub, RequirementPackageInstance):
             _compile_requirement_package_tree(
-                sub, graph, handlers, model, param_overrides_by_pkg, allocation_target_by_pkg
+                sub, graph, handlers, model, param_overrides_by_pkg, allocation_target_by_pkg,
+                owner_part=part,
             )
     for child in part.children:
         _compile_requirement_packages_from_parts(
@@ -556,8 +557,13 @@ def _compile_requirement_package_tree(
     param_overrides_by_pkg: dict[str, dict[str, ValueSlot]],
     allocation_target_by_pkg: dict[str, str],
     parent_target_path: str = "",
+    owner_part: PartInstance | None = None,
 ) -> None:
     from tg_model.model.declarations.values import RollupDecl
+
+    # Use the owning PartInstance for symbol resolution. Falls back to model.root only when
+    # no owner is provided, which preserves existing behaviour for root-level packages.
+    _owner = owner_part if owner_part is not None else model.root
 
     compiled = pkg.package_type.compile()
     overrides = param_overrides_by_pkg.get(pkg.path_string, {})
@@ -584,17 +590,17 @@ def _compile_requirement_package_tree(
             if kind == "parameter" and name in overrides:
                 _compile_parameter_override(slot, overrides[name], graph, handlers)
             else:
-                _compile_slot(slot, model.root, graph, handlers, model)
+                _compile_slot(slot, _owner, graph, handlers, model)
         elif kind == "constraint":
             _compile_requirement_package_constraint(
-                pkg, name, node, graph, handlers, model, target_path
+                pkg, name, node, graph, handlers, model, target_path, owner_part=_owner
             )
         elif kind == "requirement_block":
             inner = getattr(pkg, name, None)
             if isinstance(inner, RequirementPackageInstance):
                 _compile_requirement_package_tree(
                     inner, graph, handlers, model, param_overrides_by_pkg,
-                    allocation_target_by_pkg, target_path,
+                    allocation_target_by_pkg, target_path, owner_part=_owner,
                 )
 
 
@@ -606,6 +612,7 @@ def _compile_requirement_package_constraint(
     handlers: dict[str, Callable],
     model: ConfiguredModel,
     allocation_target_path: str = "",
+    owner_part: PartInstance | None = None,
 ) -> None:
     constraint_node_id = f"check:{pkg.path_string}.{name}"
     graph.add_node(
@@ -626,14 +633,17 @@ def _compile_requirement_package_constraint(
             f"(expected compile-time validation to reject this)."
         )
 
+    _owner = owner_part if owner_part is not None else model.root
+
     def make_pkg_constraint_handler(
         constraint_expr: Any,
         cm: ConfiguredModel,
+        sym_owner: PartInstance,
     ) -> Callable[..., bool]:
         def handler(dep_values: dict[str, Any]) -> bool:
             context: dict[Any, Any] = {}
             for sym in constraint_expr.free_symbols:
-                dep_slot = _resolve_symbol_to_slot(sym, cm.root, cm)
+                dep_slot = _resolve_symbol_to_slot(sym, sym_owner, cm)
                 dep_node_id = f"val:{dep_slot.path_string}"
                 if dep_node_id in dep_values:
                     context[sym] = dep_values[dep_node_id]
@@ -643,10 +653,10 @@ def _compile_requirement_package_constraint(
 
     if hasattr(expr, "free_symbols") and expr.free_symbols:
         for sym in expr.free_symbols:
-            dep_slot = _resolve_symbol_to_slot(sym, model.root, model)
+            dep_slot = _resolve_symbol_to_slot(sym, _owner, model)
             dep_node_id = f"val:{dep_slot.path_string}"
             graph.add_edge(dep_node_id, constraint_node_id)
-        handlers[constraint_node_id] = make_pkg_constraint_handler(expr, model)
+        handlers[constraint_node_id] = make_pkg_constraint_handler(expr, model, _owner)
     elif hasattr(expr, "evaluate"):
         handlers[constraint_node_id] = lambda dep_values, e=expr: bool(e.evaluate({}))
     elif callable(expr):
