@@ -205,6 +205,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/faq.html">FAQ</a></li>
 </ul>
@@ -793,7 +794,8 @@
         <span class="n">sub</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
             <span class="n">_compile_requirement_package_tree</span><span class="p">(</span>
-                <span class="n">sub</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span> <span class="n">allocation_target_by_pkg</span>
+                <span class="n">sub</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span> <span class="n">allocation_target_by_pkg</span><span class="p">,</span>
+                <span class="n">owner_part</span><span class="o">=</span><span class="n">part</span><span class="p">,</span>
             <span class="p">)</span>
     <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
         <span class="n">_compile_requirement_packages_from_parts</span><span class="p">(</span>
@@ -836,8 +838,13 @@
     <span class="n">param_overrides_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValueSlot</span><span class="p">]],</span>
     <span class="n">allocation_target_by_pkg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
     <span class="n">parent_target_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">owner_part</span><span class="p">:</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.model.declarations.values</span><span class="w"> </span><span class="kn">import</span> <span class="n">RollupDecl</span>
+
+    <span class="c1"># Use the owning PartInstance for symbol resolution. Falls back to model.root only when</span>
+    <span class="c1"># no owner is provided, which preserves existing behaviour for root-level packages.</span>
+    <span class="n">_owner</span> <span class="o">=</span> <span class="n">owner_part</span> <span class="k">if</span> <span class="n">owner_part</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span>
 
     <span class="n">compiled</span> <span class="o">=</span> <span class="n">pkg</span><span class="o">.</span><span class="n">package_type</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
     <span class="n">overrides</span> <span class="o">=</span> <span class="n">param_overrides_by_pkg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="p">,</span> <span class="p">{})</span>
@@ -864,17 +871,17 @@
             <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;parameter&quot;</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">overrides</span><span class="p">:</span>
                 <span class="n">_compile_parameter_override</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">overrides</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">_compile_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+                <span class="n">_compile_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">_owner</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constraint&quot;</span><span class="p">:</span>
             <span class="n">_compile_requirement_package_constraint</span><span class="p">(</span>
-                <span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">target_path</span>
+                <span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span> <span class="n">owner_part</span><span class="o">=</span><span class="n">_owner</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;requirement_block&quot;</span><span class="p">:</span>
             <span class="n">inner</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inner</span><span class="p">,</span> <span class="n">RequirementPackageInstance</span><span class="p">):</span>
                 <span class="n">_compile_requirement_package_tree</span><span class="p">(</span>
                     <span class="n">inner</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">param_overrides_by_pkg</span><span class="p">,</span>
-                    <span class="n">allocation_target_by_pkg</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span>
+                    <span class="n">allocation_target_by_pkg</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span> <span class="n">owner_part</span><span class="o">=</span><span class="n">_owner</span><span class="p">,</span>
                 <span class="p">)</span>
 
 
@@ -886,6 +893,7 @@
     <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
     <span class="n">allocation_target_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">owner_part</span><span class="p">:</span> <span class="n">PartInstance</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">constraint_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;check:</span><span class="si">{</span><span class="n">pkg</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
@@ -906,14 +914,17 @@
             <span class="sa">f</span><span class="s2">&quot;(expected compile-time validation to reject this).&quot;</span>
         <span class="p">)</span>
 
+    <span class="n">_owner</span> <span class="o">=</span> <span class="n">owner_part</span> <span class="k">if</span> <span class="n">owner_part</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">make_pkg_constraint_handler</span><span class="p">(</span>
         <span class="n">constraint_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="n">cm</span><span class="p">:</span> <span class="n">ConfiguredModel</span><span class="p">,</span>
+        <span class="n">sym_owner</span><span class="p">:</span> <span class="n">PartInstance</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">dep_values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">constraint_expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-                <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cm</span><span class="p">)</span>
+                <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">sym_owner</span><span class="p">,</span> <span class="n">cm</span><span class="p">)</span>
                 <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="k">if</span> <span class="n">dep_node_id</span> <span class="ow">in</span> <span class="n">dep_values</span><span class="p">:</span>
                     <span class="n">context</span><span class="p">[</span><span class="n">sym</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_values</span><span class="p">[</span><span class="n">dep_node_id</span><span class="p">]</span>
@@ -923,10 +934,10 @@
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;free_symbols&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">:</span>
-            <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+            <span class="n">dep_slot</span> <span class="o">=</span> <span class="n">_resolve_symbol_to_slot</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">_owner</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
             <span class="n">dep_node_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;val:</span><span class="si">{</span><span class="n">dep_slot</span><span class="o">.</span><span class="n">path_string</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">dep_node_id</span><span class="p">,</span> <span class="n">constraint_node_id</span><span class="p">)</span>
-        <span class="n">handlers</span><span class="p">[</span><span class="n">constraint_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_pkg_constraint_handler</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">handlers</span><span class="p">[</span><span class="n">constraint_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_pkg_constraint_handler</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">_owner</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;evaluate&quot;</span><span class="p">):</span>
         <span class="n">handlers</span><span class="p">[</span><span class="n">constraint_node_id</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dep_values</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">expr</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">evaluate</span><span class="p">({}))</span>
     <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>

@@ -206,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">FAQ</a></li>
 </ul>
@@ -421,15 +422,26 @@ the static checks:</p>
 <hr class="docutils" />
 <section id="how-do-i-run-a-parameter-sweep">
 <h2>How do I run a parameter sweep?<a class="headerlink" href="#how-do-i-run-a-parameter-sweep" title="Link to this heading">¶</a></h2>
-<p>Use <code class="docutils literal notranslate"><span class="pre">tg_model.analysis.sweep</span></code>:</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">tg_model.analysis.sweep</span></code>. All arguments are keyword-only; compile the graph
+first and access results via <code class="docutils literal notranslate"><span class="pre">SweepRecord.result</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">sweep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_graph</span>
 
-<span class="n">results</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">(</span><span class="n">cm</span><span class="p">,</span> <span class="n">param_slot</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">750</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">])</span>
-<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
+<span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">compile_graph</span><span class="p">(</span><span class="n">cm</span><span class="p">)</span>
+
+<span class="n">records</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">(</span>
+    <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">,</span>
+    <span class="n">parameter_values</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">payload_kg</span><span class="p">:</span> <span class="p">[</span><span class="mi">500</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">750</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="n">configured_model</span><span class="o">=</span><span class="n">cm</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="../api/api_analysis.html"><span class="doc">tg_model.analysis</span></a> for the full signature.</p>
+<p>See <a class="reference internal" href="../api/api_analysis.html"><span class="doc">tg_model.analysis</span></a> for the full signature including <code class="docutils literal notranslate"><span class="pre">prune_to_slots</span></code>, <code class="docutils literal notranslate"><span class="pre">collect</span></code>, and <code class="docutils literal notranslate"><span class="pre">sink</span></code>.</p>
 </section>
 </section>
 

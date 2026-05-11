@@ -169,6 +169,44 @@ Each allocation produces its own `ConstraintResult` row with distinct `allocatio
 
 ---
 
+## System-in-System composition
+
+`model.composed_of(name, ChildSystemType)` also accepts another `System` subclass as
+the child type. The child System's full Part tree, ports, and value slots become
+reachable via dot-access on the returned `PartRef`:
+
+```python
+class EnergySubsystem(System):
+    @classmethod
+    def define(cls, model):
+        model.name("energy_subsystem")
+        mission_kj = model.parameter("mission_energy_kj", unit=kJ)
+        battery    = model.composed_of("battery", BatteryPart)
+        req        = model.composed_of("energy_req", EnergyCapacityReq)
+        model.allocate(req, battery, inputs={
+            "mission_energy_kj":    mission_kj,
+            "usable_capacity_kj":   battery.usable_capacity_kj,
+        })
+
+
+class AutonomousPlatform(System):
+    @classmethod
+    def define(cls, model):
+        model.name("autonomous_platform")
+        energy = model.composed_of("energy", EnergySubsystem)
+        # energy.battery.usable_capacity_kj is accessible as a PartRef
+```
+
+After `instantiate`, the full tree is navigable: `cm.energy.battery.usable_capacity_kj`.
+
+> **Known limitation:** `model.allocate()` calls declared *inside* a child System are
+> instantiated within that child's scope and work correctly. However, allocations
+> defined at the root that reference elements *inside* a child System (cross-scope
+> allocation) are not currently supported. Keep allocation wiring co-located with the
+> System that owns the requirement and its target Part.
+
+---
+
 ## Reference: System methods
 
 | Method | Returns | Description |

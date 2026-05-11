@@ -18,17 +18,74 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class EvaluationIssue:
+    """One structured problem encountered during evaluation.
+
+    ``kind`` is one of:
+      - ``"missing_input"``      — required parameter had no bound value.
+      - ``"compute_error"``      — an expression or external computation raised.
+      - ``"constraint_exception"`` — the constraint handler itself raised.
+    """
+
+    kind: str   # "missing_input" | "compute_error" | "constraint_exception"
+    path: str   # dotted slot or node path
+    message: str
+
+
+@dataclass
 class RunResult:
     """Aggregated outcome of one :meth:`~Evaluator.evaluate` / :meth:`~Evaluator.evaluate_async` run."""
 
     outputs: dict[str, Any] = field(default_factory=dict)
     constraint_results: list[ConstraintResult] = field(default_factory=list)
-    failures: list[str] = field(default_factory=list)
+    issues: list[EvaluationIssue] = field(default_factory=list)
+
+    @property
+    def failures(self) -> list[str]:
+        """Backward-compat list of human-readable failure messages.
+
+        Returns ``[issue.message for issue in self.issues]``.  Old code that
+        reads or checks ``result.failures`` continues to work; new code should
+        use ``result.issues`` for structured access.
+
+        Note: this is now read-only.  Use ``result.issues.append(...)`` to add
+        new issues programmatically.
+        """
+        return [i.message for i in self.issues]
 
     @property
     def passed(self) -> bool:
-        """True when there are no failures and every constraint result passed."""
-        return len(self.failures) == 0 and all(c.passed for c in self.constraint_results)
+        """True when there are no issues and every constraint result passed."""
+        return len(self.issues) == 0 and all(c.passed for c in self.constraint_results)
+
+
+def _format_operand_values(dep_values: dict[str, Any]) -> dict[str, str]:
+    """Format dependency values into a symbol-name → value-string dict.
+
+    Keys are the local name of each dep node id (last dotted segment after
+    stripping the ``val:`` prefix), giving readable names like ``"load_kw"``
+    instead of full paths.
+    """
+    result: dict[str, str] = {}
+    for dep_id, val in dep_values.items():
+        # dep_id format: "val:root.part.slot_name" or "val:root.slot_name"
+        local = dep_id.split(".")[-1] if "." in dep_id else dep_id
+        result[local] = _value_to_str(val)
+    return result
+
+
+def _value_to_str(value: Any) -> str:
+    """Best-effort human-readable string for a slot value."""
+    try:
+        mag = getattr(value, "magnitude", None)
+        units = getattr(value, "units", None)
+        if mag is not None and units is not None:
+            return f"{float(mag):.6g} {units}"
+    except Exception:
+        pass
+    if isinstance(value, (int, float)):
+        return f"{value:.6g}"
+    return repr(value)
 
 
 class Evaluator:
@@ -103,7 +160,11 @@ class Evaluator:
                         ctx.get_or_create_record(node.slot_id).fail(
                             f"Required parameter '{node_id}' has no bound input"
                         )
-                        result.failures.append(f"Missing required input: {node_id}")
+                        result.issues.append(EvaluationIssue(
+                            kind="missing_input",
+                            path=node_id,
+                            message=f"Missing required input: {node_id}",
+                        ))
                 continue
 
             if node.kind == NodeKind.ATTRIBUTE_VALUE:
@@ -111,7 +172,17 @@ class Evaluator:
 
             deps_ready = self._check_dependencies_ready(node_id, ctx)
             if not deps_ready:
-                if node.slot_id:
+                if node.kind == NodeKind.CONSTRAINT_CHECK:
+                    blocked_by = self._describe_blocking_dep(node_id, ctx)
+                    ctx.add_constraint_result(ConstraintResult(
+                        name=node.metadata.get("name", node_id),
+                        state="blocked",
+                        expression_str=node.metadata.get("expression_str", ""),
+                        evidence=f"blocked: {blocked_by}",
+                        requirement_path=node.metadata.get("requirement_path"),
+                        allocation_target_path=node.metadata.get("allocation_target_path"),
+                    ))
+                elif node.slot_id:
                     ctx.get_or_create_record(node.slot_id).block(
                         f"Blocked: upstream dependency not ready for '{node_id}'"
                     )
@@ -174,7 +245,11 @@ class Evaluator:
                         ctx.get_or_create_record(node.slot_id).fail(
                             f"Required parameter '{node_id}' has no bound input"
                         )
-                        result.failures.append(f"Missing required input: {node_id}")
+                        result.issues.append(EvaluationIssue(
+                            kind="missing_input",
+                            path=node_id,
+                            message=f"Missing required input: {node_id}",
+                        ))
                 continue
 
             if node.kind == NodeKind.ATTRIBUTE_VALUE:
@@ -182,7 +257,17 @@ class Evaluator:
 
             deps_ready = self._check_dependencies_ready(node_id, ctx)
             if not deps_ready:
-                if node.slot_id:
+                if node.kind == NodeKind.CONSTRAINT_CHECK:
+                    blocked_by = self._describe_blocking_dep(node_id, ctx)
+                    ctx.add_constraint_result(ConstraintResult(
+                        name=node.metadata.get("name", node_id),
+                        state="blocked",
+                        expression_str=node.metadata.get("expression_str", ""),
+                        evidence=f"blocked: {blocked_by}",
+                        requirement_path=node.metadata.get("requirement_path"),
+                        allocation_target_path=node.metadata.get("allocation_target_path"),
+                    ))
+                elif node.slot_id:
                     ctx.get_or_create_record(node.slot_id).block(
                         f"Blocked: upstream dependency not ready for '{node_id}'"
                     )
@@ -228,6 +313,18 @@ class Evaluator:
                     return False
         return True
 
+    def _describe_blocking_dep(self, node_id: str, ctx: RunContext) -> str:
+        """Return a human-readable description of the first unready dependency."""
+        for dep_id in self._graph.dependencies_of(node_id):
+            dep_node = self._graph.get_node(dep_id)
+            if dep_node.slot_id:
+                state = ctx.get_state(dep_node.slot_id)
+                if state not in (SlotState.BOUND_INPUT, SlotState.REALIZED):
+                    record = ctx._slot_records.get(dep_node.slot_id)
+                    reason = (record.failure or state.value) if record else state.value
+                    return f"{dep_id} ({reason})"
+        return "upstream dependency not ready"
+
     def _evaluate_expression(
         self,
         node_id: str,
@@ -239,7 +336,11 @@ class Evaluator:
         if handler is None:
             if node.slot_id:
                 ctx.get_or_create_record(node.slot_id).fail(f"No handler for '{node_id}'")
-            result.failures.append(f"No compute handler: {node_id}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"No compute handler: {node_id}",
+            ))
             return
 
         try:
@@ -255,7 +356,11 @@ class Evaluator:
         except Exception as e:
             if node.slot_id:
                 ctx.get_or_create_record(node.slot_id).fail(str(e))
-            result.failures.append(f"Evaluation failed for '{node_id}': {e}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"Evaluation failed for '{node_id}': {e}",
+            ))
 
     def _evaluate_external(
         self,
@@ -268,7 +373,11 @@ class Evaluator:
         if handler is None:
             for sid in node.metadata.get("output_slot_ids", ()):
                 ctx.get_or_create_record(sid).fail(f"No handler for '{node_id}'")
-            result.failures.append(f"No compute handler: {node_id}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"No compute handler: {node_id}",
+            ))
             return
 
         dep_values: dict[str, Any] = {}
@@ -282,7 +391,11 @@ class Evaluator:
         except Exception as e:
             for sid in node.metadata.get("output_slot_ids", ()):
                 ctx.get_or_create_record(sid).fail(str(e))
-            result.failures.append(f"External evaluation failed for '{node_id}': {e}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"External evaluation failed for '{node_id}': {e}",
+            ))
 
     async def _evaluate_external_async(
         self,
@@ -301,14 +414,22 @@ class Evaluator:
         output_ids = node.metadata.get("output_slot_ids", ())
         input_name_to_dep: dict[str, str] = node.metadata.get("input_name_to_dep", {})
         if binding is None or owner_path is None:
-            result.failures.append(f"Malformed external node metadata: {node_id}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"Malformed external node metadata: {node_id}",
+            ))
             return
 
         slots: list[ValueSlot] = []
         for sid in output_ids:
             s = cm.id_registry[sid]
             if not isinstance(s, ValueSlot):
-                result.failures.append(f"External node '{node_id}' output is not a ValueSlot")
+                result.issues.append(EvaluationIssue(
+                    kind="compute_error",
+                    path=node_id,
+                    message=f"External node '{node_id}' output is not a ValueSlot",
+                ))
                 return
             slots.append(s)
 
@@ -321,7 +442,11 @@ class Evaluator:
         except ValueError as e:
             for sid in output_ids:
                 ctx.get_or_create_record(sid).block(str(e))
-            result.failures.append(str(e))
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=str(e),
+            ))
             return
 
         owner = navigate_to_part(cm.root, tuple(owner_path))
@@ -345,7 +470,11 @@ class Evaluator:
             msg = str(e)
             for sid in output_ids:
                 ctx.get_or_create_record(sid).fail(msg)
-            result.failures.append(f"External compute '{node_id}' failed: {msg}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"External compute '{node_id}' failed: {msg}",
+            ))
 
     def _evaluate_solve_group(
         self,
@@ -356,7 +485,11 @@ class Evaluator:
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
-            result.failures.append(f"No compute handler for solve group: {node_id}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"No compute handler for solve group: {node_id}",
+            ))
             return
 
         try:
@@ -371,8 +504,11 @@ class Evaluator:
             for slot_id, val in solved_values.items():
                 ctx.realize(slot_id, val, provenance="solve_group")
         except Exception as e:
-            result.failures.append(f"Solve group failed for '{node_id}': {e}")
-            # Mark targets as failed
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"Solve group failed for '{node_id}': {e}",
+            ))
             target_slots = node.metadata.get("target_slots", {})
             for slot_id in target_slots.values():
                 ctx.get_or_create_record(slot_id).fail(str(e))
@@ -386,34 +522,48 @@ class Evaluator:
     ) -> None:
         handler = self._compute_handlers.get(node_id)
         if handler is None:
-            result.failures.append(f"No constraint handler: {node_id}")
+            result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"No constraint handler: {node_id}",
+            ))
             return
 
+        constraint_name = node.metadata.get("name", node_id)
+        expression_str = node.metadata.get("expression_str", "")
+
         try:
-            dep_values = {}
+            dep_values: dict[str, Any] = {}
             for dep_id in self._graph.dependencies_of(node_id):
                 dep_node = self._graph.get_node(dep_id)
                 if dep_node.slot_id:
                     dep_values[dep_id] = ctx.get_value(dep_node.slot_id)
 
-            passed = handler(dep_values)
-            constraint_name = node.metadata.get("name", node_id)
-            ctx.add_constraint_result(
-                ConstraintResult(
-                    name=constraint_name,
-                    passed=bool(passed),
-                    requirement_path=node.metadata.get("requirement_path"),
-                    allocation_target_path=node.metadata.get("allocation_target_path"),
-                )
-            )
+            passed = bool(handler(dep_values))
+
+            operand_values: dict[str, str] = {}
+            if not passed:
+                operand_values = _format_operand_values(dep_values)
+
+            ctx.add_constraint_result(ConstraintResult(
+                name=constraint_name,
+                state="passed" if passed else "failed",
+                expression_str=expression_str,
+                operand_values=operand_values,
+                requirement_path=node.metadata.get("requirement_path"),
+                allocation_target_path=node.metadata.get("allocation_target_path"),
+            ))
         except Exception as e:
-            ctx.add_constraint_result(
-                ConstraintResult(
-                    name=node_id,
-                    passed=False,
-                    evidence=str(e),
-                    requirement_path=node.metadata.get("requirement_path"),
-                    allocation_target_path=node.metadata.get("allocation_target_path"),
-                )
-            )
-            result.failures.append(f"Constraint failed for '{node_id}': {e}")
+            ctx.add_constraint_result(ConstraintResult(
+                name=constraint_name,
+                state="failed",
+                expression_str=expression_str,
+                evidence=str(e),
+                requirement_path=node.metadata.get("requirement_path"),
+                allocation_target_path=node.metadata.get("allocation_target_path"),
+            ))
+            result.issues.append(EvaluationIssue(
+                kind="constraint_exception",
+                path=node_id,
+                message=f"Constraint raised for '{node_id}': {e}",
+            ))

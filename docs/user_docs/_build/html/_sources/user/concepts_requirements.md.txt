@@ -181,5 +181,6 @@ payload_results = [
 | `model.attribute(name, unit=..., expr=...)` | Derived value. |
 | `model.constraint(name, expr=...)` | Pass/fail check. |
 | `model.composed_of(name, ChildRequirementType)` | Nested child requirement package. |
+| `model.solve_group(name, equations, unknowns, givens)` | Coupled equation group solved numerically at evaluation time. |
 | `model.citation(name, ...)` | External provenance (standard, clause, URI). |
 | `model.references(node, citation)` | Traceability edge from a node to a citation. |

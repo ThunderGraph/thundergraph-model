@@ -74,22 +74,39 @@ class SlotRecord:
 
 
 class ConstraintResult:
-    """Outcome of one constraint or requirement-acceptance check."""
+    """Outcome of one constraint or requirement-acceptance check.
+
+    Three-outcome model:
+      - ``state="passed"``  — expression evaluated to True.
+      - ``state="failed"``  — expression evaluated to False; ``operand_values``
+        contains the symbol values that caused the failure.
+      - ``state="blocked"`` — at least one upstream dependency was not ready
+        (missing input or upstream compute error); ``evidence`` says which.
+
+    ``passed`` is a computed property (``state == "passed"``) for backward
+    compatibility. Old code that reads ``cr.passed`` keeps working; new code
+    should read ``cr.state`` directly.
+    """
 
     __slots__ = (
+        "_state",
         "allocation_target_path",
         "evidence",
+        "expression_str",
         "name",
-        "passed",
+        "operand_values",
         "requirement_path",
     )
 
     def __init__(
         self,
         name: str,
-        passed: bool,
+        passed: bool | None = None,
         evidence: str = "",
         *,
+        state: str | None = None,
+        expression_str: str = "",
+        operand_values: dict | None = None,
         requirement_path: str | None = None,
         allocation_target_path: str | None = None,
     ) -> None:
@@ -99,23 +116,50 @@ class ConstraintResult:
         ----------
         name : str
             Graph/check identifier (often dotted path).
-        passed : bool
-            Whether the predicate evaluated true.
+        passed : bool, optional
+            Legacy positional arg.  Derives ``state`` when ``state`` is not
+            provided: ``True`` → ``"passed"``, ``False`` → ``"failed"``.
+            Ignored when ``state`` is provided explicitly.
         evidence : str, optional
-            Human-readable detail or expression result summary.
+            Human-readable detail; used for blocked/exception messages.
+        state : str, optional
+            Canonical three-value outcome: ``"passed"``, ``"failed"``, or
+            ``"blocked"``.  Takes priority over ``passed`` when both supplied.
+        expression_str : str, optional
+            Human-readable constraint expression string (e.g. ``"x >= 0 kW"``).
+        operand_values : dict, optional
+            Symbol name → formatted value string for failed/blocked states.
         requirement_path : str, optional
             Set for requirement acceptance rows.
         allocation_target_path : str, optional
             Part path where the requirement was allocated.
         """
+        if state is not None:
+            self._state = state
+        elif passed is not None:
+            self._state = "passed" if passed else "failed"
+        else:
+            self._state = "passed"
+
         self.name = name
-        self.passed = passed
         self.evidence = evidence
+        self.expression_str = expression_str
+        self.operand_values: dict[str, str] = operand_values or {}
         self.requirement_path = requirement_path
         self.allocation_target_path = allocation_target_path
 
+    @property
+    def state(self) -> str:
+        """Canonical three-value outcome: ``"passed"``, ``"failed"``, or ``"blocked"``."""
+        return self._state
+
+    @property
+    def passed(self) -> bool:
+        """True when ``state == "passed"`` (computed — not stored)."""
+        return self._state == "passed"
+
     def __repr__(self) -> str:
-        status = "PASS" if self.passed else "FAIL"
+        status = self._state.upper()
         if self.requirement_path:
             return (
                 f"<ConstraintResult: {self.name} {status} "

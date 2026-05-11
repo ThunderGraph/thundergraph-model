@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Concept: External Compute (Concrete Binding)" href="concepts_external_compute.html"><link rel="prev" title="Concept: Requirements" href="concepts_requirements.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Concept: Behavioral Modeling" href="concepts_behavior.html"><link rel="prev" title="Concept: Requirements" href="concepts_requirements.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>Concept: Evaluation - ThunderGraph Model Docs</title>
@@ -206,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -481,20 +482,49 @@ Pass <code class="docutils literal notranslate"><span class="pre">validate=False
 <hr class="docutils" />
 <section id="analysis-utilities">
 <h2>Analysis utilities<a class="headerlink" href="#analysis-utilities" title="Link to this heading">¶</a></h2>
-<p>For systematic multi-value evaluation, use the analysis module:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">sweep</span><span class="p">,</span> <span class="n">compare_variants</span>
+<p>For systematic multi-value evaluation, use the analysis module.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sweep</span></code> takes keyword-only arguments and returns a list of <code class="docutils literal notranslate"><span class="pre">SweepRecord</span></code> objects
+(not <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> objects directly):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">sweep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_graph</span>
 
-<span class="c1"># Sweep one parameter across a range of values</span>
-<span class="n">results</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">(</span>
-    <span class="n">cm</span><span class="p">,</span>
-    <span class="n">param_slot</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">tank</span><span class="o">.</span><span class="n">loaded_mass_kg</span><span class="p">,</span>
-    <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">2000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">3000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">4000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">],</span>
+<span class="n">graph</span><span class="p">,</span> <span class="n">handlers</span> <span class="o">=</span> <span class="n">compile_graph</span><span class="p">(</span><span class="n">cm</span><span class="p">)</span>
+
+<span class="n">records</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">(</span>
+    <span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">,</span>
+    <span class="n">parameter_values</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">tank</span><span class="o">.</span><span class="n">loaded_mass_kg</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">2000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">3000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">,</span> <span class="mi">4000</span> <span class="o">*</span> <span class="n">kg</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="n">configured_model</span><span class="o">=</span><span class="n">cm</span><span class="p">,</span>   <span class="c1"># optional: enables coherence checks</span>
 <span class="p">)</span>
-<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">tank</span><span class="o">.</span><span class="n">mass_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">passed</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">cm</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">tank</span><span class="o">.</span><span class="n">mass_margin_kg</span><span class="o">.</span><span class="n">stable_id</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="../api/api_analysis.html"><span class="doc">tg_model.analysis</span></a> for <code class="docutils literal notranslate"><span class="pre">sweep</span></code>, <code class="docutils literal notranslate"><span class="pre">compare_variants</span></code>, and <code class="docutils literal notranslate"><span class="pre">dependency_impact</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">SweepRecord</span></code> fields:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rec.index</span></code></p></td>
+<td><p>Zero-based sample index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rec.inputs</span></code></p></td>
+<td><p>Dict of stable_id → value for this sample.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rec.result</span></code></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> for this sample.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See <a class="reference internal" href="../api/api_analysis.html"><span class="doc">tg_model.analysis</span></a> for <code class="docutils literal notranslate"><span class="pre">sweep</span></code>, <code class="docutils literal notranslate"><span class="pre">sweep_async</span></code>, <code class="docutils literal notranslate"><span class="pre">compare_variants</span></code>, and <code class="docutils literal notranslate"><span class="pre">dependency_impact</span></code>.</p>
 </section>
 </section>
 
@@ -503,12 +533,12 @@ Pass <code class="docutils literal notranslate"><span class="pre">validate=False
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="concepts_external_compute.html">
+          <a class="next-page" href="concepts_behavior.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Concept: External Compute (Concrete Binding)</div>
+                <div class="title">Concept: Behavioral Modeling</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

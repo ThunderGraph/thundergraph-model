@@ -206,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/faq.html">FAQ</a></li>
 </ul>
@@ -532,18 +533,24 @@ paths the graph compiler resolves when wiring <a class="reference internal" href
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.composed_of">
 <span class="sig-name descname"><span class="pre">composed_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.composed_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.composed_of" title="Link to this definition">¶</a></dt>
-<dd><p>Declare a composed child (Part subtree or Requirement package).</p>
+<dd><p>Declare a composed child (Part subtree, System sub-program, or Requirement package).</p>
 <p>This is the single entry point for all composition — it replaces both the
 old <code class="docutils literal notranslate"><span class="pre">model.part(name,</span> <span class="pre">Type)</span></code> and <code class="docutils literal notranslate"><span class="pre">model.requirement_package(name,</span> <span class="pre">Type)</span></code>
-calls.  Dispatch is automatic: <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>
-subclasses become requirement packages; <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a>
-subclasses become structural children.</p>
+calls.  Dispatch is automatic:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a> subclasses become requirement packages.</p></li>
+<li><p><a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> subclasses become structural children.</p></li>
+<li><p><a class="reference internal" href="#tg_model.model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a> subclasses become structural sub-programs —
+their child parts, ports, value slots, and connections all become part of the parent
+topology and are reachable via dot-access on the returned <a class="reference internal" href="#tg_model.model.PartRef" title="tg_model.model.PartRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">PartRef</span></code></a>.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Local child name in this element’s namespace.</p></li>
-<li><p><strong>child_type</strong> (<em>type</em>) – Subclass of <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a> or
-<a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>.</p></li>
+<li><p><strong>child_type</strong> (<em>type</em>) – Subclass of <a class="reference internal" href="#tg_model.model.Part" title="tg_model.model.elements.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">Part</span></code></a>,
+<a class="reference internal" href="#tg_model.model.System" title="tg_model.model.elements.System"><code class="xref py py-class docutils literal notranslate"><span class="pre">System</span></code></a>,
+or <a class="reference internal" href="#tg_model.model.Requirement" title="tg_model.model.elements.Requirement"><code class="xref py py-class docutils literal notranslate"><span class="pre">Requirement</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -553,10 +560,16 @@ subclasses become structural children.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.PartRef" title="tg_model.model.PartRef">PartRef</a> or <a class="reference internal" href="#tg_model.model.RequirementRef" title="tg_model.model.RequirementRef">RequirementRef</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – If <code class="docutils literal notranslate"><span class="pre">child_type</span></code> is neither a Part nor a Requirement subclass, on
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – If <code class="docutils literal notranslate"><span class="pre">child_type</span></code> is not a Part, System, or Requirement subclass, on
     duplicate name, or frozen context.</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p><strong>Known limitation (v1):</strong> When a <code class="docutils literal notranslate"><span class="pre">System</span></code> is composed as a child, its
+internal <code class="docutils literal notranslate"><span class="pre">model.allocate(...)</span></code> bindings are <strong>not</strong> instantiated in the
+parent topology — only the structural tree (parts, ports, value slots) is
+visible.  The composed System’s requirement closures can still be verified by
+instantiating it standalone via <code class="docutils literal notranslate"><span class="pre">ChildSystemType.instantiate()</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -826,13 +839,18 @@ the top-level system stays structural.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tg_model.model.ModelDefinitionContext.action">
-<span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.action" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">then</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tg_model/model/definition_context.html#ModelDefinitionContext.action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tg_model.model.ModelDefinitionContext.action" title="Link to this definition">¶</a></dt>
 <dd><p>Declare a named action (callable side effect on a part instance).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Action name referenced by transitions, sequences, decisions, etc.</p></li>
 <li><p><strong>effect</strong> (<em>callable</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">(RunContext,</span> <span class="pre">PartInstance)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code> executed under behavior subtree scope.</p></li>
+<li><p><strong>then</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the action that follows this one in the activity flow.  Declaring
+<code class="docutils literal notranslate"><span class="pre">then=</span></code> creates a succession edge in the activity diagram without requiring
+a separate <code class="docutils literal notranslate"><span class="pre">model.sequence()</span></code> call.  Actions with no succession edges
+(neither <code class="docutils literal notranslate"><span class="pre">then=</span></code> source nor target) are treated as <strong>effect-only</strong> — they
+appear on state-machine transitions but are excluded from the activity diagram.</p></li>
 <li><p><strong>**metadata</strong> – Stored on the compiled action node if <code class="docutils literal notranslate"><span class="pre">effect</span></code> is omitted (legacy inline hook).</p></li>
 </ul>
 </dd>
@@ -843,7 +861,7 @@ the top-level system stays structural.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref">Ref</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name or frozen context.</p>
+<dd class="field-even"><p><strong>ModelDefinitionError</strong> – On duplicate name, unknown <code class="docutils literal notranslate"><span class="pre">then=</span></code> target, or frozen context.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1099,7 +1117,12 @@ do not also call <code class="xref py py-func docutils literal notranslate"><spa
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>source</strong> (<a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref"><em>Ref</em></a>) – Any declared node on this type (part, port, parameter, requirement, …).</p></li>
+<li><p><strong>source</strong> (<a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref"><em>Ref</em></a>) – Any declared node on this type (part, port, parameter, attribute,
+requirement, …). For <code class="docutils literal notranslate"><span class="pre">Requirement</span></code> blocks, parameters and
+attributes are threaded under <code class="docutils literal notranslate"><span class="pre">symbol_owner</span></code> so allocations can
+wire them across boundaries; refs whose <code class="docutils literal notranslate"><span class="pre">owner_type</span></code> is either
+the local <code class="docutils literal notranslate"><span class="pre">owner_type</span></code> or the configured <code class="docutils literal notranslate"><span class="pre">symbol_owner</span></code> are
+both accepted as sources.</p></li>
 <li><p><strong>citation</strong> (<a class="reference internal" href="#tg_model.model.Ref" title="tg_model.model.Ref"><em>Ref</em></a>) – Must be <code class="docutils literal notranslate"><span class="pre">kind='citation'</span></code> on this type.</p></li>
 </ul>
 </dd>

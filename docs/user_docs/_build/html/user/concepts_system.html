@@ -206,6 +206,7 @@
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -433,6 +434,42 @@ property against different targets:</p>
 <p>Each allocation produces its own <code class="docutils literal notranslate"><span class="pre">ConstraintResult</span></code> row with distinct <code class="docutils literal notranslate"><span class="pre">allocation_target_path</span></code>.</p>
 </section>
 <hr class="docutils" />
+<section id="system-in-system-composition">
+<h2>System-in-System composition<a class="headerlink" href="#system-in-system-composition" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">ChildSystemType)</span></code> also accepts another <code class="docutils literal notranslate"><span class="pre">System</span></code> subclass as
+the child type. The child System’s full Part tree, ports, and value slots become
+reachable via dot-access on the returned <code class="docutils literal notranslate"><span class="pre">PartRef</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EnergySubsystem</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;energy_subsystem&quot;</span><span class="p">)</span>
+        <span class="n">mission_kj</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;mission_energy_kj&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kJ</span><span class="p">)</span>
+        <span class="n">battery</span>    <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span> <span class="n">BatteryPart</span><span class="p">)</span>
+        <span class="n">req</span>        <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;energy_req&quot;</span><span class="p">,</span> <span class="n">EnergyCapacityReq</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">battery</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;mission_energy_kj&quot;</span><span class="p">:</span>    <span class="n">mission_kj</span><span class="p">,</span>
+            <span class="s2">&quot;usable_capacity_kj&quot;</span><span class="p">:</span>   <span class="n">battery</span><span class="o">.</span><span class="n">usable_capacity_kj</span><span class="p">,</span>
+        <span class="p">})</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AutonomousPlatform</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;autonomous_platform&quot;</span><span class="p">)</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">EnergySubsystem</span><span class="p">)</span>
+        <span class="c1"># energy.battery.usable_capacity_kj is accessible as a PartRef</span>
+</pre></div>
+</div>
+<p>After <code class="docutils literal notranslate"><span class="pre">instantiate</span></code>, the full tree is navigable: <code class="docutils literal notranslate"><span class="pre">cm.energy.battery.usable_capacity_kj</span></code>.</p>
+<blockquote>
+<div><p><strong>Known limitation:</strong> <code class="docutils literal notranslate"><span class="pre">model.allocate()</span></code> calls declared <em>inside</em> a child System are
+instantiated within that child’s scope and work correctly. However, allocations
+defined at the root that reference elements <em>inside</em> a child System (cross-scope
+allocation) are not currently supported. Keep allocation wiring co-located with the
+System that owns the requirement and its target Part.</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
 <section id="reference-system-methods">
 <h2>Reference: System methods<a class="headerlink" href="#reference-system-methods" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper colwidths-auto docutils container">
@@ -451,14 +488,6 @@ property against different targets:</p>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.parameter(name,</span> <span class="pre">unit=...)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">AttributeRef</span></code></p></td>
 <td><p>Scenario-level input.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.attribute(name,</span> <span class="pre">unit=...,</span> <span class="pre">expr=...)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">AttributeRef</span></code></p></td>
-<td><p>Derived system-level value.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.constraint(name,</span> <span class="pre">expr=...)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Ref</span></code></p></td>
-<td><p>System-level boolean check.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">PartType)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">PartRef</span></code></p></td>
@@ -483,6 +512,11 @@ property against different targets:</p>
 </tbody>
 </table>
 </div>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">model.attribute</span></code> and <code class="docutils literal notranslate"><span class="pre">model.constraint</span></code> are <strong>not allowed</strong> on <code class="docutils literal notranslate"><span class="pre">System</span></code> and raise
+<code class="docutils literal notranslate"><span class="pre">ModelDefinitionError</span></code>. Value logic and checks belong on the owning <code class="docutils literal notranslate"><span class="pre">Part</span></code> or a
+<code class="docutils literal notranslate"><span class="pre">Requirement</span></code> package — keep <code class="docutils literal notranslate"><span class="pre">System.define()</span></code> focused on composition and wiring.</p>
+</div></blockquote>
 </section>
 </section>
 
@@ -547,6 +581,7 @@ property against different targets:</p>
 <li><a class="reference internal" href="#allocation-wiring-in-depth">Allocation wiring in depth</a></li>
 <li><a class="reference internal" href="#allocating-nested-requirement-packages">Allocating nested requirement packages</a></li>
 <li><a class="reference internal" href="#multiple-allocations-across-different-parts">Multiple allocations across different Parts</a></li>
+<li><a class="reference internal" href="#system-in-system-composition">System-in-System composition</a></li>
 <li><a class="reference internal" href="#reference-system-methods">Reference: System methods</a></li>
 </ul>
 </li>

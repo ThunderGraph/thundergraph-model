@@ -187,19 +187,36 @@ Each call gets a fresh `RunContext`. The compiled graph is cached after the firs
 
 ## Analysis utilities
 
-For systematic multi-value evaluation, use the analysis module:
+For systematic multi-value evaluation, use the analysis module.
+
+`sweep` takes keyword-only arguments and returns a list of `SweepRecord` objects
+(not `RunResult` objects directly):
 
 ```python
-from tg_model.analysis import sweep, compare_variants
+from tg_model.analysis import sweep
+from tg_model.execution import compile_graph
 
-# Sweep one parameter across a range of values
-results = sweep(
-    cm,
-    param_slot=cm.root.tank.loaded_mass_kg,
-    values=[1000 * kg, 2000 * kg, 3000 * kg, 4000 * kg],
+graph, handlers = compile_graph(cm)
+
+records = sweep(
+    graph=graph,
+    handlers=handlers,
+    parameter_values={
+        cm.root.tank.loaded_mass_kg: [1000 * kg, 2000 * kg, 3000 * kg, 4000 * kg],
+    },
+    configured_model=cm,   # optional: enables coherence checks
 )
-for r in results:
-    print(r.passed, r.outputs[cm.root.tank.mass_margin_kg.stable_id])
+
+for rec in records:
+    print(rec.index, rec.result.passed, rec.result.outputs[cm.root.tank.mass_margin_kg.stable_id])
 ```
 
-See {doc}`../api/api_analysis` for `sweep`, `compare_variants`, and `dependency_impact`.
+`SweepRecord` fields:
+
+| Field | Description |
+|-------|-------------|
+| `rec.index` | Zero-based sample index. |
+| `rec.inputs` | Dict of stable_id → value for this sample. |
+| `rec.result` | The `RunResult` for this sample. |
+
+See {doc}`../api/api_analysis` for `sweep`, `sweep_async`, `compare_variants`, and `dependency_impact`.

@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="FAQ" href="faq.html"><link rel="prev" title="Concept: Evaluation" href="concepts_evaluation.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="FAQ" href="faq.html"><link rel="prev" title="Concept: Behavioral Modeling" href="concepts_behavior.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>Concept: External Compute (Concrete Binding) - ThunderGraph Model Docs</title>
@@ -206,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_requirements.html">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -283,7 +284,8 @@
 <p>Use external compute when a value comes from another tool or model.</p>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">kg</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unitflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unitflow.catalogs.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">kg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Part</span><span class="p">,</span> <span class="n">System</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.execution</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span><span class="p">,</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">compile_graph</span><span class="p">,</span> <span class="n">instantiate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tg_model.integrations</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExternalComputeBinding</span><span class="p">,</span> <span class="n">ExternalComputeResult</span>
@@ -304,6 +306,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">VehicleMassAnalysis</span><span class="p">(</span><span class="n">Part</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;vehicle_mass_analysis&quot;</span><span class="p">)</span>
         <span class="n">dry</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">,</span> <span class="s2">&quot;dry_kg&quot;</span><span class="p">)</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameter_ref</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">,</span> <span class="s2">&quot;payload_kg&quot;</span><span class="p">)</span>
 
@@ -321,9 +324,10 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Vehicle</span><span class="p">(</span><span class="n">System</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">define</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;dry_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">part</span><span class="p">(</span><span class="s2">&quot;mass_analysis&quot;</span><span class="p">,</span> <span class="n">VehicleMassAnalysis</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s2">&quot;vehicle&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;dry_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="s2">&quot;payload_kg&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kg</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">composed_of</span><span class="p">(</span><span class="s2">&quot;mass_analysis&quot;</span><span class="p">,</span> <span class="n">VehicleMassAnalysis</span><span class="p">)</span>
 
 
 <span class="n">cm</span> <span class="o">=</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">Vehicle</span><span class="p">)</span>
@@ -388,14 +392,14 @@
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="concepts_evaluation.html">
+          <a class="prev-page" href="concepts_behavior.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Concept: Evaluation</div>
+                <div class="title">Concept: Behavioral Modeling</div>
                 
               </div>
             </a>

@@ -35,6 +35,63 @@ from tg_model.integrations.external_compute import (
 from tg_model.model.refs import AttributeRef
 
 
+def _readable_expr(expr: object) -> str:
+    """Return a short human-readable string for a constraint expression.
+
+    Uses type-name dispatch over unitflow/tg-model expression objects.
+    Never raises — falls back to ``str()`` on unknown types.
+    """
+    def _r(obj: object, depth: int = 0) -> str:
+        if depth > 20:
+            return "..."
+        tn = type(obj).__name__
+
+        if hasattr(obj, "path") and hasattr(obj, "owner_type"):
+            path = getattr(obj, "path", ())
+            return path[-1] if path else tn
+
+        if tn == "Symbol" and hasattr(obj, "name"):
+            return obj.name.rsplit(".", 1)[-1]  # type: ignore[union-attr]
+
+        if tn == "QuantityExpr" and hasattr(obj, "value"):
+            q = obj.value
+            try:
+                mag = int(q.magnitude) if q.magnitude == int(q.magnitude) else q.magnitude
+            except Exception:
+                mag = q.magnitude
+            sym = getattr(getattr(q, "unit", None), "symbol", "") or ""
+            return f"{mag} {sym}".strip()
+
+        _bin = {"AddExpr": "+", "SubExpr": "-", "MulExpr": "*", "DivExpr": "/"}
+        if tn in _bin and hasattr(obj, "left") and hasattr(obj, "right"):
+            return f"{_r(obj.left, depth+1)} {_bin[tn]} {_r(obj.right, depth+1)}"
+
+        if tn in ("NonStrictInequality", "StrictInequality") and hasattr(obj, "operator"):
+            return f"{_r(obj.left, depth+1)} {obj.operator} {_r(obj.right, depth+1)}"
+
+        if tn == "Equation" and hasattr(obj, "left") and hasattr(obj, "right"):
+            return f"{_r(obj.left, depth+1)} == {_r(obj.right, depth+1)}"
+
+        if tn == "Conjunction" and hasattr(obj, "left") and hasattr(obj, "right"):
+            return f"({_r(obj.left, depth+1)}) and ({_r(obj.right, depth+1)})"
+
+        if tn == "Disjunction" and hasattr(obj, "left") and hasattr(obj, "right"):
+            return f"({_r(obj.left, depth+1)}) or ({_r(obj.right, depth+1)})"
+
+        if tn == "Negation" and hasattr(obj, "constraint"):
+            return f"not ({_r(obj.constraint, depth+1)})"
+
+        return str(obj)
+
+    try:
+        return _r(expr)
+    except Exception:
+        try:
+            return str(expr)
+        except Exception:
+            return ""
+
+
 def _alloc_target_as_part(target: ElementInstance, *, where: str) -> PartInstance:
     """Narrow allocation targets to :class:`PartInstance` with a single graph-level check."""
     if not isinstance(target, PartInstance):
@@ -340,7 +397,7 @@ def _make_external_handler(
     slots: list[ValueSlot],
     node_id: str,
 ) -> Callable[..., None]:
-    from tg_model.execution.evaluator import RunResult
+    from tg_model.execution.evaluator import EvaluationIssue, RunResult
     from tg_model.execution.run_context import RunContext
 
     def handler(dep_values: dict[str, Any], ctx: RunContext, run_result: RunResult) -> None:
@@ -350,7 +407,9 @@ def _make_external_handler(
             msg = str(e)
             for s in slots:
                 ctx.get_or_create_record(s.stable_id).block(msg)
-            run_result.failures.append(msg)
+            run_result.issues.append(EvaluationIssue(
+                kind="compute_error", path=node_id, message=msg,
+            ))
             return
 
         inputs_dict: dict[str, Quantity] = {}
@@ -370,7 +429,11 @@ def _make_external_handler(
             msg = str(e)
             for s in slots:
                 ctx.get_or_create_record(s.stable_id).fail(msg)
-            run_result.failures.append(f"External compute '{node_id}' failed: {msg}")
+            run_result.issues.append(EvaluationIssue(
+                kind="compute_error",
+                path=node_id,
+                message=f"External compute '{node_id}' failed: {msg}",
+            ))
 
     return handler
 
@@ -615,6 +678,7 @@ def _compile_requirement_package_constraint(
     owner_part: PartInstance | None = None,
 ) -> None:
     constraint_node_id = f"check:{pkg.path_string}.{name}"
+    expr = node.get("metadata", {}).get("_expr")
     graph.add_node(
         DependencyNode(
             constraint_node_id,
@@ -623,10 +687,10 @@ def _compile_requirement_package_constraint(
                 "name": f"{pkg.path_string}.{name}",
                 "requirement_path": pkg.path_string,
                 "allocation_target_path": allocation_target_path,
+                "expression_str": _readable_expr(expr) if expr is not None else "",
             },
         )
     )
-    expr = node.get("metadata", {}).get("_expr")
     if expr is None:
         raise GraphCompilationError(
             f"Requirement package constraint '{pkg.path_string}.{name}' has no expr "
@@ -685,15 +749,17 @@ def _compile_constraints_for_part(
             continue
 
         constraint_node_id = f"check:{part.path_string}.{name}"
+        expr = node["metadata"].get("_expr")
         graph.add_node(
             DependencyNode(
                 constraint_node_id,
                 NodeKind.CONSTRAINT_CHECK,
-                metadata={"name": f"{part.path_string}.{name}"},
+                metadata={
+                    "name": f"{part.path_string}.{name}",
+                    "expression_str": _readable_expr(expr) if expr is not None else "",
+                },
             )
         )
-
-        expr = node["metadata"].get("_expr")
         if expr is not None and hasattr(expr, "free_symbols"):
             for sym in expr.free_symbols:
                 dep_slot = _resolve_symbol_to_slot(sym, part, model)

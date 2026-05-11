@@ -5,7 +5,8 @@ Use external compute when a value comes from another tool or model.
 ## Example
 
 ```python
-from unitflow import Quantity, kg
+from unitflow import Quantity
+from unitflow.catalogs.si import kg
 from tg_model import Part, System
 from tg_model.execution import Evaluator, RunContext, compile_graph, instantiate
 from tg_model.integrations import ExternalComputeBinding, ExternalComputeResult
@@ -26,6 +27,7 @@ class MassTool:
 class VehicleMassAnalysis(Part):
     @classmethod
     def define(cls, model):
+        model.name("vehicle_mass_analysis")
         dry = model.parameter_ref(Vehicle, "dry_kg")
         payload = model.parameter_ref(Vehicle, "payload_kg")
 
@@ -43,9 +45,10 @@ class VehicleMassAnalysis(Part):
 class Vehicle(System):
     @classmethod
     def define(cls, model):
-        model.parameter("dry_kg", unit=kg, required=True)
-        model.parameter("payload_kg", unit=kg, required=True)
-        model.part("mass_analysis", VehicleMassAnalysis)
+        model.name("vehicle")
+        model.parameter("dry_kg", unit=kg)
+        model.parameter("payload_kg", unit=kg)
+        model.composed_of("mass_analysis", VehicleMassAnalysis)
 
 
 cm = instantiate(Vehicle)

@@ -208,4 +208,5 @@ Value flow between Parts uses expressions referencing child slot refs directly.
 | `model.port(name, direction, ...)` | `PortRef` | Structural interface port. |
 | `model.connect(source, target, ...)` | `None` | Port-to-port connection. |
 | `model.parts()` | sentinel | All direct child Parts (for roll-up expressions). |
+| `model.solve_group(name, equations, unknowns, givens)` | `Ref` | Coupled equation group solved numerically at evaluation time. |
 | `model.citation(name, ...)` | `Ref` | External provenance reference. |

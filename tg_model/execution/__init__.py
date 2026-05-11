@@ -49,7 +49,9 @@ from tg_model.execution.connection_bindings import (
     ReferenceBinding,
 )
 from tg_model.execution.dependency_graph import DependencyGraph, DependencyNode, NodeKind
-from tg_model.execution.evaluator import Evaluator, RunResult
+from tg_model.execution.evaluation import Evaluation
+from tg_model.execution.evaluator import EvaluationIssue, Evaluator, RunResult
+from tg_model.execution.stable_ids import class_scoped_constraint_sid, class_scoped_slot_sid
 from tg_model.execution.graph_compiler import GraphCompilationError, compile_graph
 from tg_model.execution.instances import (
     ElementInstance,
@@ -64,12 +66,16 @@ from tg_model.execution.requirements import (
     iter_requirement_satisfaction,
     summarize_requirement_satisfaction,
 )
-from tg_model.execution.run_context import ConstraintResult, RunContext, SlotState
+from tg_model.execution.run_context import ConstraintResult, RunContext, SlotRecord, SlotState
 from tg_model.execution.validation import GraphValidationError, ValidationResult, validate_graph
 from tg_model.execution.value_slots import ValueSlot
 
 __all__ = [
     "AllocationBinding",
+    "class_scoped_constraint_sid",
+    "class_scoped_slot_sid",
+    "Evaluation",
+    "EvaluationIssue",
     "BehaviorStep",
     "BehaviorTrace",
     "ConfiguredModel",

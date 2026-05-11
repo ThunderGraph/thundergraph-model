@@ -206,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="concepts_system.html">Concept: Systems</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Concept: Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_evaluation.html">Concept: Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts_behavior.html">Concept: Behavioral Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concepts_external_compute.html">Concept: External Compute (Concrete Binding)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -485,10 +486,13 @@ tagged with <code class="docutils literal notranslate"><span class="pre">require
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.composed_of(name,</span> <span class="pre">ChildRequirementType)</span></code></p></td>
 <td><p>Nested child requirement package.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.citation(name,</span> <span class="pre">...)</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.solve_group(name,</span> <span class="pre">equations,</span> <span class="pre">unknowns,</span> <span class="pre">givens)</span></code></p></td>
+<td><p>Coupled equation group solved numerically at evaluation time.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.citation(name,</span> <span class="pre">...)</span></code></p></td>
 <td><p>External provenance (standard, clause, URI).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.references(node,</span> <span class="pre">citation)</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">model.references(node,</span> <span class="pre">citation)</span></code></p></td>
 <td><p>Traceability edge from a node to a citation.</p></td>
 </tr>
 </tbody>

@@ -159,14 +159,25 @@ result = cm.evaluate(inputs={...}, validate=False)
 
 ## How do I run a parameter sweep?
 
-Use `tg_model.analysis.sweep`:
+Use `tg_model.analysis.sweep`. All arguments are keyword-only; compile the graph
+first and access results via `SweepRecord.result`:
 
 ```python
 from tg_model.analysis import sweep
+from tg_model.execution import compile_graph
 
-results = sweep(cm, param_slot=cm.root.analysis.payload_kg, values=[500 * kg, 750 * kg, 1000 * kg])
-for r in results:
-    print(r.passed, r.outputs[...])
+graph, handlers = compile_graph(cm)
+
+records = sweep(
+    graph=graph,
+    handlers=handlers,
+    parameter_values={
+        cm.root.analysis.payload_kg: [500 * kg, 750 * kg, 1000 * kg],
+    },
+    configured_model=cm,
+)
+for rec in records:
+    print(rec.result.passed, rec.result.outputs[...])
 ```
 
-See {doc}`../api/api_analysis` for the full signature.
+See {doc}`../api/api_analysis` for the full signature including `prune_to_slots`, `collect`, and `sink`.
