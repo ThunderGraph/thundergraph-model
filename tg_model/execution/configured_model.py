@@ -263,7 +263,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
     )
 
     connections = _instantiate_all_connections(root_instance, path_registry, root_type)
-    allocations = _instantiate_allocations(compiled, root_instance, path_registry, root_type)
+    allocations = _instantiate_allocations(root_instance, path_registry, root_type)
     references = _instantiate_all_references(root_instance, path_registry, root_type) + ref_accumulator
 
     root_instance.freeze()
@@ -643,57 +643,82 @@ def _instantiate_all_connections(
 
 
 def _instantiate_allocations(
-    compiled: dict[str, Any],
     root: PartInstance,
     path_registry: dict[str, ElementInstance | ValueSlot],
     root_type: type,
 ) -> list[AllocationBinding]:
-    """Resolve compiled allocation edges into AllocationBindings."""
-    allocations: list[AllocationBinding] = []
+    """Resolve ``allocate`` edges from every Part / System in the instance tree.
 
-    for edge in compiled.get("edges", []):
-        if edge["kind"] != "allocate":
-            continue
+    Mirrors :func:`_instantiate_all_connections` and :func:`_instantiate_all_references`.
+    Allocations may be authored inside any composed System or Part; each contributes
+    the ``allocate`` edges from its own ``definition_type.compile()`` artifact, and
+    source / target / input paths are resolved against that part's ``instance_path``.
+    This lets composed sub-Systems be self-contained — they author their own
+    requirement-to-part wiring without needing to hoist every allocation up to the
+    program root.
+    """
+    out: list[AllocationBinding] = []
+    stack: list[PartInstance] = [root]
+    while stack:
+        part = stack.pop()
+        compiled = part.definition_type.compile()
+        for edge in compiled.get("edges", []):
+            if edge["kind"] != "allocate":
+                continue
 
-        req_path = root.instance_path + tuple(edge["source"]["path"])
-        tgt_path = root.instance_path + tuple(edge["target"]["path"])
-        req_key = ".".join(req_path)
-        tgt_key = ".".join(tgt_path)
+            req_path = part.instance_path + tuple(edge["source"]["path"])
+            tgt_path = part.instance_path + tuple(edge["target"]["path"])
+            req_key = ".".join(req_path)
+            tgt_key = ".".join(tgt_path)
 
-        req = path_registry.get(req_key)
-        tgt = path_registry.get(tgt_key)
+            req = path_registry.get(req_key)
+            tgt = path_registry.get(tgt_key)
 
-        if req is None:
-            raise ValueError(f"Allocation requirement '{req_key}' not found in registry")
-        if tgt is None:
-            raise ValueError(f"Allocation target '{tgt_key}' not found in registry")
-        if not isinstance(req, ElementInstance):
-            raise ValueError(f"Allocation requirement '{req_key}' is not an ElementInstance")
-        if not isinstance(tgt, ElementInstance):
-            raise ValueError(f"Allocation target '{tgt_key}' is not an ElementInstance")
+            if req is None:
+                raise ValueError(f"Allocation requirement '{req_key}' not found in registry")
+            if tgt is None:
+                raise ValueError(f"Allocation target '{tgt_key}' not found in registry")
+            if not isinstance(req, ElementInstance):
+                raise ValueError(f"Allocation requirement '{req_key}' is not an ElementInstance")
+            if not isinstance(tgt, ElementInstance):
+                raise ValueError(f"Allocation target '{tgt_key}' is not an ElementInstance")
 
-        parameter_overrides: dict[str, ValueSlot] = {}
-        raw_inputs = edge.get("_allocate_inputs")
-        if raw_inputs:
-            for iname, spec in raw_inputs.items():
-                rel = tuple(spec["path"])
-                slot_key = ".".join((root.path_string, *rel))
-                slot = path_registry.get(slot_key)
-                if not isinstance(slot, ValueSlot):
-                    raise ValueError(f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry")
-                parameter_overrides[str(iname)] = slot
+            parameter_overrides: dict[str, ValueSlot] = {}
+            raw_inputs = edge.get("_allocate_inputs")
+            if raw_inputs:
+                for iname, spec in raw_inputs.items():
+                    rel = tuple(spec["path"])
+                    # Input paths are relative to the DECLARING part's context, not
+                    # the root — so use part.path_string here, not root.path_string.
+                    slot_key = ".".join((part.path_string, *rel))
+                    slot = path_registry.get(slot_key)
+                    if not isinstance(slot, ValueSlot):
+                        raise ValueError(f"allocate inputs[{iname!r}] path {slot_key!r} is not a ValueSlot in registry")
+                    parameter_overrides[str(iname)] = slot
 
-        alloc_id = derive_declaration_id(root_type, "allocate", *edge["source"]["path"], *edge["target"]["path"])
-        allocations.append(
-            AllocationBinding(
-                stable_id=alloc_id,
-                requirement=req,
-                target=tgt,
-                parameter_overrides=parameter_overrides,
+            # Include the part's own instance path segments in the stable_id so
+            # allocate edges authored inside different sub-Systems remain unique
+            # even if the relative source/target paths happen to match.
+            owner_segments = part.instance_path[1:]  # skip the root_type name itself
+            alloc_id = derive_declaration_id(
+                root_type,
+                "allocate",
+                *owner_segments,
+                *edge["source"]["path"],
+                *edge["target"]["path"],
             )
-        )
+            out.append(
+                AllocationBinding(
+                    stable_id=alloc_id,
+                    requirement=req,
+                    target=tgt,
+                    parameter_overrides=parameter_overrides,
+                )
+            )
+        # Recurse into composed child Parts (NOT ports / value slots / requirement packages).
+        stack.extend(part.children)
 
-    return allocations
+    return out
 
 
 def _instantiate_all_references(
