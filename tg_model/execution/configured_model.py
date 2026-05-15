@@ -241,6 +241,22 @@ def instantiate(root_type: type) -> ConfiguredModel:
     id_registry: dict[str, ElementInstance | ValueSlot] = {}
     requirement_value_slots: list[ValueSlot] = []
 
+    # Requirement classes are specification statements — there is no such thing
+    # as "two copies of the same requirement." When the same Requirement subclass
+    # is composed in multiple places from DIFFERENT defining classes (e.g. once
+    # inside FacilitySystem and again inside DataCenterCapabilityRequirements),
+    # tg-model treats them as ONE shared RequirementPackageInstance with multiple
+    # navigation paths in path_registry.
+    #
+    # However, when the SAME defining class introduces a Requirement multiple times
+    # (because that class is itself instantiated more than once — e.g. two motor
+    # sub-systems each owning their own thrust requirement), each instance gets its
+    # own independent RequirementPackageInstance. This is the multi-instantiation
+    # case and must NOT be deduped.
+    #
+    # Registry maps: Requirement class → (introducing_class, canonical_instance)
+    pkg_class_registry: dict[type, tuple[type, RequirementPackageInstance]] = {}
+
     root_path = (root_type.__name__,)
     root_id = derive_declaration_id(root_type, *root_path)
     root_instance = PartInstance(
@@ -260,6 +276,7 @@ def instantiate(root_type: type) -> ConfiguredModel:
         id_registry,
         ref_accumulator,
         requirement_value_slots,
+        pkg_class_registry,
     )
 
     connections = _instantiate_all_connections(root_instance, path_registry, root_type)
@@ -279,6 +296,45 @@ def instantiate(root_type: type) -> ConfiguredModel:
     )
 
 
+def _register_pkg_alias(
+    existing: RequirementPackageInstance,
+    alias_path: tuple[str, ...],
+    path_registry: dict[str, ElementInstance | ValueSlot],
+) -> None:
+    """Register an already-instantiated RequirementPackageInstance under a new path prefix.
+
+    When the same Requirement class is composed a second time, we do not create a
+    new instance. Instead, all navigation paths under ``alias_path`` are added to
+    ``path_registry`` pointing at the SAME descendant objects as the canonical path.
+    ``id_registry`` is NOT touched — each object retains exactly one stable_id.
+
+    This walk mirrors the structure produced by _instantiate_requirement_block_children:
+    it recurses into nested RequirementPackageInstances so deeply-nested members are
+    also aliased.
+    """
+    canonical_prefix = existing.instance_path
+    canonical_len = len(canonical_prefix)
+    alias_str = ".".join(alias_path)
+    path_registry[alias_str] = existing
+
+    # Walk _members which contains: ElementInstance (requirement/constraint/citation),
+    # ValueSlot (parameter/attribute), and nested RequirementPackageInstance.
+    stack: list[RequirementPackageInstance] = [existing]
+    while stack:
+        pkg = stack.pop()
+        pkg_alias_prefix = alias_path + pkg.instance_path[canonical_len:]
+        for member_name, member in pkg._members.items():
+            # Compute the alias path for this member.
+            member_alias = (*pkg_alias_prefix, member_name)
+            member_alias_str = ".".join(member_alias)
+            if isinstance(member, RequirementPackageInstance):
+                path_registry[member_alias_str] = member
+                stack.append(member)
+            else:
+                # ElementInstance (requirement, constraint, citation) or ValueSlot.
+                path_registry[member_alias_str] = member
+
+
 def _instantiate_children(
     parent: PartInstance,
     compiled: dict[str, Any],
@@ -287,9 +343,12 @@ def _instantiate_children(
     id_registry: dict[str, ElementInstance | ValueSlot],
     ref_accumulator: list[ReferenceBinding] | None = None,
     requirement_value_slots: list[ValueSlot] | None = None,
+    pkg_class_registry: dict[type, RequirementPackageInstance] | None = None,
 ) -> None:
     """Walk compiled nodes and create child instances under parent."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
+    if pkg_class_registry is None:
+        pkg_class_registry = {}
 
     for name, node in compiled["nodes"].items():
         kind = node["kind"]
@@ -319,6 +378,7 @@ def _instantiate_children(
                     id_registry,
                     ref_accumulator,
                     requirement_value_slots,
+                    pkg_class_registry,
                 )
 
         elif kind == "port":
@@ -361,26 +421,64 @@ def _instantiate_children(
             block_type = type_registry.get(name)
             if block_type is None:
                 raise ValueError(f"requirement_block {name!r} has no target_type (internal compile error)")
-            pkg_inst = RequirementPackageInstance(
-                stable_id=child_id,
-                definition_type=root_type,
-                definition_path=(name,),
-                instance_path=child_path,
-                package_type=block_type,
-                metadata=metadata,
-            )
-            parent.add_requirement_package(name, pkg_inst)
-            _register(pkg_inst, path_registry, id_registry)
-            _instantiate_requirement_block_children(
-                pkg_inst,
-                _requirement_block_compiled_artifact(block_type),
-                root_type,
-                root_type,
-                path_registry,
-                id_registry,
-                ref_accumulator,
-                requirement_value_slots,
-            )
+            introducing_class = parent.definition_type
+            registry_entry = pkg_class_registry.get(block_type)
+            if registry_entry is not None:
+                prior_introducing_class, existing_inst = registry_entry
+                if prior_introducing_class is not introducing_class:
+                    # Different class introduces the same Requirement — cross-tree
+                    # sharing (e.g. rollup package referencing a domain requirement).
+                    # Alias to the canonical instance; don't recurse.
+                    parent.add_requirement_package(name, existing_inst)
+                    _register_pkg_alias(existing_inst, alias_path=child_path, path_registry=path_registry)
+                else:
+                    # Same class introduces the same Requirement again — this class
+                    # is instantiated multiple times and each instance gets its own
+                    # independent Requirement instance. Don't dedupe.
+                    pkg_inst = RequirementPackageInstance(
+                        stable_id=child_id,
+                        definition_type=root_type,
+                        definition_path=(name,),
+                        instance_path=child_path,
+                        package_type=block_type,
+                        metadata=metadata,
+                    )
+                    parent.add_requirement_package(name, pkg_inst)
+                    _register(pkg_inst, path_registry, id_registry)
+                    _instantiate_requirement_block_children(
+                        pkg_inst,
+                        _requirement_block_compiled_artifact(block_type),
+                        root_type,
+                        root_type,
+                        path_registry,
+                        id_registry,
+                        ref_accumulator,
+                        requirement_value_slots,
+                        pkg_class_registry,
+                    )
+            else:
+                pkg_inst = RequirementPackageInstance(
+                    stable_id=child_id,
+                    definition_type=root_type,
+                    definition_path=(name,),
+                    instance_path=child_path,
+                    package_type=block_type,
+                    metadata=metadata,
+                )
+                parent.add_requirement_package(name, pkg_inst)
+                _register(pkg_inst, path_registry, id_registry)
+                pkg_class_registry[block_type] = (introducing_class, pkg_inst)
+                _instantiate_requirement_block_children(
+                    pkg_inst,
+                    _requirement_block_compiled_artifact(block_type),
+                    root_type,
+                    root_type,
+                    path_registry,
+                    id_registry,
+                    ref_accumulator,
+                    requirement_value_slots,
+                    pkg_class_registry,
+                )
 
         elif kind == "constraint":
             constraint_instance = ElementInstance(
@@ -414,10 +512,13 @@ def _instantiate_requirement_block_children(
     id_registry: dict[str, ElementInstance | ValueSlot],
     ref_accumulator: list[ReferenceBinding] | None = None,
     requirement_value_slots: list[ValueSlot] | None = None,
+    pkg_class_registry: dict[type, RequirementPackageInstance] | None = None,
 ) -> None:
     """Materialize members under a composable requirement package (dot-access under the root part)."""
     type_registry: dict[str, type] = compiled.get("_type_registry", {})
     prefix_path = package.instance_path
+    if pkg_class_registry is None:
+        pkg_class_registry = {}
 
     for name, node in compiled["nodes"].items():
         kind = node["kind"]
@@ -451,26 +552,60 @@ def _instantiate_requirement_block_children(
             block_type = type_registry.get(name)
             if block_type is None:
                 raise ValueError(f"requirement_block {name!r} has no target_type (internal compile error)")
-            inner_pkg = RequirementPackageInstance(
-                stable_id=child_id,
-                definition_type=definition_root_type,
-                definition_path=tuple(child_path[1:]),
-                instance_path=child_path,
-                package_type=block_type,
-                metadata=metadata,
-            )
-            package.add_member(name, inner_pkg)
-            _register(inner_pkg, path_registry, id_registry)
-            _instantiate_requirement_block_children(
-                inner_pkg,
-                _requirement_block_compiled_artifact(block_type),
-                definition_root_type,
-                root_type,
-                path_registry,
-                id_registry,
-                ref_accumulator,
-                requirement_value_slots,
-            )
+            introducing_class = package.package_type
+            registry_entry = pkg_class_registry.get(block_type)
+            if registry_entry is not None:
+                prior_introducing_class, existing_inst = registry_entry
+                if prior_introducing_class is not introducing_class:
+                    # Different Requirement class is introducing this — alias.
+                    package.add_member(name, existing_inst)
+                    _register_pkg_alias(existing_inst, alias_path=child_path, path_registry=path_registry)
+                else:
+                    # Same package type introduces it again (multi-instantiation).
+                    inner_pkg = RequirementPackageInstance(
+                        stable_id=child_id,
+                        definition_type=definition_root_type,
+                        definition_path=tuple(child_path[1:]),
+                        instance_path=child_path,
+                        package_type=block_type,
+                        metadata=metadata,
+                    )
+                    package.add_member(name, inner_pkg)
+                    _register(inner_pkg, path_registry, id_registry)
+                    _instantiate_requirement_block_children(
+                        inner_pkg,
+                        _requirement_block_compiled_artifact(block_type),
+                        definition_root_type,
+                        root_type,
+                        path_registry,
+                        id_registry,
+                        ref_accumulator,
+                        requirement_value_slots,
+                        pkg_class_registry,
+                    )
+            else:
+                inner_pkg = RequirementPackageInstance(
+                    stable_id=child_id,
+                    definition_type=definition_root_type,
+                    definition_path=tuple(child_path[1:]),
+                    instance_path=child_path,
+                    package_type=block_type,
+                    metadata=metadata,
+                )
+                package.add_member(name, inner_pkg)
+                _register(inner_pkg, path_registry, id_registry)
+                pkg_class_registry[block_type] = (introducing_class, inner_pkg)
+                _instantiate_requirement_block_children(
+                    inner_pkg,
+                    _requirement_block_compiled_artifact(block_type),
+                    definition_root_type,
+                    root_type,
+                    path_registry,
+                    id_registry,
+                    ref_accumulator,
+                    requirement_value_slots,
+                    pkg_class_registry,
+                )
 
         elif kind in ("parameter", "attribute"):
             slot = ValueSlot(
